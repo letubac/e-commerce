@@ -1,0 +1,1 @@
+SELECT * FROM products WHERE brand_id = /*brandId*/ AND is_active = true

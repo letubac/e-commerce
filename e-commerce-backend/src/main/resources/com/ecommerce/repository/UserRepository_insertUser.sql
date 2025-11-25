@@ -1,0 +1,30 @@
+INSERT INTO users (
+    username,
+    email,
+    password,
+    full_name,
+    first_name,
+    last_name,
+    phone_number,
+    address,
+    role,
+    is_active,
+    email_verified,
+    created_at,
+    updated_at
+) VALUES (
+    /*username*/,
+    /*email*/,
+    /*password*/,
+    /*fullName*/,
+    /*firstName*/,
+    /*lastName*/,
+    /*phoneNumber*/,
+    /*address*/,
+    /*role*/,
+    /*isActive*/,
+    /*emailVerified*/,
+    /*createdAt*/,
+    /*updatedAt*/
+)
+RETURNING id;

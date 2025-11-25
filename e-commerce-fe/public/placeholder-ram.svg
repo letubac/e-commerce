@@ -1,0 +1,22 @@
+<!-- Placeholder SVG for RAM image -->
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="400" fill="#f3f4f6"/>
+  <rect x="100" y="120" width="200" height="160" rx="4" fill="#374151"/>
+  <rect x="110" y="130" width="180" height="140" fill="#22c55e"/>
+  <!-- RAM notch -->
+  <rect x="190" y="120" width="20" height="10" fill="#f3f4f6"/>
+  <!-- RAM chips -->
+  <rect x="120" y="150" width="20" height="30" fill="#1f2937"/>
+  <rect x="150" y="150" width="20" height="30" fill="#1f2937"/>
+  <rect x="190" y="150" width="20" height="30" fill="#1f2937"/>
+  <rect x="220" y="150" width="20" height="30" fill="#1f2937"/>
+  <rect x="250" y="150" width="20" height="30" fill="#1f2937"/>
+  
+  <rect x="120" y="200" width="20" height="30" fill="#1f2937"/>
+  <rect x="150" y="200" width="20" height="30" fill="#1f2937"/>
+  <rect x="190" y="200" width="20" height="30" fill="#1f2937"/>
+  <rect x="220" y="200" width="20" height="30" fill="#1f2937"/>
+  <rect x="250" y="200" width="20" height="30" fill="#1f2937"/>
+  
+  <text x="200" y="320" text-anchor="middle" fill="#9ca3af" font-family="Arial" font-size="16">RAM</text>
+</svg>

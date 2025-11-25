@@ -1,0 +1,35 @@
+package com.ecommerce.constant;
+
+/**
+ * 
+ * AppApiExceptionCodeConstant
+ * 
+ * @version 01-00
+ * @since 01-00
+ * @author BacLV
+ */
+public class AppApiExceptionCodeConstant {
+	// API ACCOUNT REST (01-99)
+	/** APPAPI_ACCOUNT_LIST_ERROR */
+	public static final String E402600_APPAPI_ACCOUNT_NOT_FOUND = "402600_APPAPI_ACCOUNT_NOT_FOUND";
+	public static final String E402601_APPAPI_ACCOUNT_ERROR = "402601_APPAPI_ACCOUNT_ERROR";
+	/** APPAPI_ACCOUNT_CHANGE_PASSWORD_ERROR */
+	public static final String E402603_APPAPI_ACCOUNT_CHANGE_PASS_ERROR = "402603_APPAPI_ACCOUNT_CHANGE_PASSWORD_ERROR";
+	/** APPAPI_ACCOUNT_PASSWORD_OLD_INCORRECT */
+	public static final String E402604_APPAPI_ACCOUNT_PASS_OLD_INCORRECT = "402604_APPAPI_ACCOUNT_PASSWORD_OLD_INCORRECT";
+	/** APPAPI_ACCOUNT_CONFIRM_PASSWORD_NEW_INCORRECT */
+	public static final String E402605_APPAPI_ACCOUNT_CONFIRM_PASS_NEW_INCORRECT = "402605_APPAPI_ACCOUNT_CONFIRM_PASSWORD_NEW_INCORRECT";
+	/** EMAIL EXIST **/
+	public static final String E402606_APPAPI_EMAIL_EXIST = "402606_APPAPI_EMAIL_EXIST";
+	/** ERROR REGISTER ACCOUNT */
+	public static final String E402607_APPAPI_REGISTER_ACCOUNT_ERROR = "402607_APPAPI_REGISTER_ACCOUNT_ERROR";
+	// ERROR_SORT_DYNAMIC_TABLE (700-720)
+	/** Sort dynamic table error not found */
+	public static final String E402608_SORT_DYNAMIC_TABLE = "402608_SORT_DYNAMIC_TABLE";
+	/** Sort invalid file extension error not found */
+	public static final String E402609_APPAPI_INVALID_FILE_EXTENSION = "402609_APPAPI_INVALID_FILE_EXTENSION";
+	/** Error reservation seat */
+	public static final String E402610_APPAPI_NOT_FOUND_SEAT = "402610_APPAPI_NOT_FOUND_SEAT";
+	/** Sort invalid file extension error not found */
+	public static final String E402611_APPAPI_FILE_EXTENSION_NOT_ALLOWED = "402611_APPAPI_FILE_EXTENSION_NOT_ALLOWED";
+}

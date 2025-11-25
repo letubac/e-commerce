@@ -1,0 +1,39 @@
+<!-- Placeholder SVG for case image -->
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="400" fill="#f3f4f6"/>
+  <!-- Case body -->
+  <rect x="120" y="60" width="160" height="280" rx="8" fill="#1f2937"/>
+  <rect x="130" y="70" width="140" height="260" fill="#374151"/>
+  
+  <!-- Front panel -->
+  <rect x="140" y="80" width="120" height="4" fill="#6b7280"/>
+  <rect x="140" y="90" width="120" height="4" fill="#6b7280"/>
+  
+  <!-- Power button -->
+  <circle cx="200" cy="110" r="8" fill="#22c55e"/>
+  
+  <!-- USB ports -->
+  <rect x="170" y="125" width="12" height="6" fill="#000000"/>
+  <rect x="185" y="125" width="12" height="6" fill="#000000"/>
+  <rect x="200" y="125" width="12" height="6" fill="#000000"/>
+  <rect x="215" y="125" width="12" height="6" fill="#000000"/>
+  
+  <!-- Front fans -->
+  <circle cx="160" cy="160" r="15" fill="#4b5563"/>
+  <circle cx="200" cy="160" r="15" fill="#4b5563"/>
+  <circle cx="240" cy="160" r="15" fill="#4b5563"/>
+  
+  <circle cx="160" cy="200" r="15" fill="#4b5563"/>
+  <circle cx="200" cy="200" r="15" fill="#4b5563"/>
+  <circle cx="240" cy="200" r="15" fill="#4b5563"/>
+  
+  <!-- Side panel -->
+  <rect x="280" y="80" width="60" height="220" rx="4" fill="#6b7280"/>
+  <rect x="290" y="90" width="40" height="200" fill="rgba(255,255,255,0.1)"/>
+  
+  <!-- Feet -->
+  <rect x="110" y="340" width="20" height="8" fill="#6b7280"/>
+  <rect x="270" y="340" width="20" height="8" fill="#6b7280"/>
+  
+  <text x="200" y="380" text-anchor="middle" fill="#9ca3af" font-family="Arial" font-size="16">CASE</text>
+</svg>

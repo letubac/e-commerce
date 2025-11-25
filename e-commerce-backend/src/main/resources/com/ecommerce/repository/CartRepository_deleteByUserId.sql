@@ -1,0 +1,1 @@
+DELETE FROM carts WHERE user_id = /*userId*/

@@ -1,0 +1,22 @@
+# Eclipse & IDE trash
+.metadata/
+.settings/
+.classpath
+.project
+.factorypath
+.vscode/
+
+# Maven build
+target/
+
+# Logs
+logs/
+*.log
+
+# Node (FE)
+e-commerce-fe/node_modules/
+e-commerce-fe/.cache/
+
+# OS
+Thumbs.db
+.DS_Store

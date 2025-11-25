@@ -1,0 +1,219 @@
+package com.ecommerce.controller;
+
+import com.ecommerce.dto.ApiResponse;
+import com.ecommerce.dto.ChatMessageDTO;
+import com.ecommerce.dto.ConversationDTO;
+import com.ecommerce.dto.request.CreateConversationRequest;
+import com.ecommerce.dto.request.SendMessageRequest;
+import com.ecommerce.service.ConversationService;
+import com.ecommerce.service.ChatMessageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * REST controller for managing chat functionality.
+ * Provides endpoints for conversations and messages.
+ */
+@RestController
+@RequestMapping("/api/v1/chat")
+public class ChatController {
+
+    private static final Logger log = LoggerFactory.getLogger(ChatController.class);
+
+    @Autowired
+    private ConversationService conversationService;
+
+    @Autowired
+    private ChatMessageService chatMessageService;
+
+    // USER ENDPOINTS
+
+    /**
+     * Get user's conversations
+     */
+    @GetMapping("/conversations")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<ConversationDTO>>> getUserConversations(Authentication authentication) {
+        try {
+            // Tạm thời return empty list, implement sau
+            List<ConversationDTO> conversations = List.of();
+            return ResponseEntity
+                    .ok(new ApiResponse<>(true, "Lấy danh sách cuộc trò chuyện thành công", conversations));
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy danh sách cuộc trò chuyện", e);
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi lấy danh sách cuộc trò chuyện"));
+        }
+    }
+
+    /**
+     * Get messages in a conversation
+     */
+    @GetMapping("/conversations/{conversationId}/messages")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Page<ChatMessageDTO>>> getConversationMessages(
+            @PathVariable Long conversationId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            Authentication authentication) {
+
+        try {
+            // Tạm thời return empty page, implement sau
+            Page<ChatMessageDTO> messages = Page.empty();
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy tin nhắn cuộc trò chuyện thành công", messages));
+        } catch (SecurityException e) {
+            log.warn("Không có quyền truy cập cuộc trò chuyện ID: {}", conversationId);
+            return ResponseEntity.status(403)
+                    .body(new ApiResponse<>(false, "Bạn không có quyền truy cập cuộc trò chuyện này"));
+        } catch (RuntimeException e) {
+            log.warn("Không tìm thấy cuộc trò chuyện ID: {}", conversationId);
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy tin nhắn cuộc trò chuyện ID: {}", conversationId, e);
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi lấy tin nhắn"));
+        }
+    }
+
+    /**
+     * Send a message
+     */
+    @PostMapping("/messages")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ChatMessageDTO>> sendMessage(
+            @Valid @RequestBody SendMessageRequest request,
+            Authentication authentication) {
+
+        try {
+            String username = authentication.getName();
+
+            // Tạm thời return mock response, implement sau
+            ChatMessageDTO message = new ChatMessageDTO();
+            message.setContent(request.getContent());
+
+            log.info("Người dùng {} đã gửi tin nhắn trong cuộc trò chuyện ID: {}",
+                    username, request.getConversationId());
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "Gửi tin nhắn thành công", message));
+        } catch (SecurityException e) {
+            log.warn("Không có quyền gửi tin nhắn: {}", e.getMessage());
+            return ResponseEntity.status(403)
+                    .body(new ApiResponse<>(false, "Bạn không có quyền gửi tin nhắn"));
+        } catch (IllegalArgumentException e) {
+            log.warn("Dữ liệu không hợp lệ khi gửi tin nhắn: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, "Dữ liệu không hợp lệ: " + e.getMessage()));
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi tin nhắn", e);
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi gửi tin nhắn"));
+        }
+    }
+
+    /**
+     * Create a new conversation
+     */
+    @PostMapping("/conversations")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ConversationDTO>> createConversation(
+            @Valid @RequestBody CreateConversationRequest request,
+            Authentication authentication) {
+
+        try {
+            String username = authentication.getName();
+
+            // Tạm thời return mock response, implement sau
+            ConversationDTO conversation = new ConversationDTO();
+            conversation.setSubject(request.getSubject());
+
+            log.info("Người dùng {} đã tạo cuộc trò chuyện mới", username);
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "Tạo cuộc trò chuyện thành công", conversation));
+        } catch (IllegalArgumentException e) {
+            log.warn("Dữ liệu không hợp lệ khi tạo cuộc trò chuyện: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, "Dữ liệu không hợp lệ: " + e.getMessage()));
+        } catch (Exception e) {
+            log.error("Lỗi khi tạo cuộc trò chuyện", e);
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi tạo cuộc trò chuyện"));
+        }
+    }
+
+    /**
+     * Mark messages as read
+     */
+    @PostMapping("/conversations/{conversationId}/read")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<String>> markMessagesAsRead(
+            @PathVariable Long conversationId,
+            Authentication authentication) {
+
+        try {
+            return ResponseEntity.ok(new ApiResponse<>(true, "Đánh dấu đã đọc thành công"));
+        } catch (SecurityException e) {
+            log.warn("Không có quyền đánh dấu đã đọc cuộc trò chuyện ID: {}", conversationId);
+            return ResponseEntity.status(403)
+                    .body(new ApiResponse<>(false, "Bạn không có quyền thực hiện hành động này"));
+        } catch (Exception e) {
+            log.error("Lỗi khi đánh dấu tin nhắn đã đọc", e);
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi đánh dấu đã đọc"));
+        }
+    }
+
+    /**
+     * Upload file for chat
+     */
+    @PostMapping("/upload")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, String>>> uploadChatFile(
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
+
+        try {
+            String username = authentication.getName();
+
+            Map<String, String> fileInfo = Map.of("url", "/uploads/" + file.getOriginalFilename());
+
+            log.info("Người dùng {} đã tải lên file: {}", username, file.getOriginalFilename());
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "Tải lên file thành công", fileInfo));
+        } catch (IllegalArgumentException e) {
+            log.warn("File không hợp lệ: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, "File không hợp lệ: " + e.getMessage()));
+        } catch (Exception e) {
+            log.error("Lỗi khi tải lên file", e);
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi tải lên file"));
+        }
+    }
+
+    /**
+     * Get chat status
+     */
+    @GetMapping("/status")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getChatStatus() {
+        try {
+            Map<String, Object> status = Map.of("online", true, "activeUsers", 100);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy trạng thái chat thành công", status));
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy trạng thái chat", e);
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi lấy trạng thái chat"));
+        }
+    }
+}
