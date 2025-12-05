@@ -2,21 +2,25 @@ package com.ecommerce.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import vn.com.unit.miragesql.miragesql.annotation.PrimaryKey;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.Date;
 
+import com.ecommerce.constant.TableConstant;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "order_items")
+@Table(name = TableConstant.ORDER_ITEMS)
 public class OrderItem {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ
+    + TableConstant.ORDER_ITEMS)
     @Column(name = "id")
     private Long id;
 
@@ -43,9 +47,9 @@ public class OrderItem {
 
     @Column(name = "created_at")
     private Date createdAt;
-
-    @Column(name = "updated_at")
-    private Date updatedAt;
+    
+    @Transient
+    private String productImageUrl; // Not stored in DB, used for DTO purposes
 
     // Business methods
     public BigDecimal calculateTotal() {

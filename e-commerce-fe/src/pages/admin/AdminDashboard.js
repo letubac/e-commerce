@@ -21,6 +21,9 @@ import AdminHeader from '../../components/AdminHeader';
 import AdminFooter from '../../components/AdminFooter';
 import AdminChatManagement from '../../components/AdminChatManagement';
 import ProductManagement from '../../components/ProductManagement';
+import OrderManagement from '../../components/OrderManagement';
+import UserManagement from '../../components/UserManagement';
+import CouponManagement from '../../components/CouponManagement';
 import adminApi from '../../api/adminApi';
 
 function AdminDashboard() {
@@ -36,23 +39,43 @@ function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (activeTab === 'overview') {
+      fetchDashboardData();
+    }
+  }, [activeTab]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const [statsResponse, ordersResponse, productsResponse] = await Promise.all([
-        adminApi.getDashboardStats(),
-        adminApi.getRecentOrders(),
-        adminApi.getRecentProducts()
-      ]);
-
-      setStats(statsResponse);
-      setRecentOrders(ordersResponse);
-      setRecentProducts(productsResponse);
+      const response = await adminApi.getDashboardOverview();
+      const data = response.data || response;
+      
+      setStats({
+        totalUsers: data.totalUsers || 0,
+        totalProducts: data.totalProducts || 0,
+        totalOrders: data.totalOrders || 0,
+        totalRevenue: data.totalRevenue || 0,
+        userGrowth: data.userGrowth || 0,
+        productGrowth: data.productGrowth || 0,
+        orderGrowth: data.orderGrowth || 0,
+        revenueGrowth: data.revenueGrowth || 0
+      });
+      
+      setRecentOrders(data.recentOrders || []);
+      setRecentProducts(data.recentProducts || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      // Set default values on error
+      setStats({
+        totalUsers: 0,
+        totalProducts: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        userGrowth: 0,
+        productGrowth: 0,
+        orderGrowth: 0,
+        revenueGrowth: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -151,28 +174,28 @@ function AdminDashboard() {
                 value={stats.totalUsers?.toLocaleString('vi-VN') || '0'}
                 icon={Users}
                 color="bg-blue-500"
-                trend={12}
+                trend={stats.userGrowth}
               />
               <StatCard
                 title="Tổng sản phẩm"
                 value={stats.totalProducts?.toLocaleString('vi-VN') || '0'}
                 icon={Package}
                 color="bg-green-500"
-                trend={8}
+                trend={stats.productGrowth}
               />
               <StatCard
                 title="Tổng đơn hàng"
                 value={stats.totalOrders?.toLocaleString('vi-VN') || '0'}
                 icon={ShoppingCart}
                 color="bg-yellow-500"
-                trend={15}
+                trend={stats.orderGrowth}
               />
               <StatCard
                 title="Doanh thu"
                 value={`${stats.totalRevenue?.toLocaleString('vi-VN') || '0'}₫`}
                 icon={DollarSign}
                 color="bg-red-500"
-                trend={23}
+                trend={stats.revenueGrowth}
               />
             </div>
 
@@ -260,87 +283,7 @@ function AdminDashboard() {
 
         {/* Orders Tab */}
         {activeTab === 'orders' && (
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Quản lý đơn hàng</h3>
-              <div className="flex gap-2">
-                <select className="px-3 py-2 border border-gray-300 rounded-lg">
-                  <option value="">Tất cả trạng thái</option>
-                  <option value="pending">Chờ xử lý</option>
-                  <option value="processing">Đang xử lý</option>
-                  <option value="completed">Hoàn thành</option>
-                  <option value="cancelled">Đã hủy</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Mã đơn hàng
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Khách hàng
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tổng tiền
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trạng thái
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ngày tạo
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Hành động
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {recentOrders.length > 0 ? recentOrders.map((order) => (
-                    <tr key={order.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        #{order.id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {order.customerName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {order.total?.toLocaleString('vi-VN')}₫
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(order.createdAt).toLocaleDateString('vi-VN')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2">
-                          <button className="text-blue-600 hover:text-blue-900">Xem</button>
-                          <button className="text-green-600 hover:text-green-900">Sửa</button>
-                        </div>
-                      </td>
-                    </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
-                        Chưa có đơn hàng nào
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <OrderManagement />
         )}
 
         {/* Products Tab */}
@@ -350,28 +293,7 @@ function AdminDashboard() {
 
         {/* Users Tab */}
         {activeTab === 'users' && (
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Quản lý người dùng</h3>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm người dùng..."
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
-                />
-                <select className="px-3 py-2 border border-gray-300 rounded-lg">
-                  <option value="">Tất cả vai trò</option>
-                  <option value="user">Người dùng</option>
-                  <option value="admin">Quản trị viên</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="text-center text-gray-500 py-8">
-              <Users size={48} className="mx-auto mb-4 text-gray-300" />
-              <p>Chức năng quản lý người dùng đang được phát triển</p>
-            </div>
-          </div>
+          <UserManagement />
         )}
 
         {/* Chat Tab */}
@@ -383,103 +305,7 @@ function AdminDashboard() {
 
         {/* Coupons Tab */}
         {activeTab === 'coupons' && (
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Quản lý mã giảm giá</h3>
-              <button className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                <Plus size={20} />
-                Tạo mã giảm giá
-              </button>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Mã
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tên
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Loại giảm giá
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Giá trị
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Số lần sử dụng
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trạng thái
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Hành động
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      WELCOME10
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Chào mừng khách hàng mới
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Phần trăm
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      10%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      156/1000
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                        Hoạt động
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
-                        <button className="text-blue-600 hover:text-blue-900">Sửa</button>
-                        <button className="text-red-600 hover:text-red-900">Vô hiệu</button>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      FLASH50
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Flash Sale 50K
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Cố định
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      50,000₫
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      234/500
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                        Hoạt động
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
-                        <button className="text-blue-600 hover:text-blue-900">Sửa</button>
-                        <button className="text-red-600 hover:text-red-900">Vô hiệu</button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <CouponManagement />
         )}
 
         {/* Reports Tab */}

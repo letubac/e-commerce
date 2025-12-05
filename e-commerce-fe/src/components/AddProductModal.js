@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Upload, Plus, Minus, AlertCircle } from 'lucide-react';
 import adminApi from '../api/adminApi';
-import api from '../api/api';
+import api, { getImageUrl } from '../api/api';
 
 function AddProductModal({ isOpen, onClose, onSuccess, editProduct = null }) {
   const [formData, setFormData] = useState({
@@ -52,8 +52,11 @@ function AddProductModal({ isOpen, onClose, onSuccess, editProduct = null }) {
           isActive: editProduct.isActive !== undefined ? editProduct.isActive : true,
           isFeatured: editProduct.isFeatured || false
         });
-        // Set image URLs từ API response format
-        const imageUrls = editProduct.images ? editProduct.images.map(img => img.imageUrl) : [];
+        // Set image URLs từ API response format - handle both images and productImages
+        const imagesArray = editProduct.productImages || editProduct.images || [];
+        const imageUrls = imagesArray
+          .map(img => getImageUrl(img.imageUrl))
+          .filter(url => url); // Remove null/undefined
         setImageUrls(imageUrls);
       }
     }

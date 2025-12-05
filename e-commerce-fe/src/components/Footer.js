@@ -50,7 +50,7 @@ export default function Footer() {
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
                 <span className="text-sm text-gray-600">
-                  30/4 Tự Lập, Phường 4, Tân Bình, Hồ Chí Minh 700000, Việt Nam
+                  Tự Lập, Phường 4, Tân Bình, Hồ Chí Minh 700000, Việt Nam
                 </span>
               </div>
               <div className="flex items-center gap-2">

@@ -2,6 +2,9 @@ package com.ecommerce.repository;
 
 import com.ecommerce.entity.FlashSaleProduct;
 import com.ecommerce.repository.base.DbRepository;
+
+import vn.com.unit.springframework.data.mirage.repository.query.Modifying;
+
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -20,5 +23,6 @@ public interface FlashSaleProductRepository extends DbRepository<FlashSaleProduc
     FlashSaleProduct findByProductId(@Param("productId") Long productId);
 
     // Maps to: flashSaleProductRepository_updateSoldQuantity.sql
+    @Modifying
     int updateSoldQuantity(@Param("id") Long id, @Param("quantity") Integer quantity);
 }

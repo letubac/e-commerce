@@ -26,4 +26,6 @@ public interface CategoryRepository extends DbRepository<Category, Long> {
 
     Page<Category> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
             @Param("search") String search, Pageable pageable);
+    
+    Long countAllByActiveTrue();
 }

@@ -27,4 +27,6 @@ public interface CartRepository extends DbRepository<Cart, Long> {
     @Modifying
     @Transactional
     void deleteByUserId(@Param("userId") Long userId);
+
+	Optional<Cart> findById(@Param("id") Long id);
 }

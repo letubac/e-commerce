@@ -1,13 +1,18 @@
 package com.ecommerce.entity;
 
 import jakarta.persistence.*;
+import vn.com.unit.miragesql.miragesql.annotation.PrimaryKey;
+
 import java.util.Date;
 
+import com.ecommerce.constant.TableConstant;
+
 @Entity
-@Table(name = "chat_quick_replies")
+@Table(name = TableConstant.CHAT_QUICK_REPLIES)
 public class ChatQuickReply {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ
+    + TableConstant.CHAT_QUICK_REPLIES)
     private Long id;
 
     @Column(name = "title", nullable = false)

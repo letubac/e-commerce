@@ -20,6 +20,7 @@ import com.ecommerce.dto.OrderItemDTO;
 import com.ecommerce.entity.Order;
 import com.ecommerce.entity.OrderItem;
 import com.ecommerce.entity.Product;
+import com.ecommerce.entity.ProductImage;
 import com.ecommerce.exception.BadRequestException;
 import com.ecommerce.exception.ResourceNotFoundException;
 import com.ecommerce.repository.CartItemRepository;
@@ -81,7 +82,7 @@ public class OrderServiceImpl implements OrderService {
 		order.setTotal(total);
 
 		// Insert order
-		orderRepository.insertOrder(order);
+		order = orderRepository.create(order);
 
 		// Create order items
 		for (CreateOrderRequest.OrderItemRequest itemRequest : request.getItems()) {
@@ -104,9 +105,8 @@ public class OrderServiceImpl implements OrderService {
 			orderItem.setPrice(itemRequest.getPrice());
 			orderItem.setTotal(itemRequest.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity())));
 			orderItem.setCreatedAt(new Date());
-			orderItem.setUpdatedAt(new Date());
 
-			orderItemRepository.insertOrderItem(orderItem);
+			orderItemRepository.create(orderItem);
 
 			// Update product stock
 			int newStock = product.getStockQuantity() - itemRequest.getQuantity();
@@ -280,6 +280,14 @@ public class OrderServiceImpl implements OrderService {
 
 		// Load order items
 		List<OrderItem> orderItems = orderItemRepository.findByOrderId(order.getId());
+		// Lazy load images for each order item
+		orderItems.forEach(item -> {
+			// Assuming a method exists to load product image URL
+			ProductImage roductImage = productRepository.findImagesByProductId(item.getProductId()).stream().findFirst().orElse(null);
+			if (roductImage != null) {
+				item.setProductImageUrl(roductImage.getImageUrl());
+			}
+		});
 		List<OrderItemDTO> itemDTOs = orderItems.stream().map(this::convertOrderItemToDTO).collect(Collectors.toList());
 		dto.setItems(itemDTOs);
 
@@ -293,6 +301,7 @@ public class OrderServiceImpl implements OrderService {
 		dto.setProductId(orderItem.getProductId());
 		dto.setProductName(orderItem.getProductName());
 		dto.setProductSku(orderItem.getProductSku());
+		dto.setProductImageUrl(orderItem.getProductImageUrl());
 		dto.setQuantity(orderItem.getQuantity());
 		dto.setPrice(orderItem.getPrice());
 		dto.setTotal(orderItem.getTotal());

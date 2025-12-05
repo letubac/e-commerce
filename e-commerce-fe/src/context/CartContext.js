@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../api/api';
 import { useAuth } from './AuthContext';
+import toast from '../utils/toast';
 
 const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
@@ -11,9 +12,24 @@ export const CartProvider = ({ children }) => {
   const { user } = useAuth();
 
   useEffect(() => {
+    console.log('🛒 CartContext - user:', user); // Debug log
+    
+    // Chỉ fetch cart nếu user là CUSTOMER, không fetch cho ADMIN
     if (user) {
+      const userRole = user.role || (user.roles && user.roles[0]);
+      console.log('🛒 CartContext - User role:', userRole);
+      
+      if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
+        console.log('🛒 CartContext - User is admin, skipping cart fetch');
+        setCart({ items: [], totalPrice: 0, totalItems: 0 });
+        setLoading(false);
+        return;
+      }
+      
+      console.log('🛒 CartContext - User is customer, fetching cart...'); // Debug log
       fetchCart();
     } else {
+      console.log('🛒 CartContext - No user, skipping cart fetch'); // Debug log
       setLoading(false);
     }
   }, [user]);
@@ -37,41 +53,66 @@ export const CartProvider = ({ children }) => {
     try {
       const data = await api.addToCart({ productId, quantity });
       setCart(data);
+      toast.success('Thêm sản phẩm vào giỏ hàng thành công!');
+      return data;
     } catch (error) {
-      alert(error.message);
+      console.error('Error adding to cart:', error);
+      if (error.message !== 'Authentication required') {
+        toast.error(error.message || 'Đã xảy ra lỗi khi thêm vào giỏ hàng');
+      }
+      throw error;
     }
   };
 
   const updateItemQuantity = async (itemId, quantity) => {
     try {
+      console.log('🔄 Updating cart item:', itemId, 'to quantity:', quantity); // Debug
       const data = await api.updateCartItem(itemId, quantity);
+      console.log('✅ Cart updated successfully:', data); // Debug
       setCart(data);
+      return data;
     } catch (error) {
-      console.error('Error updating cart item:', error);
-      alert(error.message);
+      console.error('❌ Error updating cart item:', error);
+      if (error.message !== 'Authentication required') {
+        toast.error(error.message || 'Đã xảy ra lỗi khi cập nhật giỏ hàng');
+      }
+      throw error;
     }
   };
 
   const removeFromCart = async (itemId) => {
     try {
+      console.log('🗑️ Removing cart item:', itemId); // Debug
       const data = await api.removeFromCart(itemId);
+      console.log('✅ Cart after removal:', data); // Debug
       setCart(data);
+      toast.success('Xóa sản phẩm khỏi giỏ hàng thành công!');
+      return data;
     } catch (error) {
-      console.error('Error removing cart item:', error);
-      alert(error.message);
+      console.error('❌ Error removing cart item:', error);
+      if (error.message !== 'Authentication required') {
+        toast.error(error.message || 'Đã xảy ra lỗi khi xóa sản phẩm');
+      }
+      throw error;
     }
   };
 
-  const clearCart = async () => {
+  const clearCart = async (silent = false) => {
     try {
-      // API call to clear cart or remove each item
-      for (const item of cart.items || []) {
-        await api.removeFromCart(item.id);
+      console.log('🧹 Clearing entire cart'); // Debug
+      const data = await api.clearCart();
+      console.log('✅ Cart cleared:', data); // Debug
+      setCart(data || { items: [], totalPrice: 0, totalItems: 0 });
+      if (!silent) {
+        toast.success('Xóa toàn bộ giỏ hàng thành công!');
       }
-      setCart({ items: [], totalPrice: 0, totalItems: 0 });
+      return data;
     } catch (error) {
-      console.error('Error clearing cart:', error);
-      alert(error.message);
+      console.error('❌ Error clearing cart:', error);
+      if (error.message !== 'Authentication required') {
+        toast.error(error.message || 'Đã xảy ra lỗi khi xóa giỏ hàng');
+      }
+      throw error;
     }
   };
 

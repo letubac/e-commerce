@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Eye } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { API_BASE_URL } from '../api/api';
+import toast from '../utils/toast';
 
 export default function ProductCard({ product, onViewDetails }) {
   const { addToCart } = useCart();
@@ -11,9 +13,10 @@ export default function ProductCard({ product, onViewDetails }) {
     setAdding(true);
     try {
       await addToCart(product.id, 1);
-      alert('Đã thêm vào giỏ hàng!');
+      // Success toast already shown in CartContext
     } catch (error) {
       console.error('Error adding to cart:', error);
+      // Error toast already shown in api.js
     }
     setAdding(false);
   };
@@ -24,12 +27,19 @@ export default function ProductCard({ product, onViewDetails }) {
     }
   };
 
-  // 🖼️ chọn ảnh chính (isPrimary = true, hoặc lấy ảnh đầu tiên)
   const primaryImage =
-    product.imageUrl || 
-    (product.images && product.images.length > 0
-      ? product.images.find((img) => img.isPrimary)?.imageUrl || product.images[0].imageUrl
+    product.imageUrl ||
+    (product.productImages && product.productImages.length > 0
+      ? product.productImages.find((img) => img.primary)?.imageUrl || product.productImages[0].imageUrl
       : null);
+
+  // Add backend URL if image path is relative
+  const fullImageUrl = primaryImage 
+    ? (primaryImage.startsWith('http') ? primaryImage : `${API_BASE_URL}/files${primaryImage}`)
+    : null;
+
+  // Giá hiển thị: ưu tiên effectivePrice, sau đó salePrice, sau đó price
+  const displayPrice = product.effectivePrice ?? product.salePrice ?? product.price ?? 0;
 
   return (
     <div 
@@ -37,9 +47,9 @@ export default function ProductCard({ product, onViewDetails }) {
       onClick={handleViewDetails}
     >
       <div className="aspect-square bg-gray-100 flex items-center justify-center">
-        {primaryImage ? (
+        {fullImageUrl ? (
           <img
-            src={primaryImage}
+            src={fullImageUrl}
             alt={product.name}
             className="object-cover w-full h-full"
             onError={(e) => {
@@ -62,15 +72,15 @@ export default function ProductCard({ product, onViewDetails }) {
           {product.salePrice ? (
             <>
               <span className="text-2xl font-bold text-red-600">
-                ${product.salePrice?.toLocaleString()}
+                {Number(product.salePrice).toLocaleString('vi-VN')}đ
               </span>
               <span className="text-sm text-gray-500 line-through">
-                ${product.price?.toLocaleString()}
+                {Number(product.price).toLocaleString('vi-VN')}đ
               </span>
             </>
           ) : (
             <span className="text-2xl font-bold text-red-600">
-              ${product.price?.toLocaleString()}
+              {Number(displayPrice).toLocaleString('vi-VN')}đ
             </span>
           )}
         </div>

@@ -20,6 +20,7 @@ public class CartItemDTO {
     private String productSku;
     private String productImage;
     private Integer quantity;
+    private Integer stockQuantity; // Available stock for this product
     private BigDecimal price;
     private BigDecimal subtotal;
     private Date createdAt;

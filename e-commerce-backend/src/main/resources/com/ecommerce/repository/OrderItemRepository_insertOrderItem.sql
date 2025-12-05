@@ -6,16 +6,14 @@ INSERT INTO order_items (
     quantity,
     price,
     total,
-    created_at,
-    updated_at
+    created_at
 ) VALUES (
-    /* orderItem.orderId */,
-    /* orderItem.productId */,
-    /* orderItem.productName */,
-    /* orderItem.productSku */,
-    /* orderItem.quantity */,
-    /* orderItem.price */,
-    /* orderItem.total */,
-    /* orderItem.createdAt */,
-    /* orderItem.updatedAt */
+    /*orderItem.orderId*/,
+    /*orderItem.productId*/,
+    /*orderItem.productName*/,
+    /*orderItem.productSku*/,
+    /*orderItem.quantity*/,
+    /*orderItem.price*/,
+    /*orderItem.total*/,
+    /*orderItem.createdAt*/
 )

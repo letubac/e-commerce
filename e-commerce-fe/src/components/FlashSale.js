@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, ShoppingCart, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api/api';
+import api, { API_BASE_URL } from '../api/api';
 
 export default function FlashSale() {
   const navigate = useNavigate();
@@ -23,13 +23,19 @@ export default function FlashSale() {
 
   const fetchFlashSaleProducts = useCallback(async () => {
     try {
-      // Fetch flash sale products from API
+      // Fetch flash sale products from API (products with salePrice)
       const response = await api.getProducts({ 
-        category: 'flash-sale',
-        size: 10,
-        sort: 'discount,desc'
+        sortBy: 'createdAt',
+        sortDirection: 'desc',
+        size: 10
       });
-      setFlashSaleProducts(response.content || []);
+      console.log('Flash Sale API Response:', response);
+      // Get all products (or filter if needed)
+      const products = response.items || response.content || response.data?.content || [];
+      console.log('Flash Sale - All products:', products);
+      // Show all products for now, or filter only if has real sale
+      // const onSaleProducts = products.filter(p => p.salePrice && p.salePrice < p.price);
+      setFlashSaleProducts(products);
     } catch (error) {
       console.error('Error fetching flash sale products:', error);
       // Fallback to mock data if API fails
@@ -160,11 +166,13 @@ export default function FlashSale() {
                 <div className="relative">
                   <img
                     src={
-                      product.images && product.images.length > 0 
-                        ? product.images.find(img => img.isPrimary)?.imageUrl || product.images[0]?.imageUrl
+                      product.productImages && product.productImages.length > 0 
+                        ? (product.productImages.find(img => img.primary)?.imageUrl || product.productImages[0]?.imageUrl).startsWith('http')
+                          ? product.productImages.find(img => img.primary)?.imageUrl || product.productImages[0]?.imageUrl
+                          : `${API_BASE_URL}/files${product.productImages.find(img => img.primary)?.imageUrl || product.productImages[0]?.imageUrl}`
                         : product.imageUrl || product.image || `https://via.placeholder.com/300x200/f0f0f0/666666?text=${encodeURIComponent(product.name)}`
                     }
-                    alt={product.name}
+                    alt={product.productImages?.[0]?.altText || product.name}
                     className="w-full h-48 object-cover cursor-pointer"
                     onClick={() => navigate(`/product/${product.id}`)}
                     onError={(e) => {
@@ -172,10 +180,9 @@ export default function FlashSale() {
                     }}
                   />
                   <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-sm font-bold">
-                    -{product.discount || 
-                      (product.compareAtPrice && product.price 
-                        ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
-                        : 0)}%
+                    -{product.salePrice && product.price 
+                      ? Math.round(((product.price - product.salePrice) / product.price) * 100)
+                      : 0}%
                   </div>
                 </div>
                 
@@ -189,9 +196,9 @@ export default function FlashSale() {
                   
                   <div className="flex items-center space-x-2 mb-3">
                     <span className="text-lg font-bold text-red-600">
-                      {product.salePrice ? product.salePrice.toLocaleString('vi-VN') : (product.price ? product.price.toLocaleString('vi-VN') : '0')}đ
+                      {(product.salePrice || product.effectivePrice || product.price || 0).toLocaleString('vi-VN')}đ
                     </span>
-                    {product.salePrice && (
+                    {product.salePrice && product.price > product.salePrice && (
                       <span className="text-sm text-gray-500 line-through ml-2">
                         {product.price.toLocaleString('vi-VN')}đ
                       </span>

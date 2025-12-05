@@ -2,6 +2,9 @@ package com.ecommerce.repository;
 
 import com.ecommerce.entity.TrendingSearch;
 import com.ecommerce.repository.base.DbRepository;
+
+import vn.com.unit.springframework.data.mirage.repository.query.Modifying;
+
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -20,5 +23,6 @@ public interface TrendingSearchRepository extends DbRepository<TrendingSearch, L
     List<TrendingSearch> findTop(@Param("limit") int limit);
 
     // Maps to: trendingSearchRepository_incrementSearchCount.sql
+    @Modifying
     int incrementSearchCount(@Param("keyword") String keyword);
 }

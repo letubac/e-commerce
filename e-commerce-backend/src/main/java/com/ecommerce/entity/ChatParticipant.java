@@ -1,13 +1,18 @@
 package com.ecommerce.entity;
 
 import jakarta.persistence.*;
+import vn.com.unit.miragesql.miragesql.annotation.PrimaryKey;
+
 import java.util.Date;
 
+import com.ecommerce.constant.TableConstant;
+
 @Entity
-@Table(name = "chat_participants")
+@Table(name = TableConstant.CHAT_PARTICIPANTS)
 public class ChatParticipant {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ
+    + TableConstant.CHAT_PARTICIPANTS)
     private Long id;
 
     @Column(name = "conversation_id", nullable = false)

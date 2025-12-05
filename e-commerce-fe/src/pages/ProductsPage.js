@@ -62,7 +62,9 @@ function ProductsPage() {
       }
 
       const response = await api.getProducts(params);
-      setProducts(response.content || []);
+      console.log('API Response:', response);
+      console.log('Products:', response.items);
+      setProducts(response.items || []);
       setTotalPages(response.totalPages || 0);
     } catch (error) {
       console.error('Error fetching products:', error);

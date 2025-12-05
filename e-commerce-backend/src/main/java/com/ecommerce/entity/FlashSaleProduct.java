@@ -2,6 +2,7 @@ package com.ecommerce.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import vn.com.unit.miragesql.miragesql.annotation.PrimaryKey;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import jakarta.persistence.*;
@@ -9,15 +10,18 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Date;
 
+import com.ecommerce.constant.TableConstant;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "flash_sale_products")
+@Table(name = TableConstant.FLASH_SALE_PRODUCTS)
 public class FlashSaleProduct {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ
+    + TableConstant.FLASH_SALE_PRODUCTS)
     @Column(name = "id")
     private Long id;
 

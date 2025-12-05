@@ -46,6 +46,7 @@ public class UserDTO {
     private Date lastLoginAt;
     private Date createdAt;
     private Date updatedAt;
+    private String role;
 
     // Custom constructor for basic user info
     public UserDTO(String username, String email, String firstName, String lastName) {

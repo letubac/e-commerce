@@ -13,8 +13,12 @@ import org.springframework.stereotype.Repository;
 import com.ecommerce.entity.Order;
 import com.ecommerce.repository.base.DbRepository;
 
+import vn.com.unit.springframework.data.mirage.repository.query.Modifying;
+
 @Repository
 public interface OrderRepository extends DbRepository<Order, Long> {
+	
+		Long countAll();
 
         // Maps to: orderRepository_findById.sql
         Order findById(@Param("id") Long id);
@@ -70,12 +74,14 @@ public interface OrderRepository extends DbRepository<Order, Long> {
          * Insert a new order
          * Maps to: orderRepository_insertOrder.sql
          */
+        @Modifying
         void insertOrder(@Param("order") Order order);
 
         /**
          * Update an existing order
          * Maps to: orderRepository_updateOrder.sql
          */
+        @Modifying
         void updateOrder(@Param("order") Order order);
 
         /**

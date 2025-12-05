@@ -77,35 +77,28 @@ public class CartServiceImpl implements CartService {
         }
 
         // Get or create cart
-        Optional<Cart> cartOptional = cartRepository.findByUserId(userId);
-        Cart cart;
-        if (cartOptional.isPresent()) {
-            cart = cartOptional.get();
-        } else {
-            // Create new cart if not exists
-            cart = new Cart();
-            cart.setUserId(userId);
-            cart.setCreatedAt(new Date());
-            cart.setUpdatedAt(new Date());
-        }
+        Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> {
+            Cart c = new Cart();
+            c.setUserId(userId);
+            c.setCreatedAt(new Date());
+            c.setUpdatedAt(new Date());
+            return cartRepository.create(c); // MUST SAVE
+        });
 
-        // Check if item already exists in cart
-        Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndProductId(cart.getId(),
-                request.getProductId());
+        // Check if product already in cart
+        CartItem item = cartItemRepository.findByCartIdAndProductId(cart.getId(), request.getProductId()).orElse(null);
 
-        if (existingItem.isPresent()) {
-            // Update existing item
-            CartItem item = existingItem.get();
-            int newQuantity = item.getQuantity() + request.getQuantity();
+        if (item != null) {
+            int newQty = item.getQuantity() + request.getQuantity();
 
-            if (newQuantity > product.getStockQuantity()) {
+            if (newQty > product.getStockQuantity()) {
                 throw new BadRequestException("Insufficient stock for product: " + product.getName());
             }
 
-            item.setQuantity(newQuantity);
+            item.setQuantity(newQty);
             item.setUpdatedAt(new Date());
+            cartItemRepository.update(item); // MUST SAVE UPDATE
         } else {
-            // Create new cart item
             CartItem newItem = new CartItem();
             newItem.setCartId(cart.getId());
             newItem.setProductId(request.getProductId());
@@ -113,13 +106,20 @@ public class CartServiceImpl implements CartService {
             newItem.setPrice(product.getSalePrice() != null ? product.getSalePrice() : product.getPrice());
             newItem.setCreatedAt(new Date());
             newItem.setUpdatedAt(new Date());
+
+            cartItemRepository.create(newItem); // MUST SAVE NEW
         }
 
         cart.setUpdatedAt(new Date());
-        return convertToCartDTO(cart);
+        cartRepository.update(cart);
+
+        // Reload cart including items
+        Cart updatedCart = cartRepository.findById(cart.getId()).get();
+        return convertToCartDTO(updatedCart);
     }
 
     @Override
+    @Transactional
     public CartDTO updateCartItemQuantity(Long userId, Long cartItemId, Integer quantity) {
         // Validate user exists
         if (!userRepository.existsById(userId)) {
@@ -147,9 +147,9 @@ public class CartServiceImpl implements CartService {
             // Remove item if quantity is 0 or negative
             cartItemRepository.deleteByCartIdAndProductId(cartItem.getCartId(), cartItem.getProductId());
         } else {
-            // Update quantity
-            cartItem.setQuantity(quantity);
-            cartItem.setUpdatedAt(new Date());
+            // Update quantity in database
+            Date now = new Date();
+            cartItemRepository.updateCartItem(cartItemId, quantity, now);
         }
 
         // Get updated cart
@@ -276,6 +276,12 @@ public class CartServiceImpl implements CartService {
             dto.setProductName(product.getName());
             dto.setProductSku(product.getSku());
             dto.setProductImage(product.getImageUrl());
+            dto.setStockQuantity(product.getStockQuantity()); // Add stock info for FE validation
+            // Lazy load images if needed
+            dto.setProductImage(productRepository.findImagesByProductId(product.getId()).stream()
+                    .filter(img -> img.getImageUrl() != null)
+                    .map(img -> img.getImageUrl()).collect(Collectors.toList()).get(0));
+            // dto.setProductImages(productRepository.findImagesByProductId(product.getId()));
         }
 
         return dto;

@@ -1,8 +1,11 @@
 package com.ecommerce.mapper;
 
-import com.ecommerce.dto.ProductDTO;
-import com.ecommerce.entity.Product;
 import org.springframework.stereotype.Component;
+
+import com.ecommerce.dto.ProductDTO;
+import com.ecommerce.dto.ProductImageDTO;
+import com.ecommerce.entity.Product;
+import com.ecommerce.entity.ProductImage;
 
 @Component
 public class ProductMapper {
@@ -68,6 +71,38 @@ public class ProductMapper {
         product.setCreatedAt(dto.getCreatedAt());
         product.setUpdatedAt(dto.getUpdatedAt());
 
+        return product;
+    }
+    
+    public ProductImage toEntityProductImage(ProductImageDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        ProductImage product = new ProductImage();
+        product.setId(dto.getId());
+        product.setProductId(dto.getProductId());
+        product.setImageUrl(dto.getImageUrl());
+        product.setAltText(dto.getAltText());
+        product.setPrimary(dto.isPrimary());
+        product.setSortOrder(dto.getSortOrder());
+        product.setCreatedAt(dto.getCreatedAt());
+        
+        return product;
+    }
+    
+    public ProductImageDTO toDtoProductImage(ProductImage dto) {
+        if (dto == null) {
+            return null;
+        }
+        ProductImageDTO product = new ProductImageDTO();
+        product.setId(dto.getId());
+        product.setProductId(dto.getProductId());
+        product.setImageUrl(dto.getImageUrl());
+        product.setAltText(dto.getAltText());
+        product.setPrimary(dto.isPrimary());
+        product.setSortOrder(dto.getSortOrder());
+        product.setCreatedAt(dto.getCreatedAt());
+        
         return product;
     }
 }

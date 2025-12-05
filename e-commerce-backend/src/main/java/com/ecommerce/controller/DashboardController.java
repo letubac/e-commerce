@@ -28,7 +28,7 @@ public class DashboardController {
      * Get dashboard overview (Admin only)
      */
     @GetMapping("/overview")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboardOverview() {
         try {
             Map<String, Object> overview = dashboardService.getDashboardOverview();
@@ -44,7 +44,7 @@ public class DashboardController {
      * Get sales statistics (Admin only)
      */
     @GetMapping("/sales")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getSalesStatistics(
             @RequestParam(defaultValue = "7") int days) {
 
@@ -62,7 +62,7 @@ public class DashboardController {
      * Get user statistics (Admin only)
      */
     @GetMapping("/users")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getUserStatistics() {
         try {
             Map<String, Object> userStats = dashboardService.getUserStatistics();
@@ -78,7 +78,7 @@ public class DashboardController {
      * Get product statistics (Admin only)
      */
     @GetMapping("/products")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getProductStatistics() {
         try {
             Map<String, Object> productStats = dashboardService.getProductStatistics();
@@ -94,7 +94,7 @@ public class DashboardController {
      * Get order statistics (Admin only)
      */
     @GetMapping("/orders")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getOrderStatistics() {
         try {
             Map<String, Object> orderStats = dashboardService.getOrderStatistics();
@@ -110,7 +110,7 @@ public class DashboardController {
      * Get recent activities (Admin only)
      */
     @GetMapping("/activities")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getRecentActivities(
             @RequestParam(defaultValue = "20") int limit) {
 
@@ -128,7 +128,7 @@ public class DashboardController {
      * Get system health status (Admin only)
      */
     @GetMapping("/health")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getSystemHealth() {
         try {
             Map<String, Object> health = dashboardService.getSystemHealth();

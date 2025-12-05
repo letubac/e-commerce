@@ -81,15 +81,19 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public Long getUserIdFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+	public Long getUserIdFromToken(String token) {
+		Claims claims = Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).getPayload();
 
-        return Long.parseLong(claims.get("userId", String.class));
-    }
+		Object userIdObj = claims.get("userId");
+
+		if (userIdObj instanceof Integer) {
+			return ((Integer) userIdObj).longValue();
+		}
+		if (userIdObj instanceof Long) {
+			return (Long) userIdObj;
+		}
+		return Long.parseLong(String.valueOf(userIdObj));
+	}
 
     public boolean validateToken(String authToken) {
         try {

@@ -31,6 +31,7 @@ public class UserMapper {
         dto.setLastLoginAt(user.getLastLoginAt());
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
+        dto.setRole(user.getRole());
 
         return dto;
     }
@@ -58,6 +59,7 @@ public class UserMapper {
         user.setLastLoginAt(dto.getLastLoginAt());
         user.setCreatedAt(dto.getCreatedAt());
         user.setUpdatedAt(dto.getUpdatedAt());
+        user.setRole(dto.getRole());
 
         return user;
     }

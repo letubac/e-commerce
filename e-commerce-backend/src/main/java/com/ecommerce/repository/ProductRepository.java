@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ecommerce.entity.Product;
+import com.ecommerce.entity.ProductImage;
 import com.ecommerce.repository.base.DbRepository;
 
 import vn.com.unit.springframework.data.mirage.repository.query.Modifying;
@@ -67,7 +68,6 @@ public interface ProductRepository extends DbRepository<Product, Long> {
 	Long countByCategory(@Param("category") String category);
 
 	@Modifying
-	@Transactional
 	Integer insertProduct(@Param("name") String name, @Param("description") String description,
 			@Param("shortDescription") String shortDescription, @Param("sku") String sku,
 			@Param("price") BigDecimal price, @Param("salePrice") BigDecimal salePrice,
@@ -80,7 +80,6 @@ public interface ProductRepository extends DbRepository<Product, Long> {
 			@Param("slug") String slug, @Param("createdAt") Date createdAt, @Param("updatedAt") Date updatedAt);
 
 	@Modifying
-	@Transactional
 	Integer updateProduct(@Param("id") Long id, @Param("name") String name, @Param("description") String description,
 			@Param("price") BigDecimal price, @Param("salePrice") BigDecimal salePrice,
 			@Param("stockQuantity") Integer stockQuantity, @Param("categoryId") Long categoryId,
@@ -90,20 +89,18 @@ public interface ProductRepository extends DbRepository<Product, Long> {
 			@Param("metaDescription") String metaDescription, @Param("updatedAt") Date updatedAt);
 
 	@Modifying
-	@Transactional
 	Integer updateStock(@Param("id") Long id, @Param("stockQuantity") Integer stockQuantity,
 			@Param("updatedAt") Date updatedAt);
 
 	@Modifying
-	@Transactional
 	Integer updatePrice(@Param("id") Long id, @Param("price") BigDecimal price, @Param("updatedAt") Date updatedAt);
 
 	@Modifying
-	@Transactional
 	Integer updateSalePrice(@Param("id") Long id, @Param("salePrice") BigDecimal salePrice,
 			@Param("updatedAt") Date updatedAt);
 
 	@Modifying
-	@Transactional
 	Integer hardDelete(@Param("id") Long id);
+
+	List<ProductImage> findImagesByProductId(@Param("productId") Long productId);
 }

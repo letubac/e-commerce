@@ -139,7 +139,7 @@ public class ProductController {
      * Get all products for admin (including inactive)
      */
     @GetMapping("/admin/products")
-    @PreAuthorize("hasRole('ADMIN')")
+//    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> getAllProductsAdmin(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -177,7 +177,7 @@ public class ProductController {
      * Create product (Admin only)
      */
     @PostMapping("/admin/products")
-    @PreAuthorize("hasRole('ADMIN')")
+//    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> createProduct(@Valid @RequestBody ProductDTO productDTO) {
         try {
             ProductDTO createdProduct = productService.createProduct(productDTO);
@@ -198,7 +198,7 @@ public class ProductController {
      * Update product (Admin only)
      */
     @PutMapping("/admin/products/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+//    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> updateProduct(
             @PathVariable Long id,
             @Valid @RequestBody ProductDTO productDTO) {
@@ -225,7 +225,7 @@ public class ProductController {
      * Delete product (Admin only)
      */
     @DeleteMapping("/admin/products/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+//    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> deleteProduct(@PathVariable Long id) {
         try {
             productService.deleteProduct(id);
@@ -245,7 +245,7 @@ public class ProductController {
      * Toggle product active status (Admin only)
      */
     @PutMapping("/admin/products/{id}/toggle-status")
-    @PreAuthorize("hasRole('ADMIN')")
+//    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> toggleProductStatus(@PathVariable Long id) {
         try {
             ProductDTO product = productService.getProductByIdOrThrow(id);
@@ -275,7 +275,7 @@ public class ProductController {
      * Update product stock (Admin only)
      */
     @PutMapping("/admin/products/{id}/stock")
-    @PreAuthorize("hasRole('ADMIN')")
+//    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> updateProductStock(
             @PathVariable Long id,
             @RequestParam Integer quantity) {

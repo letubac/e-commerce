@@ -13,7 +13,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import adminApi from '../api/adminApi';
-import api from '../api/api';
+import api, { getImageUrl } from '../api/api';
 import AddProductModal from '../components/AddProductModal';
 
 function ProductManagement() {
@@ -59,8 +59,12 @@ function ProductManagement() {
       };
 
       const response = await api.getAllProductsAdmin(params);
-      setProducts(response.content);
-      setTotalPages(response.totalPages);
+      console.log('📦 Products response:', response); // Debug log
+      
+      // Handle response structure: response.data.content or response.content
+      const data = response.data || response;
+      setProducts(data.content || []);
+      setTotalPages(data.totalPages || 0);
     } catch (error) {
       console.error('Error loading products:', error);
       alert('Có lỗi xảy ra khi tải danh sách sản phẩm!');
@@ -75,8 +79,15 @@ function ProductManagement() {
         api.getAllCategoriesAdmin(),
         api.getAllBrandsAdmin()
       ]);
-      setCategories(categoriesResponse.data || []);
-      setBrands(brandsResponse.data || []);
+      console.log('📂 Categories response:', categoriesResponse); // Debug
+      console.log('🏷️ Brands response:', brandsResponse); // Debug
+      
+      // Handle response structure
+      const categoriesData = categoriesResponse.data || categoriesResponse;
+      const brandsData = brandsResponse.data || brandsResponse;
+      
+      setCategories(categoriesData.content || categoriesData || []);
+      setBrands(brandsData.content || brandsData || []);
     } catch (error) {
       console.error('Error loading filters:', error);
       setCategories([]);
@@ -338,20 +349,30 @@ function ProductManagement() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-12 w-12">
-                            {product.images && product.images.length > 0 ? (
-                              <img
-                                className="h-12 w-12 rounded-lg object-cover"
-                                src={product.images.find(img => img.isPrimary)?.imageUrl || product.images[0]?.imageUrl}
-                                alt={product.images.find(img => img.isPrimary)?.altText || product.name}
-                                onError={(e) => {
-                                  e.target.src = '/images/placeholder-product.svg';
-                                }}
-                              />
-                            ) : (
-                              <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">
-                                <Package className="h-6 w-6 text-gray-400" />
-                              </div>
-                            )}
+                            {(() => {
+                              const images = product.productImages || product.images || [];
+                              
+                              // Find primary image or use first image sorted by sortOrder
+                              const sortedImages = [...images].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                              const primaryImage = images.find(img => img.primary || img.isPrimary) || sortedImages[0];
+                              const imageUrl = getImageUrl(primaryImage?.imageUrl);
+                              
+                              return imageUrl ? (
+                                <img
+                                  className="h-12 w-12 rounded-lg object-cover"
+                                  src={imageUrl}
+                                  alt={primaryImage?.altText || product.name}
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Crect fill="%23e5e7eb" width="48" height="48"/%3E%3C/svg%3E';
+                                  }}
+                                />
+                              ) : (
+                                <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">
+                                  <Package className="h-6 w-6 text-gray-400" />
+                                </div>
+                              );
+                            })()}
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900 max-w-xs truncate">

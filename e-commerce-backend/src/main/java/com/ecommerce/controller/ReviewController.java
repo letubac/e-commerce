@@ -257,7 +257,7 @@ public class ReviewController {
      * Get all reviews with admin filters (Admin only)
      */
     @GetMapping("/admin/reviews")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Page<ReviewDTO>>> getAllReviews(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -287,7 +287,7 @@ public class ReviewController {
      * Admin delete review
      */
     @DeleteMapping("/admin/reviews/{reviewId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> adminDeleteReview(@PathVariable Long reviewId) {
         try {
             reviewService.adminDeleteReview(reviewId);

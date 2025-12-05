@@ -56,41 +56,30 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .csrf(csrf -> csrf.disable())
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource)).csrf(csrf -> csrf.disable())
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                        // Public endpoints
-                        .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers("/api/v1/products/**").permitAll()
-                        .requestMatchers("/api/products/**").permitAll()
-                        .requestMatchers("/api/v1/categories/**").permitAll()
-                        .requestMatchers("/api/categories/**").permitAll()
-                        .requestMatchers("/api/v1/brands/**").permitAll()
-                        .requestMatchers("/api/brands/**").permitAll()
-                        .requestMatchers("/ws/**").permitAll()
+
+                        // ADMIN & PROTECTED API — ĐẶT LÊN TRÊN ĐẦU
+                        .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/api/v1/support/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "SUPPORT")
+                        .requestMatchers("/api/v1/user/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "CUSTOMER", "SUPPORT")
+                        .requestMatchers("/api/v1/orders/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "CUSTOMER")
+                        .requestMatchers("/api/v1/cart/**").hasRole("CUSTOMER").requestMatchers("/api/v1/chat/**")
+                        .hasAnyRole("ADMIN", "SUPER_ADMIN", "CUSTOMER", "SUPPORT")
+
+                        // PUBLIC AUTH
+                        .requestMatchers("/api/v1/auth/login").permitAll().requestMatchers("/api/v1/auth/register")
+                        .permitAll().requestMatchers("/api/v1/auth/verify-otp").permitAll()
+
+                        // PUBLIC DATA
+                        .requestMatchers("/api/v1/products/**").permitAll().requestMatchers("/api/v1/categories/**")
+                        .permitAll().requestMatchers("/api/v1/brands/**").permitAll()
+                        .requestMatchers("/api/v1/files/**").permitAll().requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
 
-                        // Admin endpoints
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
-                        // Support endpoints
-                        .requestMatchers("/api/v1/support/**").hasAnyRole("ADMIN", "SUPPORT")
-                        .requestMatchers("/api/support/**").hasAnyRole("ADMIN", "SUPPORT")
-
-                        // User endpoints
-                        .requestMatchers("/api/v1/user/**").hasAnyRole("ADMIN", "CUSTOMER", "SUPPORT")
-                        .requestMatchers("/api/user/**").hasAnyRole("ADMIN", "CUSTOMER", "SUPPORT")
-                        .requestMatchers("/api/v1/orders/**").hasAnyRole("ADMIN", "CUSTOMER")
-                        .requestMatchers("/api/orders/**").hasAnyRole("ADMIN", "CUSTOMER")
-                        .requestMatchers("/api/v1/chat/**").hasAnyRole("ADMIN", "CUSTOMER", "SUPPORT")
-                        .requestMatchers("/api/chat/**").hasAnyRole("ADMIN", "CUSTOMER", "SUPPORT")
-
-                        // All other requests need authentication
+                        // Còn lại phải login
                         .anyRequest().authenticated());
 
         http.authenticationProvider(authenticationProvider());

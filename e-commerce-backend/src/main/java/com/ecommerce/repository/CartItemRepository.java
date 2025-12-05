@@ -28,13 +28,16 @@ public interface CartItemRepository extends DbRepository<CartItem, Long> {
 
     // Maps to: cartItemRepository_deleteByCartId.sql
     @Modifying
-    @Transactional
     void deleteByCartId(@Param("cartId") Long cartId);
 
     // Maps to: cartItemRepository_deleteByCartIdAndProductId.sql
     @Modifying
-    @Transactional
     void deleteByCartIdAndProductId(@Param("cartId") Long cartId, @Param("productId") Long productId);
+
+    // Maps to: cartItemRepository_updateCartItem.sql
+    @Modifying
+    void updateCartItem(@Param("id") Long id, @Param("quantity") Integer quantity,
+            @Param("updatedAt") java.util.Date updatedAt);
 
     // Maps to: cartItemRepository_existsByCartIdAndProductId.sql
     boolean existsByCartIdAndProductId(@Param("cartId") Long cartId, @Param("productId") Long productId);

@@ -6,8 +6,7 @@ INSERT INTO order_items (
     quantity,
     price,
     total,
-    created_at,
-    updated_at
+    created_at
 ) VALUES (
     /* orderId */,
     /* productId */,
@@ -16,6 +15,5 @@ INSERT INTO order_items (
     /* quantity */,
     /* price */,
     /* total */,
-    /* createdAt */,
-    /* updatedAt */
+    /* createdAt */
 )

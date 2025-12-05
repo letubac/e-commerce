@@ -1,21 +1,28 @@
 package com.ecommerce.service.impl;
 
-import com.ecommerce.dto.CreateUserRequest;
-import com.ecommerce.dto.UserDTO;
-import com.ecommerce.entity.User;
-import com.ecommerce.repository.UserRepository;
-import com.ecommerce.service.UserService;
-import com.ecommerce.mapper.UserMapper;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ecommerce.dto.CreateUserRequest;
+import com.ecommerce.dto.UserDTO;
+import com.ecommerce.entity.User;
+import com.ecommerce.mapper.UserMapper;
+import com.ecommerce.repository.UserRepository;
+import com.ecommerce.service.UserService;
+
 import jakarta.persistence.EntityNotFoundException;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional("transactionManagerSql")
@@ -53,7 +60,7 @@ public class UserServiceImpl implements UserService {
                 request.getLastName(),
                 request.getPhoneNumber(),
                 request.getAddress(),
-                "ROLE_CUSTOMER", // role
+                "CUSTOMER", // role (without ROLE_ prefix, UserPrincipal will add it)
                 true, // isActive
                 false, // emailVerified
                 now, // createdAt
@@ -256,5 +263,105 @@ public class UserServiceImpl implements UserService {
                 user.isActive(),
                 user.isEmailVerified(),
                 now);
+    }
+
+    // Admin operations implementation
+    @Override
+    public Page<UserDTO> getAllUsersWithPagination(Pageable pageable) {
+        List<User> allUsers = userRepository.findAllData();
+
+        // Convert to DTOs
+        List<UserDTO> userDTOs = allUsers.stream()
+                .map(userMapper::toDTO)
+                .collect(Collectors.toList());
+
+        // Manual pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), userDTOs.size());
+
+        List<UserDTO> pageContent = userDTOs.subList(start, end);
+
+        return new org.springframework.data.domain.PageImpl<>(
+                pageContent,
+                pageable,
+                userDTOs.size());
+    }
+
+    @Override
+    public Page<UserDTO> searchUsers(String keyword, Pageable pageable) {
+        List<User> allUsers = userRepository.findAllData();
+
+        // Filter by keyword
+        List<UserDTO> filteredUsers = allUsers.stream()
+                .filter(user -> {
+                    if (keyword == null || keyword.trim().isEmpty()) {
+                        return true;
+                    }
+                    String lowerKeyword = keyword.toLowerCase();
+                    return (user.getUsername() != null && user.getUsername().toLowerCase().contains(lowerKeyword)) ||
+                            (user.getEmail() != null && user.getEmail().toLowerCase().contains(lowerKeyword)) ||
+                            (user.getFullName() != null && user.getFullName().toLowerCase().contains(lowerKeyword)) ||
+                            (user.getPhoneNumber() != null && user.getPhoneNumber().contains(lowerKeyword));
+                })
+                .map(userMapper::toDTO)
+                .collect(Collectors.toList());
+
+        // Manual pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), filteredUsers.size());
+
+        List<UserDTO> pageContent = filteredUsers.subList(start, end);
+
+        return new org.springframework.data.domain.PageImpl<>(
+                pageContent,
+                pageable,
+                filteredUsers.size());
+    }
+
+    @Override
+    @Transactional
+    public void lockUser(Long id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            throw new EntityNotFoundException("User not found with id: " + id);
+        }
+
+        Date now = new Date();
+        userRepository.softDelete(id, false, now);
+    }
+
+    @Override
+    @Transactional
+    public void unlockUser(Long id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            throw new EntityNotFoundException("User not found with id: " + id);
+        }
+
+        Date now = new Date();
+        userRepository.softDelete(id, true, now);
+    }
+
+    @Override
+    public Map<String, Object> getUserStatistics() {
+        Map<String, Object> statistics = new HashMap<>();
+
+        // Total users
+        Long totalUsers = userRepository.countAll();
+        statistics.put("totalUsers", totalUsers);
+
+        // Active users
+        Long activeUsers = userRepository.countActiveUsers();
+        statistics.put("activeUsers", activeUsers);
+
+        // Inactive users
+        statistics.put("inactiveUsers", totalUsers - activeUsers);
+
+        // New users this month
+        Date thirtyDaysAgo = new Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000);
+        Long newUsersThisMonth = userRepository.countActiveUsersSince(thirtyDaysAgo);
+        statistics.put("newUsersThisMonth", newUsersThisMonth);
+
+        return statistics;
     }
 }

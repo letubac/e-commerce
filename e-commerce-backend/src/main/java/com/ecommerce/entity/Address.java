@@ -2,20 +2,24 @@ package com.ecommerce.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import vn.com.unit.miragesql.miragesql.annotation.PrimaryKey;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import jakarta.persistence.*;
 import java.util.Date;
+
+import com.ecommerce.constant.TableConstant;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "addresses")
+@Table(name = TableConstant.ADDRESS)
 public class Address {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ
+    + TableConstant.ADDRESS)
     @Column(name = "id")
     private Long id;
 

@@ -1,0 +1,1 @@
+SELECT * FROM product_images t WHERE t.product_id = /*productId*/

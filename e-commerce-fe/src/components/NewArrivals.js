@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, ShoppingCart, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api/api';
+import api, { API_BASE_URL } from '../api/api';
 
 export default function NewArrivals() {
   const navigate = useNavigate();
@@ -12,10 +12,15 @@ export default function NewArrivals() {
     try {
       // Fetch new arrivals from API
       const response = await api.getProducts({ 
-        sort: 'createdAt,desc',
+        sortBy: 'createdAt',
+        sortDirection: 'desc',
         size: 8
       });
-      setNewProducts(response.content || []);
+      console.log('New Arrivals API Response:', response);
+      // response có thể là { items, totalPages, totalElements, raw } hoặc trực tiếp data
+      const products = response.items || response.content || response.data?.content || [];
+      console.log('Parsed products:', products);
+      setNewProducts(products);
     } catch (error) {
       console.error('Error fetching new products:', error);
       // Mock data cho sản phẩm mới về (fallback)
@@ -90,7 +95,16 @@ export default function NewArrivals() {
   );
 
   if (newProducts.length === 0) {
-    return null;
+    return (
+      <div className="py-8 mb-8">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Sản phẩm mới về</h2>
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <p className="text-gray-500">Đang tải sản phẩm...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -110,30 +124,40 @@ export default function NewArrivals() {
         {/* Products Grid */}
         <div className="relative">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {currentProducts.map((product) => (
-              <div
-                key={product.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div className="relative">
-                  <img
-                    src={product.imageUrl || product.image || `https://via.placeholder.com/300x200/f0f0f0/666666?text=${encodeURIComponent(product.name)}`}
-                    alt={product.name}
-                    className="w-full h-48 object-cover"
-                    onError={(e) => {
-                      e.target.src = `https://via.placeholder.com/300x200/f0f0f0/666666?text=${encodeURIComponent(product.name)}`;
-                    }}
-                  />
-                  {product.isNew && (
+            {currentProducts.map((product) => {
+              // Lấy primary image hoặc image đầu tiên
+              const primaryImage = product.productImages?.find(img => img.primary) || product.productImages?.[0];
+              const imageUrl = primaryImage?.imageUrl || product.imageUrl || product.image;
+              const fullImageUrl = imageUrl?.startsWith('http') ? imageUrl : `${API_BASE_URL}/files${imageUrl}`;
+              
+              // Tính discount nếu có salePrice
+              const discount = product.salePrice && product.price 
+                ? Math.round(((product.price - product.salePrice) / product.price) * 100)
+                : 0;
+              const displayPrice = product.salePrice || product.effectivePrice || product.price;
+              
+              return (
+                <div
+                  key={product.id}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                >
+                  <div className="relative">
+                    <img
+                      src={fullImageUrl || `https://via.placeholder.com/300x200/f0f0f0/666666?text=${encodeURIComponent(product.name)}`}
+                      alt={primaryImage?.altText || product.name}
+                      className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        e.target.src = `https://via.placeholder.com/300x200/f0f0f0/666666?text=${encodeURIComponent(product.name)}`;
+                      }}
+                    />
                     <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
                       NEW
                     </div>
-                  )}
-                  {product.discount && product.discount > 0 && (
-                    <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                      -{product.discount}%
-                    </div>
-                  )}
+                    {discount > 0 && (
+                      <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                        -{discount}%
+                      </div>
+                    )}
                   
                   {/* Hover Actions */}
                   <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center space-x-2">
@@ -162,23 +186,24 @@ export default function NewArrivals() {
                   
                   <p className="text-xs text-gray-500 mb-2">{product.brand?.name || 'Chưa có thương hiệu'}</p>
                   
-                  {product.colors && product.colors.length > 0 && (
-                    <p className="text-xs text-gray-600 mb-2">{product.colors[0]}</p>
+                  {product.productImages && product.productImages.length > 1 && (
+                    <p className="text-xs text-gray-600 mb-2">+{product.productImages.length - 1} hình khác</p>
                   )}
                   
                   <div className="flex items-center space-x-2">
                     <span className="text-lg font-bold text-red-600">
-                      {product.price ? product.price.toLocaleString('vi-VN') : '0'}đ
+                      {displayPrice ? displayPrice.toLocaleString('vi-VN') : '0'}đ
                     </span>
-                    {product.originalPrice && product.originalPrice > product.price && (
+                    {product.salePrice && product.price > product.salePrice && (
                       <span className="text-sm text-gray-500 line-through">
-                        {product.originalPrice.toLocaleString('vi-VN')}đ
+                        {product.price.toLocaleString('vi-VN')}đ
                       </span>
                     )}
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Navigation Arrows */}

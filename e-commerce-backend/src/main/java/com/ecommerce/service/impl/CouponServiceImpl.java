@@ -51,14 +51,31 @@ public class CouponServiceImpl implements CouponService {
 			}
 		}
 
-		// Convert DTO to Entity
-		Coupon coupon = convertDtoToEntity(couponDTO);
-		coupon.setCreatedAt(new Date());
-		coupon.setUpdatedAt(new Date());
+		Date now = new Date();
 
-		// Save to database
-		Coupon savedCoupon = couponRepository.save(coupon);
-		log.info("Đã tạo coupon thành công với ID: {}, Code: {}", savedCoupon.getId(), savedCoupon.getCode());
+		// Save to database using repository method
+		Long couponId = couponRepository.save(
+				couponDTO.getCode(),
+				couponDTO.getName(),
+				couponDTO.getDescription(),
+				couponDTO.getDiscountType(),
+				couponDTO.getDiscountValue() != null ? couponDTO.getDiscountValue().doubleValue() : 0.0,
+				couponDTO.getMinOrderAmount() != null ? couponDTO.getMinOrderAmount().doubleValue() : 0.0,
+				couponDTO.getMaxDiscountAmount() != null ? couponDTO.getMaxDiscountAmount().doubleValue() : 0.0,
+				couponDTO.getUsageLimit() != null ? couponDTO.getUsageLimit() : 0,
+				couponDTO.getUsageLimitPerUser() != null ? couponDTO.getUsageLimitPerUser() : 0,
+				0, // usedCount starts at 0
+				couponDTO.getIsActive() != null ? couponDTO.getIsActive() : true,
+				couponDTO.getStartDate(),
+				couponDTO.getEndDate(),
+				now,
+				now);
+
+		log.info("Đã tạo coupon thành công với ID: {}, Code: {}", couponId, couponDTO.getCode());
+
+		// Retrieve and return the saved coupon
+		Coupon savedCoupon = couponRepository.findById(couponId)
+				.orElseThrow(() -> new RuntimeException("Lỗi khi lưu coupon"));
 
 		return convertEntityToDto(savedCoupon);
 	}
@@ -76,24 +93,37 @@ public class CouponServiceImpl implements CouponService {
 			throw new BadRequestException("Mã coupon đã tồn tại");
 		}
 
-		// Update fields
-		existingCoupon.setCode(couponDTO.getCode());
-		existingCoupon.setName(couponDTO.getName());
-		existingCoupon.setDescription(couponDTO.getDescription());
-		existingCoupon.setDiscountType(couponDTO.getDiscountType());
-		existingCoupon.setDiscountValue(couponDTO.getDiscountValue());
-		existingCoupon.setMinOrderAmount(couponDTO.getMinOrderAmount());
-		existingCoupon.setMaxDiscountAmount(couponDTO.getMaxDiscountAmount());
-		existingCoupon.setUsageLimit(couponDTO.getUsageLimit());
-		existingCoupon.setActive(couponDTO.getIsActive());
-		existingCoupon.setStartDate(couponDTO.getStartDate());
-		existingCoupon.setEndDate(couponDTO.getEndDate());
-		existingCoupon.setUpdatedAt(new Date());
+		// Validate dates
+		if (couponDTO.getStartDate() != null && couponDTO.getEndDate() != null) {
+			if (couponDTO.getStartDate().after(couponDTO.getEndDate())) {
+				throw new BadRequestException("Ngày bắt đầu không thể sau ngày kết thúc");
+			}
+		}
 
-		Coupon savedCoupon = couponRepository.save(existingCoupon);
-		log.info("Đã cập nhật coupon thành công với ID: {}", savedCoupon.getId());
+		// Update using repository method
+		couponRepository.update(
+				id,
+				couponDTO.getCode(),
+				couponDTO.getName(),
+				couponDTO.getDescription(),
+				couponDTO.getDiscountType(),
+				couponDTO.getDiscountValue() != null ? couponDTO.getDiscountValue().doubleValue() : 0.0,
+				couponDTO.getMinOrderAmount() != null ? couponDTO.getMinOrderAmount().doubleValue() : 0.0,
+				couponDTO.getMaxDiscountAmount() != null ? couponDTO.getMaxDiscountAmount().doubleValue() : 0.0,
+				couponDTO.getUsageLimit(),
+				couponDTO.getUsageLimitPerUser(),
+				couponDTO.getIsActive(),
+				couponDTO.getStartDate(),
+				couponDTO.getEndDate(),
+				new Date());
 
-		return convertEntityToDto(savedCoupon);
+		log.info("Đã cập nhật coupon thành công với ID: {}", id);
+
+		// Retrieve and return updated coupon
+		Coupon updatedCoupon = couponRepository.findById(id)
+				.orElseThrow(() -> new RuntimeException("Lỗi khi cập nhật coupon"));
+
+		return convertEntityToDto(updatedCoupon);
 	}
 
 	@Override
@@ -205,7 +235,7 @@ public class CouponServiceImpl implements CouponService {
 	public Page<CouponDTO> findAll(Pageable pageable) {
 		log.debug("Lấy danh sách coupon với pagination: {}", pageable);
 
-		Page<Coupon> coupons = couponRepository.findAll(pageable);
+		Page<Coupon> coupons = couponRepository.findAllData(pageable);
 		return coupons.map(this::convertEntityToDto);
 	}
 

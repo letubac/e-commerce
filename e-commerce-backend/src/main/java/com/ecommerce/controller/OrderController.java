@@ -36,9 +36,13 @@ public class OrderController {
     public ResponseEntity<OrderDTO> createOrder(
             @Valid @RequestBody CreateOrderRequest request,
             Authentication authentication) {
-        Long userId = getUserIdFromAuthentication(authentication);
-        OrderDTO order = orderService.createOrder(userId, request);
-        return ResponseEntity.ok(order);
+    	try {
+            Long userId = getUserIdFromAuthentication(authentication);
+            OrderDTO order = orderService.createOrder(userId, request);
+            return ResponseEntity.ok(order);
+    	} catch (Exception ex) {
+    		throw ex;
+    	}
     }
 
     @GetMapping
@@ -71,6 +75,13 @@ public class OrderController {
     public ResponseEntity<Page<OrderDTO>> getAllOrders(Pageable pageable) {
         Page<OrderDTO> orders = orderService.getAllOrders(pageable);
         return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/admin/{id}")
+    public ResponseEntity<OrderDTO> getOrderById(
+            @PathVariable Long id) {
+        OrderDTO order = orderService.getOrderById(id);
+        return ResponseEntity.ok(order);
     }
 
     @GetMapping("/admin/status/{status}")

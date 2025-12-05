@@ -1,0 +1,1 @@
+SELECT COUNT(*) FROM categories c WHERE c.is_active = true

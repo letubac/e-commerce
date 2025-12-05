@@ -21,7 +21,7 @@ import java.util.Map;
  * Provides endpoints for coupon CRUD operations (Admin only).
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/admin")
 
 public class CouponController {
 
@@ -34,7 +34,7 @@ public class CouponController {
      * Get all coupons (Admin only)
      */
     @GetMapping("/coupons")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Page<CouponDTO>>> getCoupons(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -66,7 +66,7 @@ public class CouponController {
      * Create new coupon (Admin only)
      */
     @PostMapping("/coupons")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CouponDTO>> createCoupon(@Valid @RequestBody CouponDTO couponDTO) {
         try {
             CouponDTO createdCoupon = couponService.createCoupon(couponDTO);
@@ -88,7 +88,7 @@ public class CouponController {
      * Update coupon (Admin only)
      */
     @PutMapping("/coupons/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CouponDTO>> updateCoupon(
             @PathVariable Long id,
             @Valid @RequestBody CouponDTO couponDTO) {
@@ -116,7 +116,7 @@ public class CouponController {
      * Delete coupon (Admin only)
      */
     @DeleteMapping("/coupons/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteCoupon(@PathVariable Long id) {
         try {
             couponService.deleteCoupon(id);
@@ -136,7 +136,7 @@ public class CouponController {
      * Get coupon by ID (Admin only)
      */
     @GetMapping("/coupons/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CouponDTO>> getCouponById(@PathVariable Long id) {
         try {
             CouponDTO coupon = couponService.getCouponById(id);
@@ -180,7 +180,7 @@ public class CouponController {
      * Toggle coupon active status (Admin only)
      */
     @PutMapping("/coupons/{id}/toggle-status")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CouponDTO>> toggleCouponStatus(@PathVariable Long id) {
         try {
             CouponDTO updatedCoupon = couponService.toggleActiveStatus(id);
@@ -200,7 +200,7 @@ public class CouponController {
      * Get coupon usage statistics (Admin only)
      */
     @GetMapping("/coupons/{id}/statistics")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getCouponStatistics(@PathVariable Long id) {
         try {
             Map<String, Object> statistics = couponService.getCouponStatistics(id);

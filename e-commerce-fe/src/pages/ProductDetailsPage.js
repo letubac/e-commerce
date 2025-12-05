@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Heart, Star, Minus, Plus, Package, Shield, Truck } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import ReviewSection from '../components/ReviewSection';
-import api from '../api/api';
+import api, { API_BASE_URL } from '../api/api';
+import toast from '../utils/toast';
 
 function ProductDetailsPage() {
   const { id } = useParams();
@@ -20,7 +21,11 @@ function ProductDetailsPage() {
     setLoading(true);
     try {
       const response = await api.getProductDetails(id);
-      setProduct(response);
+      console.log('Product Details API Response:', response);
+      // Extract product data from response
+      const productData = response.data || response;
+      console.log('Product Data:', productData);
+      setProduct(productData);
       setSelectedImage(0);
     } catch (error) {
       console.error('Error fetching product details:', error);
@@ -35,26 +40,14 @@ function ProductDetailsPage() {
 
   const handleAddToCart = () => {
     if (product) {
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.images?.[0]?.url || '/images/placeholder-product.svg',
-        quantity: quantity
-      });
+      addToCart(product.id, quantity);
       alert('Đã thêm sản phẩm vào giỏ hàng!');
     }
   };
 
   const handleBuyNow = () => {
     if (product) {
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.images?.[0]?.url || '/images/placeholder-product.svg',
-        quantity: quantity
-      });
+      addToCart(product.id, quantity);
       navigate('/cart');
     }
   };
@@ -114,11 +107,18 @@ function ProductDetailsPage() {
     );
   }
 
-  const displayImages = product.images?.length > 0 
-    ? product.images 
+  const displayImages = product.productImages?.length > 0 
+    ? product.productImages.map(img => ({
+        url: img.imageUrl.startsWith('http') ? img.imageUrl : `${API_BASE_URL}/files${img.imageUrl}`,
+        imageUrl: img.imageUrl.startsWith('http') ? img.imageUrl : `${API_BASE_URL}/files${img.imageUrl}`,
+        altText: img.altText
+      }))
     : product.imageUrl 
-      ? [{ url: product.imageUrl, imageUrl: product.imageUrl }] 
-      : [{ url: '/images/placeholder-product.svg' }];
+      ? [{ 
+          url: product.imageUrl.startsWith('http') ? product.imageUrl : `${API_BASE_URL}/files${product.imageUrl}`,
+          imageUrl: product.imageUrl.startsWith('http') ? product.imageUrl : `${API_BASE_URL}/files${product.imageUrl}`
+        }] 
+      : [{ url: 'https://via.placeholder.com/400x400/f0f0f0/666666?text=No+Image' }];
 
   return (
     <div className="min-h-screen bg-gray-100 py-8">
@@ -189,15 +189,15 @@ function ProductDetailsPage() {
               {/* Price */}
               <div className="mb-6">
                 <div className="text-3xl font-bold text-red-600">
-                  {product.price?.toLocaleString('vi-VN')}₫
+                  {(product.effectivePrice || product.price)?.toLocaleString('vi-VN')}₫
                 </div>
-                {product.originalPrice && product.originalPrice > product.price && (
+                {product.salePrice && product.price > product.salePrice && (
                   <div className="flex items-center gap-2 mt-2">
                     <span className="text-gray-500 line-through">
-                      {product.originalPrice.toLocaleString('vi-VN')}₫
+                      {product.price.toLocaleString('vi-VN')}₫
                     </span>
                     <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-sm font-semibold">
-                      Giảm {Math.round((1 - product.price / product.originalPrice) * 100)}%
+                      Giảm {Math.round((1 - product.salePrice / product.price) * 100)}%
                     </span>
                   </div>
                 )}

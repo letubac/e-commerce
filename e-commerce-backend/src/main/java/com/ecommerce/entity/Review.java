@@ -2,6 +2,8 @@ package com.ecommerce.entity;
 
 import java.util.Date;
 
+import com.ecommerce.constant.TableConstant;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -12,16 +14,18 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import vn.com.unit.miragesql.miragesql.annotation.PrimaryKey;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "reviews")
+@Table(name = TableConstant.REVIEWS)
 public class Review {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ
+    + TableConstant.REVIEWS)
     @Column(name = "id")
     private Long id;
 

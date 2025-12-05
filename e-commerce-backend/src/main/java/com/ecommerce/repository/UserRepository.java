@@ -49,6 +49,9 @@ public interface UserRepository extends DbRepository<User, Long> {
         // Additional methods for dashboard statistics
         // count() is already provided by JpaRepository
 
+        // Maps to: userRepository_countActiveUsers.sql
+        Long countActiveUsers();
+
         // Maps to: userRepository_countActiveUsersSince.sql
         Long countActiveUsersSince(@Param("date") java.util.Date date);
 
@@ -57,6 +60,7 @@ public interface UserRepository extends DbRepository<User, Long> {
 
         // Insert/Update operations
         // Maps to: userRepository_insertUser.sql
+        @Modifying
         Long insertUser(@Param("username") String username,
                         @Param("email") String email,
                         @Param("password") String password,

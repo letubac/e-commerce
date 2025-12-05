@@ -1,5 +1,7 @@
+import { API_BASE_URL } from './api';
+
 const adminApi = {
-  baseUrl: 'http://localhost:8080/api/v1',
+  baseUrl: API_BASE_URL,
 
   async request(endpoint, options = {}) {
     const token = localStorage.getItem('token');
@@ -20,25 +22,80 @@ const adminApi = {
     return response.json();
   },
 
-  getOverview: () => adminApi.request('/dashboard/overview'),
-  getOrders: (params) => adminApi.request(`/orders?${new URLSearchParams(params)}`),
+  // Dashboard APIs
+  getDashboardOverview: () => adminApi.request('/dashboard/overview'),
+  getSalesStatistics: (days = 7) => adminApi.request(`/dashboard/sales?days=${days}`),
+  getUserStatistics: () => adminApi.request('/dashboard/users'),
+  getProductStatistics: () => adminApi.request('/dashboard/products'),
+  getOrderStatistics: () => adminApi.request('/dashboard/orders'),
+  getRecentActivities: (limit = 20) => adminApi.request(`/dashboard/activities?limit=${limit}`),
+  getSystemHealth: () => adminApi.request('/dashboard/health'),
+  
+  // Order Management APIs
+  getAllOrders: (params = {}) => {
+    const queryParams = new URLSearchParams(params);
+    return adminApi.request(`/orders/admin/all?${queryParams}`);
+  },
+  getOrdersByStatus: (status, params = {}) => {
+    const queryParams = new URLSearchParams(params);
+    return adminApi.request(`/orders/admin/status/${status}?${queryParams}`);
+  },
+  getOrderDetails: (id) => adminApi.request(`/orders/admin/${id}`),
   updateOrderStatus: (id, status) =>
-    adminApi.request(`/orders/${id}/status?status=${status}`, { method: 'PUT' }),
+    adminApi.request(`/orders/admin/${id}/status?status=${status}`, { method: 'PUT' }),
+  updateTrackingNumber: (id, trackingNumber) =>
+    adminApi.request(`/orders/admin/${id}/tracking`, { 
+      method: 'PUT', 
+      body: JSON.stringify({ trackingNumber }) 
+    }),
+  
+  // Product Management APIs
   getProducts: (params) => adminApi.request(`/admin/products?${new URLSearchParams(params)}`),
   createProduct: (data) =>
     adminApi.request('/admin/products', { method: 'POST', body: JSON.stringify(data) }),
   updateProduct: (id, data) =>
     adminApi.request(`/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteProduct: (id) => adminApi.request(`/admin/products/${id}`, { method: 'DELETE' }),
-  getUsers: (params) => adminApi.request(`/users?${new URLSearchParams(params)}`),
-  lockUser: (id) => adminApi.request(`/users/${id}/lock`, { method: 'PUT' }),
-  unlockUser: (id) => adminApi.request(`/users/${id}/unlock`, { method: 'PUT' }),
-  getCoupons: (params) => adminApi.request(`/coupons?${new URLSearchParams(params)}`),
+  
+  // User Management APIs
+  getUsers: (params = {}) => {
+    const queryParams = new URLSearchParams(params);
+    return adminApi.request(`/admin/users?${queryParams}`);
+  },
+  getUserById: (id) => adminApi.request(`/admin/users/${id}`),
+  lockUser: (id) => adminApi.request(`/admin/users/${id}/lock`, { method: 'PUT' }),
+  unlockUser: (id) => adminApi.request(`/admin/users/${id}/unlock`, { method: 'PUT' }),
+  getUserStatisticsDetailed: () => adminApi.request('/admin/users/statistics'),
+  
+  // Coupon Management APIs
+  getCoupons: (params = {}) => {
+    const queryParams = new URLSearchParams(params);
+    return adminApi.request(`/admin/coupons?${queryParams}`);
+  },
+  getCouponById: (id) => adminApi.request(`/admin/coupons/${id}`),
   createCoupon: (data) =>
-    adminApi.request('/coupons', { method: 'POST', body: JSON.stringify(data) }),
-  deleteCoupon: (id) => adminApi.request(`/coupons/${id}`, { method: 'DELETE' }),
+    adminApi.request('/admin/coupons', { method: 'POST', body: JSON.stringify(data) }),
+  updateCoupon: (id, data) =>
+    adminApi.request(`/admin/coupons/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteCoupon: (id) => adminApi.request(`/admin/coupons/${id}`, { method: 'DELETE' }),
+  
+  // Category Management APIs
   getCategories: () => adminApi.request('/admin/categories'),
+  getCategoryById: (id) => adminApi.request(`/admin/categories/${id}`),
+  createCategory: (data) =>
+    adminApi.request('/admin/categories', { method: 'POST', body: JSON.stringify(data) }),
+  updateCategory: (id, data) =>
+    adminApi.request(`/admin/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteCategory: (id) => adminApi.request(`/admin/categories/${id}`, { method: 'DELETE' }),
+  
+  // Brand Management APIs
   getBrands: () => adminApi.request('/admin/brands'),
+  getBrandById: (id) => adminApi.request(`/admin/brands/${id}`),
+  createBrand: (data) =>
+    adminApi.request('/admin/brands', { method: 'POST', body: JSON.stringify(data) }),
+  updateBrand: (id, data) =>
+    adminApi.request(`/admin/brands/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteBrand: (id) => adminApi.request(`/admin/brands/${id}`, { method: 'DELETE' }),
 
   // Chat Management APIs
   getChatConversations: (params) => adminApi.request(`/chat/conversations?${new URLSearchParams(params)}`),

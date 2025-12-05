@@ -18,6 +18,7 @@ public class OrderItemDTO {
     private Long productId;
     private String productName;
     private String productSku;
+    private String productImageUrl;
     private Integer quantity;
     private BigDecimal price;
     private BigDecimal total;

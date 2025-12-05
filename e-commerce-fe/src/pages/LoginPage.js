@@ -48,12 +48,21 @@ function LoginPage() {
         if (savedUser) {
           try {
             const userData = JSON.parse(savedUser);
-            const isAdmin = userData.roles && (
-              userData.roles.includes('ROLE_ADMIN') || 
-              userData.roles.includes('ROLE_SUPER_ADMIN')
-            );
+            console.log('Login - User data:', userData);
             
+            // Check for admin role - handle both role (string) and roles (array)
+            let isAdmin = false;
+            if (userData.role) {
+              // Single role as string
+              isAdmin = userData.role === 'ADMIN' || userData.role === 'SUPER_ADMIN';
+            } else if (userData.roles && Array.isArray(userData.roles)) {
+              // Multiple roles as array
+              isAdmin = userData.roles.includes('ADMIN') || userData.roles.includes('SUPER_ADMIN');
+            }
+            
+            console.log('Login - Is admin:', isAdmin);
             if (isAdmin) {
+              console.log('Redirecting to /admin');
               navigate('/admin');
               return;
             }
@@ -64,6 +73,7 @@ function LoginPage() {
 
         // Redirect to intended page or home for regular users
         const from = location.state?.from || '/';
+        console.log('Redirecting to:', from);
         navigate(from);
       }, 100); // Small delay to ensure localStorage is updated
     } catch (error) {

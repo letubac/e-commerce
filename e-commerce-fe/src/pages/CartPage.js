@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Minus, Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Trash2, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../api/api';
+import toast from '../utils/toast';
 
 function CartPage() {
   const navigate = useNavigate();
   const { cartItems, updateItemQuantity, removeFromCart, getTotalPrice, clearCart, loading } = useCart();
   const { user } = useAuth();
+  const [updatingItems, setUpdatingItems] = useState({}); // Track which items are being updated
 
   // Đảm bảo cartItems luôn là một array
   const safeCartItems = cartItems || [];
@@ -15,23 +18,52 @@ function CartPage() {
   console.log('CartPage - cartItems:', cartItems); // Debug log
   console.log('CartPage - safeCartItems:', safeCartItems); // Debug log
 
-  const handleQuantityChange = (itemId, newQuantity) => {
+  const handleQuantityChange = async (item, newQuantity) => {
+    // Validate stock before updating
+    if (newQuantity > item.stockQuantity) {
+      toast.error(`Chỉ còn ${item.stockQuantity} sản phẩm trong kho!`);
+      return;
+    }
+
     if (newQuantity <= 0) {
-      removeFromCart(itemId);
+      if (window.confirm('Bạn có muốn xóa sản phẩm này khỏi giỏ hàng?')) {
+        setUpdatingItems(prev => ({ ...prev, [item.id]: true }));
+        try {
+          await removeFromCart(item.id);
+        } finally {
+          setUpdatingItems(prev => ({ ...prev, [item.id]: false }));
+        }
+      }
     } else {
-      updateItemQuantity(itemId, newQuantity);
+      setUpdatingItems(prev => ({ ...prev, [item.id]: true }));
+      try {
+        await updateItemQuantity(item.id, newQuantity);
+      } finally {
+        setUpdatingItems(prev => ({ ...prev, [item.id]: false }));
+      }
+    }
+  };
+
+  const handleRemoveItem = async (itemId) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+      setUpdatingItems(prev => ({ ...prev, [itemId]: true }));
+      try {
+        await removeFromCart(itemId);
+      } finally {
+        setUpdatingItems(prev => ({ ...prev, [itemId]: false }));
+      }
     }
   };
 
   const handleCheckout = () => {
     if (!user) {
-      alert('Vui lòng đăng nhập để tiếp tục thanh toán');
+      toast.error('Vui lòng đăng nhập để tiếp tục thanh toán');
       navigate('/login', { state: { from: '/cart' } });
       return;
     }
     
     if (safeCartItems.length === 0) {
-      alert('Giỏ hàng trống');
+      toast.error('Giỏ hàng trống');
       return;
     }
 
@@ -114,62 +146,82 @@ function CartPage() {
                       <div className="w-20 h-20 flex-shrink-0">
                         <img
                           src={
-                            item.product?.images?.[0]?.imageUrl || 
-                            item.product?.imageUrl || 
-                            item.imageUrl || 
-                            item.image || 
-                            `https://via.placeholder.com/80x80/f0f0f0/666666?text=${encodeURIComponent(item.product?.name || item.name || 'Product')}`
+                            item.productImage
+                              ? `${API_BASE_URL}/files${item.productImage}`
+                              : `https://via.placeholder.com/80x80/f0f0f0/666666?text=${encodeURIComponent(item.productName || 'Product')}`
                           }
-                          alt={item.product?.name || item.name || 'Product'}
+                          alt={item.productName || 'Product'}
                           className="w-full h-full object-cover rounded-lg border border-gray-200"
                           onError={(e) => {
-                            e.target.src = `https://via.placeholder.com/80x80/f0f0f0/666666?text=${encodeURIComponent(item.product?.name || item.name || 'Product')}`;
+                            e.target.src = `https://via.placeholder.com/80x80/f0f0f0/666666?text=${encodeURIComponent(item.productName || 'Product')}`;
                           }}
                         />
                       </div>
 
                       {/* Product Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-800 mb-1 truncate">
-                          {item.product?.name || item.name || 'Sản phẩm'}
+                        <h3 
+                          className="font-semibold text-gray-800 mb-1 truncate cursor-help" 
+                          title={item.productName || 'Sản phẩm'}
+                        >
+                          {item.productName || 'Sản phẩm'}
                         </h3>
-                        <p className="text-red-600 font-bold">
-                          {(item.product?.price || item.price || 0).toLocaleString('vi-VN')}₫
+                        <p className="text-sm text-gray-500 mb-1">
+                          SKU: {item.productSku || 'N/A'}
+                        </p>
+                        <p className="text-red-600 font-bold mb-1">
+                          {(item.price || 0).toLocaleString('vi-VN')}₫
+                        </p>
+                        <p className="text-xs text-gray-500 flex items-center gap-1">
+                          <AlertCircle size={12} />
+                          Còn {item.stockQuantity || 0} sản phẩm
                         </p>
                       </div>
 
                       {/* Quantity Controls */}
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                          className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
+                          onClick={() => handleQuantityChange(item, item.quantity - 1)}
+                          disabled={updatingItems[item.id]}
+                          className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Minus size={14} />
                         </button>
                         <span className="w-12 text-center font-semibold">
-                          {item.quantity}
+                          {updatingItems[item.id] ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600 mx-auto"></div>
+                          ) : (
+                            item.quantity
+                          )}
                         </span>
                         <button
-                          onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                          className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
+                          onClick={() => handleQuantityChange(item, item.quantity + 1)}
+                          disabled={updatingItems[item.id] || item.quantity >= item.stockQuantity}
+                          className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={item.quantity >= item.stockQuantity ? 'Hết hàng trong kho' : 'Tăng số lượng'}
                         >
                           <Plus size={14} />
                         </button>
                       </div>
 
                       {/* Subtotal */}
-                      <div className="text-right w-20">
+                      <div className="text-right w-24">
                         <p className="font-bold text-gray-800">
-                          {((item.product?.price || item.price || 0) * item.quantity).toLocaleString('vi-VN')}₫
+                          {(item.subtotal || (item.price || 0) * item.quantity).toLocaleString('vi-VN')}₫
                         </p>
                       </div>
 
                       {/* Remove Button */}
                       <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        onClick={() => handleRemoveItem(item.id)}
+                        disabled={updatingItems[item.id]}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Trash2 size={16} />
+                        {updatingItems[item.id] ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                        ) : (
+                          <Trash2 size={16} />
+                        )}
                       </button>
                     </div>
                   </div>

@@ -145,18 +145,30 @@ export default function Header() {
                 </button>
               )}
 
-              {/* Cart */}
-              <button
-                onClick={() => navigate('/cart')}
-                className="relative p-2 hover:bg-red-700 rounded-full text-white"
-              >
-                <ShoppingCart size={24} />
-                {cart.totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-yellow-400 text-red-800 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                    {cart.totalItems}
-                  </span>
-                )}
-              </button>
+              {/* Cart - chỉ hiển thị cho customer, không hiển thị cho admin */}
+              {user && !isAdmin() && (
+                <button
+                  onClick={() => navigate('/cart')}
+                  className="relative p-2 hover:bg-red-700 rounded-full text-white"
+                >
+                  <ShoppingCart size={24} />
+                  {cart.totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-yellow-400 text-red-800 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                      {cart.totalItems}
+                    </span>
+                  )}
+                </button>
+              )}
+              
+              {/* Cart cho guest user (chưa login) */}
+              {!user && (
+                <button
+                  onClick={() => navigate('/cart')}
+                  className="relative p-2 hover:bg-red-700 rounded-full text-white"
+                >
+                  <ShoppingCart size={24} />
+                </button>
+              )}
 
               {/* User menu */}
               {user ? (

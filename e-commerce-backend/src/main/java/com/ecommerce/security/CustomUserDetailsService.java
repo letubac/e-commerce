@@ -39,4 +39,15 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         return UserPrincipal.create(user);
     }
+
+    public UserDetails loadUserById(Long userId) throws UsernameNotFoundException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
+
+        if (!user.isActive()) {
+            throw new UsernameNotFoundException("User account is disabled: " + userId);
+        }
+
+        return UserPrincipal.create(user);
+    }
 }

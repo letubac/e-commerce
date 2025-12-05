@@ -3,6 +3,7 @@ package com.ecommerce.service.impl;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -131,7 +132,14 @@ public class ProductServiceImpl implements ProductService {
 	public ProductDTO getProductByIdOrThrow(Long id) {
 		Product product = productRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
-		return productMapper.toDTO(product);
+		if (Objects.isNull(product)) {
+			return productMapper.toDTO(product);
+		}
+		ProductDTO productDTO = productMapper.toDTO(product);
+		// Lazy load images if needed
+		productDTO.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+							.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+		return productDTO;
 	}
 
 	@Override
@@ -152,6 +160,15 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public Page<ProductDTO> getAllProducts(Pageable pageable) {
 		List<ProductDTO> products = getAllProducts();
+		if (products.isEmpty()) {
+			return Page.empty(pageable);
+		}
+		// Get images product for each product
+		products.forEach(product -> {
+			// Lazy load images if needed
+			product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+					.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+		});
 		int start = Math.min((int) pageable.getOffset(), products.size());
 		int end = Math.min((start + pageable.getPageSize()), products.size());
 		List<ProductDTO> subList = products.subList(start, end);
@@ -219,6 +236,15 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public Page<ProductDTO> getProductsByCategory(Long categoryId, Pageable pageable) {
 		List<ProductDTO> products = getProductsByCategory(categoryId);
+		if (products.isEmpty()) {
+			return Page.empty(pageable);
+		}
+		// Get images product for each product
+		products.forEach(product -> {
+			// Lazy load images if needed
+			product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+					.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+		});
 		int start = Math.min((int) pageable.getOffset(), products.size());
 		int end = Math.min((start + pageable.getPageSize()), products.size());
 		List<ProductDTO> subList = products.subList(start, end);
@@ -233,6 +259,15 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public Page<ProductDTO> getProductsByBrand(Long brandId, Pageable pageable) {
 		List<ProductDTO> products = getProductsByBrand(brandId);
+		if (products.isEmpty()) {
+			return Page.empty(pageable);
+		}
+		// Get images product for each product
+		products.forEach(product -> {
+			// Lazy load images if needed
+			product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+					.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+		});
 		int start = Math.min((int) pageable.getOffset(), products.size());
 		int end = Math.min((start + pageable.getPageSize()), products.size());
 		List<ProductDTO> subList = products.subList(start, end);
@@ -253,6 +288,15 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public Page<ProductDTO> searchProducts(String keyword, Pageable pageable) {
 		List<ProductDTO> products = searchProducts(keyword);
+		if (products.isEmpty()) {
+			return Page.empty(pageable);
+		}
+		// Get images product for each product
+		products.forEach(product -> {
+			// Lazy load images if needed
+			product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+					.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+		});
 		int start = Math.min((int) pageable.getOffset(), products.size());
 		int end = Math.min((start + pageable.getPageSize()), products.size());
 		List<ProductDTO> subList = products.subList(start, end);

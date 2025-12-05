@@ -32,4 +32,6 @@ public interface BrandRepository extends DbRepository<Brand, Long> {
     // brandRepository_findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase.sql
     Page<Brand> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
             @Param("search") String search, Pageable pageable);
+    
+    Long countAllByActiveTrue();
 }

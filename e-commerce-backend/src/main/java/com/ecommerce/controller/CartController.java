@@ -13,7 +13,6 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/cart")
-
 public class CartController {
 
     @Autowired
@@ -21,6 +20,9 @@ public class CartController {
 
     @GetMapping
     public ResponseEntity<CartDTO> getCart(Authentication authentication) {
+        // Kiểm tra role - chỉ CUSTOMER/USER mới có giỏ hàng
+        checkCustomerRole(authentication);
+
         Long userId = getUserIdFromAuthentication(authentication);
         CartDTO cart = cartService.getCartByUserId(userId);
         return ResponseEntity.ok(cart);
@@ -30,6 +32,7 @@ public class CartController {
     public ResponseEntity<CartDTO> addToCart(
             @Valid @RequestBody AddToCartRequest request,
             Authentication authentication) {
+        checkCustomerRole(authentication);
         Long userId = getUserIdFromAuthentication(authentication);
         CartDTO cart = cartService.addToCart(userId, request);
         return ResponseEntity.ok(cart);
@@ -40,25 +43,41 @@ public class CartController {
             @PathVariable Long itemId,
             @RequestParam Integer quantity,
             Authentication authentication) {
+        checkCustomerRole(authentication);
         Long userId = getUserIdFromAuthentication(authentication);
         CartDTO cart = cartService.updateCartItemQuantity(userId, itemId, quantity);
         return ResponseEntity.ok(cart);
     }
 
     @DeleteMapping("/items/{itemId}")
-    public ResponseEntity<Void> removeCartItem(
+    public ResponseEntity<CartDTO> removeCartItem(
             @PathVariable Long itemId,
             Authentication authentication) {
+        checkCustomerRole(authentication);
         Long userId = getUserIdFromAuthentication(authentication);
         cartService.removeCartItem(userId, itemId);
-        return ResponseEntity.ok().build();
+        CartDTO cart = cartService.getCartByUserId(userId);
+        return ResponseEntity.ok(cart);
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> clearCart(Authentication authentication) {
+    public ResponseEntity<CartDTO> clearCart(Authentication authentication) {
+        checkCustomerRole(authentication);
         Long userId = getUserIdFromAuthentication(authentication);
         cartService.clearCart(userId);
-        return ResponseEntity.ok().build();
+        CartDTO cart = cartService.getCartByUserId(userId);
+        return ResponseEntity.ok(cart);
+    }
+
+    private void checkCustomerRole(Authentication authentication) {
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        boolean isAdmin = userPrincipal.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN") ||
+                        auth.getAuthority().equals("ROLE_SUPER_ADMIN"));
+
+        if (isAdmin) {
+            throw new RuntimeException("Admin không có giỏ hàng");
+        }
     }
 
     private Long getUserIdFromAuthentication(Authentication authentication) {

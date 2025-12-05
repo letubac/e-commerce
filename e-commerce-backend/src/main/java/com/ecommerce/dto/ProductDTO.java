@@ -1,5 +1,9 @@
 package com.ecommerce.dto;
 
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.List;
+
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -9,9 +13,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.math.BigDecimal;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -57,6 +58,8 @@ public class ProductDTO {
     private String slug;
     private Date createdAt;
     private Date updatedAt;
+    
+    private List<ProductImageDTO> productImages;
 
     // Custom constructor for basic product info
     public ProductDTO(String name, String sku, BigDecimal price, Integer stockQuantity) {

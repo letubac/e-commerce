@@ -1,13 +1,18 @@
 package com.ecommerce.entity;
 
 import jakarta.persistence.*;
+import vn.com.unit.miragesql.miragesql.annotation.PrimaryKey;
+
 import java.util.Date;
 
+import com.ecommerce.constant.TableConstant;
+
 @Entity
-@Table(name = "new_arrivals")
+@Table(name = TableConstant.NEW_ARRIVALS)
 public class NewArrival {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ
+    + TableConstant.NEW_ARRIVALS)
     private Long id;
 
     @Column(name = "product_id", nullable = false)

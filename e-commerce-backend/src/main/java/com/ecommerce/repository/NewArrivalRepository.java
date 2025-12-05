@@ -2,6 +2,9 @@ package com.ecommerce.repository;
 
 import com.ecommerce.entity.NewArrival;
 import com.ecommerce.repository.base.DbRepository;
+
+import vn.com.unit.springframework.data.mirage.repository.query.Modifying;
+
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -20,5 +23,6 @@ public interface NewArrivalRepository extends DbRepository<NewArrival, Long> {
     List<NewArrival> findOrderedByDisplayOrder();
 
     // Maps to: newArrivalRepository_updateDisplayOrder.sql
+    @Modifying
     int updateDisplayOrder(@Param("id") Long id, @Param("displayOrder") Integer displayOrder);
 }

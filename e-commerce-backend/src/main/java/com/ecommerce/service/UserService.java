@@ -1,10 +1,16 @@
 package com.ecommerce.service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.ecommerce.dto.CreateUserRequest;
 import com.ecommerce.dto.UserDTO;
 import com.ecommerce.entity.User;
-import java.util.List;
-import java.util.Optional;
+
 
 public interface UserService {
 
@@ -28,6 +34,17 @@ public interface UserService {
     void deactivateUser(Long id);
 
     void activateUser(Long id);
+
+    // Admin operations
+    Page<UserDTO> getAllUsersWithPagination(Pageable pageable);
+
+    Page<UserDTO> searchUsers(String keyword, Pageable pageable);
+
+    void lockUser(Long id);
+
+    void unlockUser(Long id);
+
+    Map<String, Object> getUserStatistics();
 
     // Password management
     void changePassword(Long userId, String currentPassword, String newPassword);

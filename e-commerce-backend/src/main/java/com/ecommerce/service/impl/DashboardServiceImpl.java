@@ -47,9 +47,9 @@ public class DashboardServiceImpl implements DashboardService {
 
 		try {
 			// Get basic counts
-			long totalProducts = productRepository.count();
-			long totalUsers = userRepository.count();
-			long totalOrders = orderRepository.count();
+			long totalProducts = productRepository.countActive();
+			long totalUsers = userRepository.countAll();
+			long totalOrders = orderRepository.countAll();
 
 			// Get revenue - assuming we have getTotalRevenue method
 			BigDecimal totalRevenue = getTotalRevenue();
@@ -143,7 +143,7 @@ public class DashboardServiceImpl implements DashboardService {
 		Map<String, Object> userStats = new HashMap<>();
 
 		try {
-			long totalUsers = userRepository.count();
+			long totalUsers = userRepository.countAll();
 			long activeUsers = getActiveUsersCount();
 
 			Date startOfMonth = DateUtils.getStartOfMonth();
@@ -185,12 +185,12 @@ public class DashboardServiceImpl implements DashboardService {
 		Map<String, Object> productStats = new HashMap<>();
 
 		try {
-			long totalProducts = productRepository.count();
+			long totalProducts = productRepository.countActive();
 			long activeProducts = getActiveProductsCount();
 			long lowStockProducts = getLowStockProductsCount();
 			long outOfStockProducts = getOutOfStockProductsCount();
-			long categoriesCount = categoryRepository.count();
-			long brandsCount = brandRepository.count();
+			long categoriesCount = categoryRepository.countAllByActiveTrue();
+			long brandsCount = brandRepository.countAllByActiveTrue();
 
 			BigDecimal averagePrice = getAverageProductPrice();
 			BigDecimal totalInventoryValue = getTotalInventoryValue();
@@ -226,7 +226,7 @@ public class DashboardServiceImpl implements DashboardService {
 			// Get order counts by status
 			Map<String, Long> ordersByStatus = getOrdersByStatus();
 
-			long totalOrders = orderRepository.count();
+			long totalOrders = orderRepository.countAll();
 			BigDecimal averageOrderValue = getAverageOrderValue();
 			BigDecimal totalRevenue = getTotalRevenue();
 

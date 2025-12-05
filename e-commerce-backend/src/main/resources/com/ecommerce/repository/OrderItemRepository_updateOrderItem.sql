@@ -5,6 +5,5 @@ UPDATE order_items SET
     product_sku = /* orderItem.productSku */,
     quantity = /* orderItem.quantity */,
     price = /* orderItem.price */,
-    total = /* orderItem.total */,
-    updated_at = /* orderItem.updatedAt */
+    total = /* orderItem.total */
 WHERE id = /* orderItem.id */

@@ -1,4 +1,19 @@
-const API_BASE_URL = 'http://localhost:8080/api/v1';
+import toast from '../utils/toast';
+
+export const API_BASE_URL = 'http://localhost:8080/api/v1';
+export const IMAGE_BASE_URL = 'http://localhost:8080/api/v1/files';
+
+// Helper function to get full image URL
+export const getImageUrl = (imageUrl) => {
+  if (!imageUrl || typeof imageUrl !== 'string') {
+    return null;
+  }
+  if (imageUrl.startsWith('http')) {
+    return imageUrl;
+  }
+  const fullUrl = `${IMAGE_BASE_URL}${imageUrl}`;
+  return fullUrl;
+};
 
 const api = {
   async request(endpoint, options = {}) {
@@ -17,12 +32,34 @@ const api = {
 
       if (!response.ok) {
         let errorMessage = 'Request failed';
+        let errorData = null;
+        
         try {
-          const errorData = await response.json();
+          errorData = await response.json();
           errorMessage = errorData.message || errorData.error || `HTTP ${response.status}`;
         } catch (e) {
           errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         }
+
+        // Handle 401 Unauthorized - token expired or invalid
+        if (response.status === 401) {
+          console.error('401 Unauthorized - Token expired or invalid');
+          
+          // Clear auth data
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          
+          // Show toast notification
+          toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+          
+          // Throw error but let the calling context decide how to handle redirect
+          // This prevents auto-redirect during checkAuth on page load
+          throw new Error('Authentication required');
+        }
+
+        // For other errors, just log and throw - let the calling component handle the toast
+        console.error(`API Error [${response.status}]:`, errorMessage);
+        
         throw new Error(errorMessage);
       }
 
@@ -48,7 +85,7 @@ const api = {
   getCurrentUser: () => api.request('/auth/me'),
 
   // Products
-  getProducts: (params) => {
+  getProducts: async (params = {}) => {
     // Tách sortBy/sortDirection nếu có, loại bỏ sort cũ nếu còn
     const query = { ...params };
     if (query.sort) {
@@ -66,9 +103,21 @@ const api = {
     if (queryParams.get("brandId") === "null") {
         queryParams.delete("brandId");
     }
+    if (queryParams.get("categoryId") === "null") {
+      queryParams.delete("categoryId");
+    }
 
-    return api.request(`/products?${queryParams.toString()}`);
+    // Gọi API và normalize response
+    const res = await api.request(`/products?${queryParams.toString()}`);
+    // Có thể có các shape khác nhau; chuẩn hoá sang { items, totalPages, totalElements, raw }
+    const data = res?.data ?? res;
+    const items = data?.content ?? data?.items ?? [];
+    const totalPages = data?.totalPages ?? data?.totalPages ?? null;
+    const totalElements = data?.totalElements ?? data?.total ?? null;
+
+    return { items, totalPages, totalElements, raw: res };
   },
+
   getProduct: (id) => api.request(`/products/${id}`),
   getProductDetails: (id) => api.request(`/products/${id}`),
   searchProducts: (keyword, params = {}) => api.request(`/products/search?keyword=${encodeURIComponent(keyword)}&${new URLSearchParams(params)}`),
@@ -111,6 +160,7 @@ const api = {
   addToCart: (data) => api.request('/cart/items', { method: 'POST', body: JSON.stringify(data) }),
   updateCartItem: (id, quantity) => api.request(`/cart/items/${id}?quantity=${quantity}`, { method: 'PUT' }),
   removeFromCart: (id) => api.request(`/cart/items/${id}`, { method: 'DELETE' }),
+  clearCart: () => api.request('/cart', { method: 'DELETE' }),
 
   // Orders
   createOrder: (data) => api.request('/orders', { method: 'POST', body: JSON.stringify(data) }),
@@ -147,9 +197,9 @@ export const sanitizeParams = (params) => {
 };
 
 export const fetchProducts = async (params) => {
-    // Sử dụng api.getProducts thay vì axios để tránh phụ thuộc axios
-    const data = await api.getProducts(params);
-    return data;
+    // Trả về mảng để giữ tương thích với chỗ khác
+    const res = await api.getProducts(params);
+    return res.items ?? [];
 };
 
 

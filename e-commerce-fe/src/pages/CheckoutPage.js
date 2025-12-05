@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, CreditCard, Truck, Shield, CheckCircle, AlertCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/api';
+import api, { API_BASE_URL } from '../api/api';
+import toast from '../utils/toast';
 
 function CheckoutPage() {
   const navigate = useNavigate();
@@ -50,14 +51,14 @@ function CheckoutPage() {
     if (step === 1) {
       // Validate customer info
       if (!customerInfo.fullName || !customerInfo.phone || !customerInfo.address) {
-        alert('Vui lòng điền đầy đủ thông tin bắt buộc (Họ tên, Số điện thoại, Địa chỉ)');
+        toast.error('Vui lòng điền đầy đủ thông tin bắt buộc (Họ tên, Số điện thoại, Địa chỉ)');
         return;
       }
       
       // Validate phone number format
       const phoneRegex = /^[0-9]{10,11}$/;
       if (!phoneRegex.test(customerInfo.phone.replace(/\s+/g, ''))) {
-        alert('Số điện thoại không hợp lệ. Vui lòng nhập 10-11 số.');
+        toast.error('Số điện thoại không hợp lệ. Vui lòng nhập 10-11 số.');
         return;
       }
       
@@ -65,7 +66,7 @@ function CheckoutPage() {
       if (customerInfo.email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(customerInfo.email)) {
-          alert('Email không hợp lệ. Vui lòng kiểm tra lại.');
+          toast.error('Email không hợp lệ. Vui lòng kiểm tra lại.');
           return;
         }
       }
@@ -74,7 +75,7 @@ function CheckoutPage() {
     } else if (step === 2) {
       // Validate cart items before placing order
       if (safeCartItems.length === 0) {
-        alert('Giỏ hàng trống. Không thể đặt hàng.');
+        toast.error('Giỏ hàng trống. Không thể đặt hàng.');
         navigate('/cart');
         return;
       }
@@ -101,9 +102,9 @@ function CheckoutPage() {
         shippingMethod: shippingMethod,
         paymentMethod: paymentMethod,
         items: safeCartItems.map(item => ({
-          productId: item.product?.id || item.productId,
+          productId: item.productId,
           quantity: item.quantity,
-          price: item.product?.price || item.price
+          price: item.price
         })),
         totalPrice: finalTotal,
         shippingFee: shippingFee
@@ -127,22 +128,31 @@ function CheckoutPage() {
           value: finalTotal,
           currency: 'VND',
           items: safeCartItems.map(item => ({
-            item_id: item.product?.id || item.productId,
-            item_name: item.product?.name,
+            item_id: item.productId,
+            item_name: item.productName,
             quantity: item.quantity,
-            price: item.product?.price || item.price
+            price: item.price
           }))
         });
       }
       
-      // Clear cart after successful order
+      // Clear cart after successful order (silent mode - no toast)
       setTimeout(() => {
-        clearCart();
+        clearCart(true);
       }, 1000);
       
     } catch (error) {
       console.error('Error placing order:', error);
-      alert(`Có lỗi xảy ra khi đặt hàng: ${error.message || 'Vui lòng thử lại.'}`);
+      
+      // Check if it's a 401 authentication error (already handled by api.js)
+      if (error.message === 'Authentication required') {
+        // api.js already showed logout message and redirecting
+        return;
+      }
+      
+      // For all other errors, show checkout-specific error message
+      const errorMsg = error.message || 'Đã xảy ra lỗi không xác định';
+      toast.error(`Lỗi xảy ra trong quá trình đặt hàng: ${errorMsg}`);
     } finally {
       setLoading(false);
     }
@@ -474,22 +484,22 @@ function CheckoutPage() {
                     <div className="w-16 h-16 flex-shrink-0">
                       <img
                         src={
-                          item.product?.images?.[0]?.imageUrl || 
-                          item.product?.imageUrl || 
-                          `https://via.placeholder.com/64x64/f0f0f0/666666?text=${encodeURIComponent(item.product?.name || 'Product')}`
+                          item.productImage
+                            ? `${API_BASE_URL}/files${item.productImage}`
+                            : `https://via.placeholder.com/64x64/f0f0f0/666666?text=${encodeURIComponent(item.productName || 'Product')}`
                         }
-                        alt={item.product?.name || 'Product'}
+                        alt={item.productName || 'Product'}
                         className="w-full h-full object-cover rounded-lg border border-gray-200"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-medium text-gray-800 truncate">
-                        {item.product?.name || 'Sản phẩm'}
+                        {item.productName || 'Sản phẩm'}
                       </h4>
                       <p className="text-sm text-gray-600">Số lượng: {item.quantity}</p>
                     </div>
                     <div className="text-sm font-semibold text-gray-800">
-                      {((item.product?.price || 0) * item.quantity).toLocaleString('vi-VN')}₫
+                      {((item.price || 0) * item.quantity).toLocaleString('vi-VN')}₫
                     </div>
                   </div>
                 ))}
