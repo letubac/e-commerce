@@ -19,7 +19,7 @@ import com.ecommerce.constant.TableConstant;
 public class Conversation {
     @Id
     @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ
-    + TableConstant.CONVERSATIONS)
+            + TableConstant.CONVERSATIONS)
     @Column(name = "id")
     private Long id;
 
@@ -34,6 +34,12 @@ public class Conversation {
 
     @Column(name = "status")
     private String status; // OPEN, ASSIGNED, RESOLVED, CLOSED
+
+    @Column(name = "priority")
+    private String priority; // LOW, NORMAL, HIGH, URGENT
+
+    @Column(name = "unread_count")
+    private Integer unreadCount;
 
     @Column(name = "last_message_at")
     private Date lastMessageAt;
@@ -59,5 +65,31 @@ public class Conversation {
 
     public boolean hasAdmin() {
         return adminId != null;
+    }
+
+    public void assignToAdmin(Long adminId) {
+        this.adminId = adminId;
+        this.status = "ASSIGNED";
+    }
+
+    public void close() {
+        this.status = "CLOSED";
+    }
+
+    public void reopen() {
+        this.status = "OPEN";
+        this.adminId = null;
+    }
+
+    public void updateLastMessage() {
+        this.lastMessageAt = new Date();
+    }
+
+    public void incrementUnreadCount() {
+        this.unreadCount = (this.unreadCount == null ? 0 : this.unreadCount) + 1;
+    }
+
+    public void resetUnreadCount() {
+        this.unreadCount = 0;
     }
 }

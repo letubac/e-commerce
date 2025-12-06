@@ -14,15 +14,21 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ecommerce.dto.AddressDTO;
 import com.ecommerce.dto.CreateOrderRequest;
 import com.ecommerce.dto.OrderDTO;
 import com.ecommerce.dto.OrderItemDTO;
+import com.ecommerce.dto.UserDTO;
+import com.ecommerce.entity.Address;
 import com.ecommerce.entity.Order;
 import com.ecommerce.entity.OrderItem;
 import com.ecommerce.entity.Product;
 import com.ecommerce.entity.ProductImage;
+import com.ecommerce.entity.User;
 import com.ecommerce.exception.BadRequestException;
 import com.ecommerce.exception.ResourceNotFoundException;
+import com.ecommerce.mapper.UserMapper;
+import com.ecommerce.repository.AddressRepository;
 import com.ecommerce.repository.CartItemRepository;
 import com.ecommerce.repository.OrderItemRepository;
 import com.ecommerce.repository.OrderRepository;
@@ -42,6 +48,8 @@ public class OrderServiceImpl implements OrderService {
 	private final ProductRepository productRepository;
 	private final UserRepository userRepository;
 	private final CartItemRepository cartItemRepository;
+	private final AddressRepository addressRepository;
+	private final UserMapper userMapper;
 
 	@Override
 	public OrderDTO createOrder(Long userId, CreateOrderRequest request) {
@@ -177,16 +185,16 @@ public class OrderServiceImpl implements OrderService {
 		// Set specific timestamps based on status
 		Date now = new Date();
 		switch (status) {
-		case "SHIPPED":
-			order.setShippedAt(now);
-			break;
-		case "DELIVERED":
-			order.setDeliveredAt(now);
-			order.setPaymentStatus("COMPLETED");
-			break;
-		case "CANCELLED":
-			order.setCancelledAt(now);
-			break;
+			case "SHIPPED":
+				order.setShippedAt(now);
+				break;
+			case "DELIVERED":
+				order.setDeliveredAt(now);
+				order.setPaymentStatus("COMPLETED");
+				break;
+			case "CANCELLED":
+				order.setCancelledAt(now);
+				break;
 		}
 
 		orderRepository.updateOrder(order);
@@ -278,19 +286,63 @@ public class OrderServiceImpl implements OrderService {
 		dto.setCreatedAt(order.getCreatedAt());
 		dto.setUpdatedAt(order.getUpdatedAt());
 
+		// Load user info
+		if (order.getUserId() != null) {
+			userRepository.findById(order.getUserId()).ifPresent(user -> {
+				UserDTO userDTO = userMapper.toDTO(user);
+				dto.setUser(userDTO);
+			});
+		}
+
+		// Load shipping address
+		if (order.getShippingAddressId() != null) {
+			addressRepository.findById(order.getShippingAddressId()).ifPresent(address -> {
+				AddressDTO addressDTO = convertAddressToDTO(address);
+				dto.setShippingAddress(addressDTO);
+			});
+		}
+
+		// Load billing address
+		if (order.getBillingAddressId() != null) {
+			addressRepository.findById(order.getBillingAddressId()).ifPresent(address -> {
+				AddressDTO addressDTO = convertAddressToDTO(address);
+				dto.setBillingAddress(addressDTO);
+			});
+		}
+
 		// Load order items
 		List<OrderItem> orderItems = orderItemRepository.findByOrderId(order.getId());
 		// Lazy load images for each order item
 		orderItems.forEach(item -> {
 			// Assuming a method exists to load product image URL
-			ProductImage roductImage = productRepository.findImagesByProductId(item.getProductId()).stream().findFirst().orElse(null);
+			ProductImage roductImage = productRepository.findImagesByProductId(item.getProductId()).stream().findFirst()
+					.orElse(null);
 			if (roductImage != null) {
 				item.setProductImageUrl(roductImage.getImageUrl());
 			}
 		});
 		List<OrderItemDTO> itemDTOs = orderItems.stream().map(this::convertOrderItemToDTO).collect(Collectors.toList());
 		dto.setItems(itemDTOs);
+		dto.setOrderItems(itemDTOs); // Set both fields for compatibility
 
+		return dto;
+	}
+
+	private AddressDTO convertAddressToDTO(Address address) {
+		AddressDTO dto = new AddressDTO();
+		dto.setId(address.getId());
+		dto.setUserId(address.getUserId());
+		dto.setFullName(address.getFullName());
+		dto.setPhoneNumber(address.getPhoneNumber());
+		dto.setAddressLine1(address.getAddressLine1());
+		dto.setAddressLine2(address.getAddressLine2());
+		dto.setCity(address.getCity());
+		dto.setState(address.getState());
+		dto.setPostalCode(address.getPostalCode());
+		dto.setCountry(address.getCountry());
+		dto.setIsDefault(address.isDefault());
+		dto.setCreatedAt(address.getCreatedAt());
+		dto.setUpdatedAt(address.getUpdatedAt());
 		return dto;
 	}
 

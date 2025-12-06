@@ -3,9 +3,15 @@ package com.ecommerce.controller;
 import com.ecommerce.dto.ApiResponse;
 import com.ecommerce.dto.ChatMessageDTO;
 import com.ecommerce.dto.ConversationDTO;
+import com.ecommerce.dto.UserDTO;
 import com.ecommerce.dto.request.CreateConversationRequest;
 import com.ecommerce.dto.request.SendMessageRequest;
+import com.ecommerce.entity.User;
+import com.ecommerce.exception.ResourceNotFoundException;
+import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.ConversationService;
+import com.ecommerce.service.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ecommerce.service.ChatMessageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * REST controller for managing chat functionality.
@@ -37,6 +44,12 @@ public class ChatController {
     @Autowired
     private ChatMessageService chatMessageService;
 
+    @Autowired
+    private UserService userService;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
+
     // USER ENDPOINTS
 
     /**
@@ -46,8 +59,11 @@ public class ChatController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<ConversationDTO>>> getUserConversations(Authentication authentication) {
         try {
-            // Tạm thời return empty list, implement sau
-            List<ConversationDTO> conversations = List.of();
+            String username = authentication.getName();
+            List<ConversationDTO> conversations = conversationService.findByUsername(
+                    username,
+                    org.springframework.data.domain.PageRequest.of(0, 100)).getContent();
+
             return ResponseEntity
                     .ok(new ApiResponse<>(true, "Lấy danh sách cuộc trò chuyện thành công", conversations));
         } catch (Exception e) {
@@ -69,8 +85,17 @@ public class ChatController {
             Authentication authentication) {
 
         try {
-            // Tạm thời return empty page, implement sau
-            Page<ChatMessageDTO> messages = Page.empty();
+            String username = authentication.getName();
+
+            // Verify user has access to conversation
+            if (!conversationService.isUserOwnerOfConversation(username, conversationId)) {
+                return ResponseEntity.status(403)
+                        .body(new ApiResponse<>(false, "Bạn không có quyền truy cập cuộc trò chuyện này"));
+            }
+
+            Page<ChatMessageDTO> messages = chatMessageService.getMessagesByConversationId(
+                    conversationId,
+                    org.springframework.data.domain.PageRequest.of(page, size));
 
             return ResponseEntity.ok(new ApiResponse<>(true, "Lấy tin nhắn cuộc trò chuyện thành công", messages));
         } catch (SecurityException e) {
@@ -99,9 +124,26 @@ public class ChatController {
         try {
             String username = authentication.getName();
 
-            // Tạm thời return mock response, implement sau
-            ChatMessageDTO message = new ChatMessageDTO();
-            message.setContent(request.getContent());
+            // Verify user has access to conversation
+            if (!conversationService.isUserOwnerOfConversation(username, request.getConversationId())) {
+                return ResponseEntity.status(403)
+                        .body(new ApiResponse<>(false, "Bạn không có quyền gửi tin nhắn"));
+            }
+
+            // Get userId from username
+            Optional<UserDTO> user = userService.getUserByUsername(username);
+			if (user.isEmpty()) {
+				throw new ResourceNotFoundException("User not found");
+			}
+			// chuyển Optional<UserDTO> user sang User userEntity
+			User userEntity = new User();
+			userEntity.setId(user.get().getId());
+			
+			
+//            User user = userRepository.findByUsername(username)
+//                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+            ChatMessageDTO message = chatMessageService.sendMessage(user.getId(), request);
 
             log.info("Người dùng {} đã gửi tin nhắn trong cuộc trò chuyện ID: {}",
                     username, request.getConversationId());
@@ -134,9 +176,9 @@ public class ChatController {
         try {
             String username = authentication.getName();
 
-            // Tạm thời return mock response, implement sau
-            ConversationDTO conversation = new ConversationDTO();
-            conversation.setSubject(request.getSubject());
+            ConversationDTO conversation = conversationService.createConversation(
+                    username,
+                    request.getSubject());
 
             log.info("Người dùng {} đã tạo cuộc trò chuyện mới", username);
 
@@ -162,6 +204,20 @@ public class ChatController {
             Authentication authentication) {
 
         try {
+            String username = authentication.getName();
+
+            // Verify user has access to conversation
+            if (!conversationService.isUserOwnerOfConversation(username, conversationId)) {
+                return ResponseEntity.status(403)
+                        .body(new ApiResponse<>(false, "Bạn không có quyền thực hiện hành động này"));
+            }
+
+            // Get userId from username
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+            chatMessageService.markMessagesAsRead(conversationId, user.getId());
+
             return ResponseEntity.ok(new ApiResponse<>(true, "Đánh dấu đã đọc thành công"));
         } catch (SecurityException e) {
             log.warn("Không có quyền đánh dấu đã đọc cuộc trò chuyện ID: {}", conversationId);

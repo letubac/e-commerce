@@ -388,10 +388,10 @@ function OrderManagement() {
                         {selectedOrder.shippingAddress.addressLine2 && (
                           <p>{selectedOrder.shippingAddress.addressLine2}</p>
                         )}
-                        <p>
-                          {selectedOrder.shippingAddress.ward}, {selectedOrder.shippingAddress.district}
-                        </p>
                         <p>{selectedOrder.shippingAddress.city}</p>
+                        {selectedOrder.shippingAddress.country && (
+                          <p>{selectedOrder.shippingAddress.country}</p>
+                        )}
                       </>
                     ) : (
                       <p className="text-gray-500">Chưa có địa chỉ</p>
@@ -407,7 +407,7 @@ function OrderManagement() {
                   {selectedOrder.orderItems?.map((item, index) => (
                     <div key={index} className="p-4 flex items-center gap-4">
                       <img
-                        src={getImageUrl(item.product?.productImages?.[0]?.imageUrl) || '/images/placeholder.jpg'}
+                        src={getImageUrl(item.productImageUrl) || '/images/placeholder.jpg'}
                         alt={item.productName}
                         className="w-16 h-16 object-cover rounded-lg border border-gray-200"
                       />
@@ -439,21 +439,21 @@ function OrderManagement() {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Phí vận chuyển:</span>
                     <span className="text-gray-900">
-                      {(selectedOrder.shippingFee || 0).toLocaleString('vi-VN')}₫
+                      {(selectedOrder.shippingCost || 0).toLocaleString('vi-VN')}₫
                     </span>
                   </div>
-                  {selectedOrder.discount > 0 && (
+                  {selectedOrder.discountAmount > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Giảm giá:</span>
                       <span className="text-red-600">
-                        -{(selectedOrder.discount || 0).toLocaleString('vi-VN')}₫
+                        -{(selectedOrder.discountAmount || 0).toLocaleString('vi-VN')}₫
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between text-base font-semibold border-t border-gray-200 pt-2">
                     <span className="text-gray-900">Tổng cộng:</span>
                     <span className="text-red-600">
-                      {(selectedOrder.totalAmount || 0).toLocaleString('vi-VN')}₫
+                      {(selectedOrder.total || 0).toLocaleString('vi-VN')}₫
                     </span>
                   </div>
                 </div>

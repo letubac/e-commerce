@@ -9,6 +9,8 @@ import java.util.List;
 public interface ConversationService {
     ConversationDTO createConversation(Long userId, String subject);
 
+    ConversationDTO createConversation(Long userId, String subject, String initialMessage);
+
     ConversationDTO getConversationById(Long conversationId);
 
     ConversationDTO getConversationByIdAndUserId(Long conversationId, Long userId);
@@ -41,4 +43,6 @@ public interface ConversationService {
     ConversationDTO reopenConversation(Long conversationId);
 
     boolean isUserOwnerOfConversation(String username, Long conversationId);
+
+    boolean canUserAccessConversation(Long userId, Long conversationId, boolean isAdmin);
 }

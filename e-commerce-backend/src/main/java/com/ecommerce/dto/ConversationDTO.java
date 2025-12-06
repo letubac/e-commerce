@@ -20,6 +20,8 @@ public class ConversationDTO {
     private String adminName;
     private String subject;
     private String status; // OPEN, ASSIGNED, RESOLVED, CLOSED
+    private String priority; // LOW, NORMAL, HIGH, URGENT
+    private Integer unreadCount;
     private List<ChatMessageDTO> messages;
     private Date lastMessageAt;
     private Date createdAt;

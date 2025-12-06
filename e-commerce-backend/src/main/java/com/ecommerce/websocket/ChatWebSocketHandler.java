@@ -1,7 +1,7 @@
 package com.ecommerce.websocket;
 
-import com.ecommerce.security.CustomUserDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
@@ -10,66 +10,119 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Component
 public class ChatWebSocketHandler implements WebSocketHandler {
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    // Store active sessions
-    private final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
-    private final Map<String, String> sessionUserMap = new ConcurrentHashMap<>();
+    @Autowired
+    private WebSocketChatService webSocketChatService;
+
+    // Store active sessions with metadata
+    private final Map<String, SessionInfo> sessions = new ConcurrentHashMap<>();
+
+    private static class SessionInfo {
+        Long userId;
+        Long conversationId;
+        String username;
+        WebSocketSession session;
+
+        SessionInfo(Long userId, Long conversationId, String username, WebSocketSession session) {
+            this.userId = userId;
+            this.conversationId = conversationId;
+            this.username = username;
+            this.session = session;
+        }
+    }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        String userId = getUserIdFromSession(session);
+        Long userId = getUserIdFromSession(session);
+        String username = getUsernameFromSession(session);
+        Long conversationId = getConversationIdFromSession(session);
+
         if (userId != null) {
-            sessions.put(session.getId(), session);
-            sessionUserMap.put(session.getId(), userId);
-            System.out.println("WebSocket connection established for user: " + userId);
+            SessionInfo sessionInfo = new SessionInfo(userId, conversationId, username, session);
+            sessions.put(session.getId(), sessionInfo);
+
+            // Register with WebSocket service
+            webSocketChatService.registerSession(userId, conversationId, session);
+
+            log.info("WebSocket connection established - User: {}, Conversation: {}, Session: {}",
+                    username, conversationId, session.getId());
+
+            // Send connection confirmation
+            sendConnectionConfirmation(session, userId, username);
         } else {
+            log.warn("WebSocket connection rejected - No valid authentication");
             session.close(CloseStatus.NOT_ACCEPTABLE.withReason("Authentication required"));
         }
     }
 
     @Override
     public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
-        String userId = sessionUserMap.get(session.getId());
-        if (userId == null) {
+        SessionInfo sessionInfo = sessions.get(session.getId());
+        if (sessionInfo == null) {
+            log.warn("Message received from unregistered session: {}", session.getId());
             return;
         }
 
         try {
             String payload = message.getPayload().toString();
-            Map<String, Object> chatMessage = objectMapper.readValue(payload, Map.class);
-            
-            // Process the message (save to database, broadcast to other users, etc.)
-            processChatMessage(userId, chatMessage);
-            
-            // Echo back confirmation
-            Map<String, Object> response = Map.of(
-                "type", "MESSAGE_SENT",
-                "messageId", chatMessage.get("id"),
-                "status", "success"
-            );
-            
-            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(response)));
-            
+            Map<String, Object> messageData = objectMapper.readValue(payload, Map.class);
+
+            String messageType = (String) messageData.get("type");
+
+            switch (messageType != null ? messageType : "") {
+                case "TYPING":
+                    handleTypingIndicator(sessionInfo, messageData);
+                    break;
+
+                case "READ":
+                    handleReadReceipt(sessionInfo, messageData);
+                    break;
+
+                case "PING":
+                    handlePing(session);
+                    break;
+
+                case "MESSAGE":
+                    // Messages should be sent via REST API, not WebSocket
+                    sendError(session, "Please use REST API to send messages");
+                    break;
+
+                default:
+                    log.warn("Unknown message type: {}", messageType);
+                    sendError(session, "Unknown message type");
+            }
+
         } catch (Exception e) {
-            sendErrorMessage(session, "Failed to process message: " + e.getMessage());
+            log.error("Error processing WebSocket message", e);
+            sendError(session, "Failed to process message: " + e.getMessage());
         }
     }
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-        System.err.println("WebSocket transport error for session " + session.getId() + ": " + exception.getMessage());
+        log.error("WebSocket transport error for session {}", session.getId(), exception);
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
-        String userId = sessionUserMap.remove(session.getId());
-        sessions.remove(session.getId());
-        System.out.println("WebSocket connection closed for user: " + userId);
+        SessionInfo sessionInfo = sessions.remove(session.getId());
+
+        if (sessionInfo != null) {
+            // Unregister from WebSocket service
+            webSocketChatService.unregisterSession(
+                    sessionInfo.userId,
+                    sessionInfo.conversationId,
+                    session);
+
+            log.info("WebSocket connection closed - User: {}, Reason: {}",
+                    sessionInfo.username, closeStatus.getReason());
+        }
     }
 
     @Override
@@ -77,53 +130,91 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         return false;
     }
 
-    private String getUserIdFromSession(WebSocketSession session) {
-        // Extract user ID from session attributes
-        // This would be set by the WebSocketAuthInterceptor
-        Object userId = session.getAttributes().get("userId");
-        return userId != null ? userId.toString() : null;
+    // Helper methods
+
+    private Long getUserIdFromSession(WebSocketSession session) {
+        Object userIdAttr = session.getAttributes().get("userId");
+        if (userIdAttr instanceof String) {
+            try {
+                return Long.parseLong((String) userIdAttr);
+            } catch (NumberFormatException e) {
+                log.error("Invalid userId format: {}", userIdAttr);
+            }
+        }
+        return userIdAttr != null ? Long.parseLong(userIdAttr.toString()) : null;
     }
 
-    private void processChatMessage(String userId, Map<String, Object> message) {
-        // TODO: Implement message processing
-        // 1. Save message to database
-        // 2. Broadcast to other conversation participants
-        // 3. Send push notifications if needed
-        System.out.println("Processing message from user " + userId + ": " + message);
+    private String getUsernameFromSession(WebSocketSession session) {
+        Object username = session.getAttributes().get("username");
+        return username != null ? username.toString() : "Unknown";
     }
 
-    private void sendErrorMessage(WebSocketSession session, String errorMessage) {
-        try {
-            Map<String, Object> error = Map.of(
-                "type", "ERROR",
-                "message", errorMessage
-            );
-            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(error)));
-        } catch (IOException e) {
-            System.err.println("Failed to send error message: " + e.getMessage());
+    private Long getConversationIdFromSession(WebSocketSession session) {
+        Object conversationIdAttr = session.getAttributes().get("conversationId");
+        if (conversationIdAttr instanceof String) {
+            try {
+                return Long.parseLong((String) conversationIdAttr);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return conversationIdAttr != null ? Long.parseLong(conversationIdAttr.toString()) : null;
+    }
+
+    private void handleTypingIndicator(SessionInfo sessionInfo, Map<String, Object> messageData) {
+        Boolean isTyping = (Boolean) messageData.get("isTyping");
+        Long conversationId = sessionInfo.conversationId;
+
+        if (conversationId != null && isTyping != null) {
+            webSocketChatService.notifyTyping(
+                    conversationId,
+                    sessionInfo.userId,
+                    sessionInfo.username,
+                    isTyping);
         }
     }
 
-    public void broadcastToConversation(Long conversationId, Map<String, Object> message) {
-        // TODO: Implement broadcasting to specific conversation participants
-        // This method will be called by the chat service when a new message is sent
+    private void handleReadReceipt(SessionInfo sessionInfo, Map<String, Object> messageData) {
+        Long conversationId = sessionInfo.conversationId;
+
+        if (conversationId != null) {
+            webSocketChatService.notifyMessagesRead(conversationId, sessionInfo.userId);
+        }
+    }
+
+    private void handlePing(WebSocketSession session) {
         try {
-            String messageJson = objectMapper.writeValueAsString(message);
-            TextMessage textMessage = new TextMessage(messageJson);
-            
-            // For now, broadcast to all connected sessions
-            // In production, filter by conversation participants
-            sessions.values().forEach(session -> {
-                try {
-                    if (session.isOpen()) {
-                        session.sendMessage(textMessage);
-                    }
-                } catch (IOException e) {
-                    System.err.println("Failed to broadcast message: " + e.getMessage());
-                }
-            });
-        } catch (Exception e) {
-            System.err.println("Failed to broadcast message: " + e.getMessage());
+            Map<String, Object> pong = Map.of(
+                    "type", "PONG",
+                    "timestamp", System.currentTimeMillis());
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(pong)));
+        } catch (IOException e) {
+            log.error("Error sending PONG", e);
+        }
+    }
+
+    private void sendConnectionConfirmation(WebSocketSession session, Long userId, String username) {
+        try {
+            Map<String, Object> confirmation = Map.of(
+                    "type", "CONNECTION_ESTABLISHED",
+                    "userId", userId,
+                    "username", username,
+                    "timestamp", System.currentTimeMillis());
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(confirmation)));
+        } catch (IOException e) {
+            log.error("Error sending connection confirmation", e);
+        }
+    }
+
+    private void sendError(WebSocketSession session, String errorMessage) {
+        try {
+            Map<String, Object> error = Map.of(
+                    "type", "ERROR",
+                    "message", errorMessage,
+                    "timestamp", System.currentTimeMillis());
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(error)));
+        } catch (IOException e) {
+            log.error("Failed to send error message", e);
         }
     }
 }

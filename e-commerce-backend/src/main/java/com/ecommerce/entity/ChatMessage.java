@@ -19,7 +19,7 @@ import com.ecommerce.constant.TableConstant;
 public class ChatMessage {
     @Id
     @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ
-    + TableConstant.CHAT_MESSAGES)
+            + TableConstant.CHAT_MESSAGES)
     @Column(name = "id")
     private Long id;
 
@@ -35,6 +35,21 @@ public class ChatMessage {
     @Column(name = "content")
     private String content;
 
+    @Column(name = "message_type")
+    private String messageType; // TEXT, IMAGE, FILE
+
+    @Column(name = "attachment_url")
+    private String attachmentUrl;
+
+    @Column(name = "attachment_name")
+    private String attachmentName;
+
+    @Column(name = "is_read")
+    private Boolean isRead;
+
+    @Column(name = "read_at")
+    private Date readAt;
+
     @Column(name = "created_at")
     private Date createdAt;
 
@@ -48,5 +63,14 @@ public class ChatMessage {
 
     public boolean isFromAdmin() {
         return "ADMIN".equals(senderType);
+    }
+
+    public void markAsRead() {
+        this.isRead = true;
+        this.readAt = new Date();
+    }
+
+    public boolean hasAttachment() {
+        return attachmentUrl != null && !attachmentUrl.isEmpty();
     }
 }

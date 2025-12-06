@@ -19,6 +19,7 @@ function ChatWidget() {
   const [conversation, setConversation] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [authError, setAuthError] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -41,7 +42,8 @@ function ChatWidget() {
     
     try {
       const data = await api.getConversationMessages(conversation.id);
-      const newMessages = data || [];
+      // Handle Page object: data.content or data array
+      const newMessages = data?.content || data || [];
       
       // So sánh với số lượng messages hiện tại để tránh re-render không cần thiết
       setMessages(currentMessages => {
@@ -67,7 +69,9 @@ function ChatWidget() {
   // Load conversation when chat opens - simplified to avoid circular dependency
   useEffect(() => {
     const initializeChat = async () => {
-      if (isOpen && user && !conversation && !isInitialized) {
+      // Check if user is authenticated with valid token
+      const token = localStorage.getItem('token');
+      if (isOpen && user && !conversation && !isInitialized && !authError && token) {
         setIsInitialized(true); // Set flag to prevent multiple calls
         
         try {
@@ -85,7 +89,9 @@ function ChatWidget() {
             // Load messages directly here
             try {
               const data = await api.getConversationMessages(activeConversation.id);
-              setMessages(data || []);
+              // Handle Page object: data.content or data array
+              const messagesArray = data?.content || data || [];
+              setMessages(messagesArray);
               markAsRead(activeConversation.id);
             } catch (error) {
               console.error('Error loading messages:', error);
@@ -96,7 +102,8 @@ function ChatWidget() {
             // Create new conversation
             console.log('Creating new conversation...');
             const newConversation = await api.createConversation({
-              subject: 'Hỗ trợ khách hàng'
+              subject: 'Hỗ trợ khách hàng',
+              initialMessage: 'Xin chào! Tôi cần hỗ trợ.'
             });
             console.log('Created new conversation:', newConversation);
             setConversation(newConversation);
@@ -104,7 +111,11 @@ function ChatWidget() {
           }
         } catch (error) {
           console.error('Error loading conversation:', error);
-          setIsInitialized(false); // Reset flag on error
+          // If authentication error, set flag to prevent retry
+          if (error.message === 'Authentication required') {
+            setAuthError(true);
+          }
+          setIsInitialized(false); // Reset flag on error to allow retry
         } finally {
           setLoading(false);
         }
@@ -112,7 +123,7 @@ function ChatWidget() {
     };
 
     initializeChat();
-  }, [isOpen, user, conversation, isInitialized, markAsRead]);
+  }, [isOpen, user, isInitialized, authError]); // Added authError to dependencies
 
   // Simulate real-time updates (replace with WebSocket)
   useEffect(() => {
@@ -140,7 +151,9 @@ function ChatWidget() {
         // Load messages directly here instead of calling loadMessages
         try {
           const data = await api.getConversationMessages(activeConversation.id);
-          setMessages(data || []);
+          // Handle Page object: data.content or data array
+          const messagesArray = data?.content || data || [];
+          setMessages(messagesArray);
           markAsRead(activeConversation.id);
         } catch (error) {
           console.error('Error loading messages:', error);
@@ -152,7 +165,8 @@ function ChatWidget() {
         // Create new conversation
         console.log('Creating new conversation...');
         const newConversation = await api.createConversation({
-          subject: 'Hỗ trợ khách hàng'
+          subject: 'Hỗ trợ khách hàng',
+          initialMessage: 'Xin chào! Tôi cần hỗ trợ.'
         });
         console.log('Created new conversation:', newConversation);
         setConversation(newConversation);
@@ -170,7 +184,9 @@ function ChatWidget() {
   const loadMessages = useCallback(async (conversationId) => {
     try {
       const data = await api.getConversationMessages(conversationId);
-      setMessages(data || []);
+      // Handle Page object: data.content or data array
+      const messagesArray = data?.content || data || [];
+      setMessages(messagesArray);
       
       // Mark messages as read
       markAsRead(conversationId);
@@ -208,7 +224,7 @@ function ChatWidget() {
       const messageData = {
         conversationId: currentConversation.id,
         content: newMessage.trim(),
-        messageType: 'text'
+        messageType: 'TEXT'
       };
 
       console.log('Sending message data:', messageData);
@@ -283,7 +299,7 @@ function ChatWidget() {
       const fileMessage = {
         conversationId: conversation.id,
         content: `Đã gửi file: ${file.name}`,
-        messageType: 'file',
+        messageType: 'FILE',
         attachmentUrl: result.url,
         attachmentName: file.name
       };
@@ -377,6 +393,7 @@ function ChatWidget() {
                 onClick={() => {
                   setIsOpen(false);
                   setIsInitialized(false); // Reset flag when closing
+                  setAuthError(false); // Reset auth error flag
                 }}
                 className="hover:bg-red-700 p-1 rounded"
               >

@@ -18,6 +18,13 @@ public class OrderDTO {
     private String orderNumber;
     private Long userId;
     private String guestEmail; // For guest checkout
+
+    // Nested objects for detailed information
+    private UserDTO user;
+    private AddressDTO shippingAddress;
+    private AddressDTO billingAddress;
+    private List<OrderItemDTO> orderItems;
+
     private List<OrderItemDTO> items;
     private BigDecimal subtotal;
     private BigDecimal tax;

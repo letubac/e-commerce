@@ -1,25 +1,26 @@
 package com.ecommerce.service.impl;
 
-import com.ecommerce.dto.ConversationDTO;
-import com.ecommerce.entity.Conversation;
-import com.ecommerce.entity.ConversationStatus;
-import com.ecommerce.entity.User;
-import com.ecommerce.exception.ResourceNotFoundException;
-import com.ecommerce.exception.BadRequestException;
-import com.ecommerce.repository.ConversationRepository;
-import com.ecommerce.repository.UserRepository;
-import com.ecommerce.service.ConversationService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.ecommerce.dto.ConversationDTO;
+import com.ecommerce.entity.Conversation;
+import com.ecommerce.entity.ConversationStatus;
+import com.ecommerce.entity.User;
+import com.ecommerce.exception.ResourceNotFoundException;
+import com.ecommerce.repository.ConversationRepository;
+import com.ecommerce.repository.UserRepository;
+import com.ecommerce.service.ConversationService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -40,11 +41,33 @@ public class ConversationServiceImpl implements ConversationService {
 		conversation.setUserId(userId);
 		conversation.setSubject(subject);
 		conversation.setStatus("OPEN");
+		conversation.setPriority("NORMAL");
+		conversation.setUnreadCount(0);
 		conversation.setCreatedAt(new Date());
 		conversation.setUpdatedAt(new Date());
 
-		Conversation savedConversation = conversationRepository.save(conversation);
+		Conversation savedConversation = conversationRepository.create(conversation);
 		log.info("Conversation created with id: {}", savedConversation.getId());
+
+		return convertToDTO(savedConversation);
+	}
+
+	@Override
+	public ConversationDTO createConversation(Long userId, String subject, String initialMessage) {
+		log.debug("Creating conversation for user {} with subject: {} and initial message", userId, subject);
+
+		// Create conversation
+		Conversation conversation = new Conversation();
+		conversation.setUserId(userId);
+		conversation.setSubject(subject);
+		conversation.setStatus("OPEN");
+		conversation.setPriority("NORMAL");
+		conversation.setUnreadCount(0);
+		conversation.setCreatedAt(new Date());
+		conversation.setUpdatedAt(new Date());
+
+		Conversation savedConversation = conversationRepository.create(conversation);
+		log.info("Conversation created with id: {} and initial message", savedConversation.getId());
 
 		return convertToDTO(savedConversation);
 	}
@@ -135,7 +158,7 @@ public class ConversationServiceImpl implements ConversationService {
 		conversation.setStatus("ASSIGNED");
 		conversation.setUpdatedAt(new Date());
 
-		Conversation updatedConversation = conversationRepository.save(conversation);
+		Conversation updatedConversation = conversationRepository.update(conversation);
 		log.info("Conversation {} assigned to admin {}", conversationId, adminId);
 
 		return convertToDTO(updatedConversation);
@@ -153,7 +176,7 @@ public class ConversationServiceImpl implements ConversationService {
 		conversation.setStatus(status);
 		conversation.setUpdatedAt(new Date());
 
-		Conversation updatedConversation = conversationRepository.save(conversation);
+		Conversation updatedConversation = conversationRepository.update(conversation);
 		log.info("Conversation {} status updated to: {}", conversationId, status);
 
 		return convertToDTO(updatedConversation);
@@ -237,6 +260,18 @@ public class ConversationServiceImpl implements ConversationService {
 		return conversationOpt.isPresent();
 	}
 
+	@Override
+	public boolean canUserAccessConversation(Long userId, Long conversationId, boolean isAdmin) {
+		log.debug("Checking if user {} can access conversation {}", userId, conversationId);
+
+		if (isAdmin) {
+			return true; // Admins can access all conversations
+		}
+
+		Optional<Conversation> conversationOpt = conversationRepository.findByIdAndUserId(conversationId, userId);
+		return conversationOpt.isPresent();
+	}
+
 	private ConversationDTO convertToDTO(Conversation conversation) {
 		ConversationDTO dto = new ConversationDTO();
 		dto.setId(conversation.getId());
@@ -244,6 +279,8 @@ public class ConversationServiceImpl implements ConversationService {
 		dto.setAdminId(conversation.getAdminId());
 		dto.setSubject(conversation.getSubject());
 		dto.setStatus(conversation.getStatus());
+		dto.setPriority(conversation.getPriority());
+		dto.setUnreadCount(conversation.getUnreadCount());
 		dto.setLastMessageAt(conversation.getLastMessageAt());
 		dto.setCreatedAt(conversation.getCreatedAt());
 		dto.setUpdatedAt(conversation.getUpdatedAt());

@@ -170,10 +170,22 @@ const api = {
   createPaymentIntent: (data) => api.request('/payments/create-intent', { method: 'POST', body: JSON.stringify(data) }),
 
   // Chat APIs
-  getUserConversations: () => api.request('/chat/conversations'),
-  getConversationMessages: (conversationId) => api.request(`/chat/conversations/${conversationId}/messages`),
-  sendMessage: (data) => api.request('/chat/messages', { method: 'POST', body: JSON.stringify(data) }),
-  createConversation: (data) => api.request('/chat/conversations', { method: 'POST', body: JSON.stringify(data) }),
+  getUserConversations: async () => {
+    const response = await api.request('/chat/conversations');
+    return response.data || response; // Handle ApiResponse wrapper
+  },
+  getConversationMessages: async (conversationId, page = 0, size = 50) => {
+    const response = await api.request(`/chat/conversations/${conversationId}/messages?page=${page}&size=${size}`);
+    return response.data || response; // Handle ApiResponse wrapper
+  },
+  sendMessage: async (data) => {
+    const response = await api.request('/chat/messages', { method: 'POST', body: JSON.stringify(data) });
+    return response.data || response; // Handle ApiResponse wrapper
+  },
+  createConversation: async (data) => {
+    const response = await api.request('/chat/conversations', { method: 'POST', body: JSON.stringify(data) });
+    return response.data || response; // Handle ApiResponse wrapper
+  },
   uploadChatFile: (formData) => api.request('/chat/upload', { 
     method: 'POST', 
     body: formData,

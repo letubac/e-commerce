@@ -1,7 +1,17 @@
 package com.ecommerce.service.impl;
 
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.ecommerce.dto.ChatMessageDTO;
-import com.ecommerce.dto.SendMessageRequest;
+import com.ecommerce.dto.request.SendMessageRequest;
 import com.ecommerce.entity.ChatMessage;
 import com.ecommerce.entity.Conversation;
 import com.ecommerce.entity.User;
@@ -10,17 +20,9 @@ import com.ecommerce.repository.ChatMessageRepository;
 import com.ecommerce.repository.ConversationRepository;
 import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.ChatMessageService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 @Slf4j
 @Service
@@ -31,6 +33,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 	private final ChatMessageRepository chatMessageRepository;
 	private final ConversationRepository conversationRepository;
 	private final UserRepository userRepository;
+	private final com.ecommerce.websocket.WebSocketChatService webSocketChatService;
 
 	@Override
 	public ChatMessageDTO sendMessage(Long senderId, SendMessageRequest request) {
@@ -55,18 +58,34 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 		chatMessage.setSenderId(senderId);
 		chatMessage.setSenderType(senderType);
 		chatMessage.setContent(request.getContent());
+		chatMessage.setMessageType(request.getMessageType() != null ? request.getMessageType() : "TEXT");
+		chatMessage.setAttachmentUrl(request.getAttachmentUrl());
+		chatMessage.setAttachmentName(request.getAttachmentName());
+		chatMessage.setIsRead(false);
 		chatMessage.setCreatedAt(new Date());
 		chatMessage.setUpdatedAt(new Date());
 
 		ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
 
-		// Update conversation last message time
-		conversation.setLastMessageAt(new Date());
+		// Update conversation last message time and unread count
+		conversation.updateLastMessage();
+		if ("USER".equals(senderType)) {
+			conversation.incrementUnreadCount();
+		}
 		conversation.setUpdatedAt(new Date());
 		conversationRepository.save(conversation);
 
 		log.info("Message sent successfully with id: {}", savedMessage.getId());
-		return convertToDTO(savedMessage, sender.getUsername());
+
+		// Convert to DTO and broadcast via WebSocket
+		ChatMessageDTO messageDTO = convertToDTO(savedMessage, sender.getUsername());
+		try {
+			webSocketChatService.broadcastMessage(request.getConversationId(), messageDTO);
+		} catch (Exception e) {
+			log.error("Error broadcasting message via WebSocket", e);
+		}
+
+		return messageDTO;
 	}
 
 	@Override
@@ -91,6 +110,22 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 		log.debug("Marking messages as read for conversation {} by user {}", conversationId, userId);
 
 		chatMessageRepository.markMessagesAsReadByConversationId(conversationId, userId);
+
+		// Reset unread count
+		StreamSupport.stream(conversationRepository.findAll().spliterator(), false)
+				.filter(c -> c.getId().equals(conversationId))
+				.findFirst()
+				.ifPresent(conversation -> {
+					conversation.resetUnreadCount();
+					conversationRepository.save(conversation);
+				});
+
+		// Notify via WebSocket
+		try {
+			webSocketChatService.notifyMessagesRead(conversationId, userId);
+		} catch (Exception e) {
+			log.error("Error notifying messages read via WebSocket", e);
+		}
 
 		log.info("Messages marked as read for conversation {} by user {}", conversationId, userId);
 	}
