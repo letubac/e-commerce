@@ -38,11 +38,11 @@ function OrderManagement() {
         ? await adminApi.getOrdersByStatus(filters.status, params)
         : await adminApi.getAllOrders(params);
       
-      const data = response.data || response;
-      setOrders(data.content || []);
+      // parseBusinessResponse đã trả về data
+      setOrders(response.content || []);
       setPagination({
-        totalPages: data.totalPages || 0,
-        totalElements: data.totalElements || 0
+        totalPages: response.totalPages || 0,
+        totalElements: response.totalElements || 0
       });
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -54,9 +54,8 @@ function OrderManagement() {
 
   const handleViewOrder = async (orderId) => {
     try {
-      const response = await adminApi.getOrderDetails(orderId);
-      const data = response.data || response;
-      setSelectedOrder(data);
+      const orderDetails = await adminApi.getOrderDetails(orderId);
+      setSelectedOrder(orderDetails);
       setShowModal(true);
     } catch (error) {
       console.error('Error fetching order details:', error);

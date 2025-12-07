@@ -13,10 +13,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ecommerce.constant.BrandConstant;
 import com.ecommerce.dto.BrandDTO;
 import com.ecommerce.entity.Brand;
-import com.ecommerce.exception.ResourceNotFoundException;
-import com.ecommerce.exception.BadRequestException;
+import com.ecommerce.exception.DetailException;
 import com.ecommerce.repository.BrandRepository;
 import com.ecommerce.service.BrandService;
 import lombok.RequiredArgsConstructor;
@@ -34,94 +34,142 @@ public class BrandServiceImpl implements BrandService {
 	private final BrandRepository brandRepository;
 
 	@Override
-	public List<BrandDTO> findActiveBrands() {
+	public List<BrandDTO> findActiveBrands() throws DetailException {
 		log.debug("Fetching active brands");
-		List<Brand> brands = brandRepository.findByActiveTrue();
-		return brands.stream().map(this::convertToDTO).collect(Collectors.toList());
-	}
-
-	@Override
-
-	public List<BrandDTO> findAll() {
-		log.debug("Fetching all brands");
-		List<Brand> brands = brandRepository.findAllData();
-		return brands.stream().map(this::convertToDTO).collect(Collectors.toList());
-	}
-
-	@Override
-
-	public BrandDTO findById(Long id) {
-		log.debug("Fetching brand with ID: {}", id);
-		Brand brand = brandRepository.findById(id);
-		if (brand == null) {
-			throw new ResourceNotFoundException("Không tìm thấy thương hiệu với ID: " + id);
+		try {
+			List<Brand> brands = brandRepository.findByActiveTrue();
+			return brands.stream().map(this::convertToDTO).collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Error fetching active brands", e);
+			throw new DetailException(BrandConstant.E204_BRAND_LIST_ERROR);
 		}
-		return convertToDTO(brand);
 	}
 
 	@Override
-	public BrandDTO save(BrandDTO brandDTO) {
+
+	public List<BrandDTO> findAll() throws DetailException {
+		log.debug("Fetching all brands");
+		try {
+			List<Brand> brands = brandRepository.findAllData();
+			return brands.stream().map(this::convertToDTO).collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Error fetching all brands", e);
+			throw new DetailException(BrandConstant.E204_BRAND_LIST_ERROR);
+		}
+	}
+
+	@Override
+
+	public BrandDTO findById(Long id) throws DetailException {
+		log.debug("Fetching brand with ID: {}", id);
+		try {
+			Brand brand = brandRepository.findById(id);
+			if (brand == null) {
+				throw new DetailException(BrandConstant.E200_BRAND_NOT_FOUND);
+			}
+			return convertToDTO(brand);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error fetching brand with ID: {}", id, e);
+			throw new DetailException(BrandConstant.E204_BRAND_LIST_ERROR);
+		}
+	}
+
+	@Override
+	public BrandDTO save(BrandDTO brandDTO) throws DetailException {
 		log.debug("Creating new brand: {}", brandDTO.getName());
 
-		// Check if brand name already exists
-		if (brandRepository.existsByNameIgnoreCase(brandDTO.getName())) {
-			throw new BadRequestException("Tên thương hiệu đã tồn tại");
+		try {
+			// Validate brand name
+			if (brandDTO.getName() == null || brandDTO.getName().trim().isEmpty()) {
+				throw new DetailException(BrandConstant.E206_BRAND_NAME_REQUIRED);
+			}
+
+			// Check if brand name already exists
+			if (brandRepository.existsByNameIgnoreCase(brandDTO.getName())) {
+				throw new DetailException(BrandConstant.E205_BRAND_NAME_EXISTS);
+			}
+
+			Brand brand = convertToEntity(brandDTO);
+			brand.setCreatedAt(new Date());
+			brand.setUpdatedAt(new Date());
+			brand.setActive(true);
+
+			Brand savedBrand = brandRepository.save(brand);
+			log.info("Created brand with ID: {}", savedBrand.getId());
+
+			return convertToDTO(savedBrand);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error creating brand", e);
+			throw new DetailException(BrandConstant.E201_BRAND_CREATE_ERROR);
 		}
-
-		Brand brand = convertToEntity(brandDTO);
-		brand.setCreatedAt(new Date());
-		brand.setUpdatedAt(new Date());
-		brand.setActive(true);
-
-		Brand savedBrand = brandRepository.save(brand);
-		log.info("Created brand with ID: {}", savedBrand.getId());
-
-		return convertToDTO(savedBrand);
 	}
 
 	@Override
-	public BrandDTO update(BrandDTO brandDTO) {
+	public BrandDTO update(BrandDTO brandDTO) throws DetailException {
 		log.debug("Updating brand with ID: {}", brandDTO.getId());
 
-		Brand existingBrand = brandRepository.findById(brandDTO.getId());
-		if (existingBrand == null) {
-			throw new ResourceNotFoundException("Không tìm thấy thương hiệu với ID: " + brandDTO.getId());
+		try {
+			// Validate brand name
+			if (brandDTO.getName() == null || brandDTO.getName().trim().isEmpty()) {
+				throw new DetailException(BrandConstant.E206_BRAND_NAME_REQUIRED);
+			}
+
+			Brand existingBrand = brandRepository.findById(brandDTO.getId());
+			if (existingBrand == null) {
+				throw new DetailException(BrandConstant.E200_BRAND_NOT_FOUND);
+			}
+
+			// Check if new name conflicts with other brands
+			if (!existingBrand.getName().equalsIgnoreCase(brandDTO.getName())
+					&& brandRepository.existsByNameIgnoreCase(brandDTO.getName())) {
+				throw new DetailException(BrandConstant.E205_BRAND_NAME_EXISTS);
+			}
+
+			existingBrand.setName(brandDTO.getName());
+			existingBrand.setDescription(brandDTO.getDescription());
+			existingBrand.setImageUrl(brandDTO.getImageUrl());
+			existingBrand.setWebsiteUrl(brandDTO.getWebsiteUrl());
+			existingBrand.setUpdatedAt(new Date());
+
+			Brand updatedBrand = brandRepository.save(existingBrand);
+			log.info("Updated brand with ID: {}", updatedBrand.getId());
+
+			return convertToDTO(updatedBrand);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error updating brand with ID: {}", brandDTO.getId(), e);
+			throw new DetailException(BrandConstant.E202_BRAND_UPDATE_ERROR);
 		}
-
-		// Check if new name conflicts with other brands
-		if (!existingBrand.getName().equalsIgnoreCase(brandDTO.getName())
-				&& brandRepository.existsByNameIgnoreCase(brandDTO.getName())) {
-			throw new BadRequestException("Tên thương hiệu đã tồn tại");
-		}
-
-		existingBrand.setName(brandDTO.getName());
-		existingBrand.setDescription(brandDTO.getDescription());
-		existingBrand.setImageUrl(brandDTO.getImageUrl());
-		existingBrand.setWebsiteUrl(brandDTO.getWebsiteUrl());
-		existingBrand.setUpdatedAt(new Date());
-
-		Brand updatedBrand = brandRepository.save(existingBrand);
-		log.info("Updated brand with ID: {}", updatedBrand.getId());
-
-		return convertToDTO(updatedBrand);
 	}
 
 	@Override
-	public void deleteById(Long id) {
+	public void deleteById(Long id) throws DetailException {
 		log.debug("Deleting brand with ID: {}", id);
 
-		Brand brand = brandRepository.findById(id);
-		if (brand == null) {
-			throw new ResourceNotFoundException("Không tìm thấy thương hiệu với ID: " + id);
+		try {
+			Brand brand = brandRepository.findById(id);
+			if (brand == null) {
+				throw new DetailException(BrandConstant.E200_BRAND_NOT_FOUND);
+			}
+
+			// Check if brand has associated products
+			// if (brand.getProducts() != null && !brand.getProducts().isEmpty()) {
+			// throw new DetailException(BrandConstant.E208_BRAND_HAS_PRODUCTS);
+			// }
+
+			brandRepository.delete(brand);
+			log.info("Deleted brand with ID: {}", id);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error deleting brand with ID: {}", id, e);
+			throw new DetailException(BrandConstant.E203_BRAND_DELETE_ERROR);
 		}
-
-		// Check if brand has associated products
-		// if (brand.getProducts() != null && !brand.getProducts().isEmpty()) {
-		// throw new IllegalStateException("Không thể xóa thương hiệu có sản phẩm");
-		// }
-
-		brandRepository.delete(brand);
-		log.info("Deleted brand with ID: {}", id);
 	}
 
 	@Override
@@ -131,72 +179,103 @@ public class BrandServiceImpl implements BrandService {
 	}
 
 	@Override
-	public BrandDTO toggleActiveStatus(Long id) {
+	public BrandDTO toggleActiveStatus(Long id) throws DetailException {
 		log.debug("Toggling active status for brand ID: {}", id);
 
-		Brand brand = brandRepository.findById(id);
-		if (brand == null) {
-			throw new ResourceNotFoundException("Không tìm thấy thương hiệu với ID: " + id);
+		try {
+			Brand brand = brandRepository.findById(id);
+			if (brand == null) {
+				throw new DetailException(BrandConstant.E200_BRAND_NOT_FOUND);
+			}
+
+			brand.setActive(!brand.isActive());
+			brand.setUpdatedAt(new Date());
+
+			Brand updatedBrand = brandRepository.save(brand);
+			log.info("Toggled active status for brand ID: {} to {}", id, updatedBrand.isActive());
+
+			return convertToDTO(updatedBrand);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error toggling brand status for ID: {}", id, e);
+			throw new DetailException(BrandConstant.E210_BRAND_TOGGLE_STATUS_ERROR);
 		}
-
-		brand.setActive(!brand.isActive());
-		brand.setUpdatedAt(new Date());
-
-		Brand updatedBrand = brandRepository.save(brand);
-		log.info("Toggled active status for brand ID: {} to {}", id, updatedBrand.isActive());
-
-		return convertToDTO(updatedBrand);
 	}
 
 	@Override
 
-	public Page<BrandDTO> search(String keyword, Pageable pageable) {
+	public Page<BrandDTO> search(String keyword, Pageable pageable) throws DetailException {
 		log.debug("Searching brands with keyword: {}", keyword);
-		Page<Brand> brands = brandRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(keyword,
-				pageable);
-		return brands.map(this::convertToDTO);
+		try {
+			Page<Brand> brands = brandRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+					keyword,
+					pageable);
+			return brands.map(this::convertToDTO);
+		} catch (Exception e) {
+			log.error("Error searching brands with keyword: {}", keyword, e);
+			throw new DetailException(BrandConstant.E220_BRAND_SEARCH_ERROR);
+		}
 	}
 
 	@Override
 
-	public Page<BrandDTO> findAll(Pageable pageable) {
+	public Page<BrandDTO> findAll(Pageable pageable) throws DetailException {
 		log.debug("Fetching brands with pagination");
-		Page<Brand> brands = brandRepository.findAll(pageable);
-		return brands.map(this::convertToDTO);
+		try {
+			Page<Brand> brands = brandRepository.findAll(pageable);
+			return brands.map(this::convertToDTO);
+		} catch (Exception e) {
+			log.error("Error fetching brands with pagination", e);
+			throw new DetailException(BrandConstant.E204_BRAND_LIST_ERROR);
+		}
 	}
 
 	@Override
 
-	public Map<String, Object> getBrandStatistics(Long brandId) {
+	public Map<String, Object> getBrandStatistics(Long brandId) throws DetailException {
 		log.debug("Getting statistics for brand ID: {}", brandId);
 
-		Brand brand = brandRepository.findById(brandId);
-		if (brand == null) {
-			throw new ResourceNotFoundException("Không tìm thấy thương hiệu với ID: " + brandId);
+		try {
+			Brand brand = brandRepository.findById(brandId);
+			if (brand == null) {
+				throw new DetailException(BrandConstant.E200_BRAND_NOT_FOUND);
+			}
+
+			// int productCount = brand.getProducts() != null ? brand.getProducts().size() :
+			// 0;
+			int productCount = 1;
+
+			// Mock statistics - in real implementation, calculate from actual data
+			return Map.of("brandId", brandId, "brandName", brand.getName(), "totalProducts", productCount,
+					"activeProducts",
+					(int) (productCount * 0.9), // Mock: 90% active
+					"totalSales", productCount * 1000000, // Mock sales data
+					"averageRating", 4.2 + (brandId % 10) * 0.1 // Mock rating
+			);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error getting statistics for brand ID: {}", brandId, e);
+			throw new DetailException(BrandConstant.E221_BRAND_STATISTICS_ERROR);
 		}
-
-		// int productCount = brand.getProducts() != null ? brand.getProducts().size() :
-		// 0;
-		int productCount = 1;
-
-		// Mock statistics - in real implementation, calculate from actual data
-		return Map.of("brandId", brandId, "brandName", brand.getName(), "totalProducts", productCount, "activeProducts",
-				(int) (productCount * 0.9), // Mock: 90% active
-				"totalSales", productCount * 1000000, // Mock sales data
-				"averageRating", 4.2 + (brandId % 10) * 0.1 // Mock rating
-		);
 	}
 
 	@Override
 
-	public List<BrandDTO> getPopularBrands(int limit) {
+	public List<BrandDTO> getPopularBrands(int limit) throws DetailException {
 		log.debug("Fetching {} popular brands", limit);
 
-		// For now, return active brands ordered by name
-		// In real implementation, this would consider sales, views, etc.
-		List<Brand> brands = brandRepository.findByActiveTrue();
+		try {
+			// For now, return active brands ordered by name
+			// In real implementation, this would consider sales, views, etc.
+			List<Brand> brands = brandRepository.findByActiveTrue();
 
-		return brands.stream().limit(limit).map(this::convertToDTO).collect(Collectors.toList());
+			return brands.stream().limit(limit).map(this::convertToDTO).collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Error fetching popular brands", e);
+			throw new DetailException(BrandConstant.E204_BRAND_LIST_ERROR);
+		}
 	}
 
 	/**

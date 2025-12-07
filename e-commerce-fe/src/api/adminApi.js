@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './api';
+import { parseBusinessResponse } from '../utils/responseHandler';
 
 const adminApi = {
   baseUrl: API_BASE_URL,
@@ -14,12 +15,17 @@ const adminApi = {
       },
     });
 
+    // Parse JSON response
+    const responseData = await response.json();
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Request failed');
+      // Extract error message from BusinessApiResponse structure
+      const errorMessage = responseData.description || responseData.message || 'Request failed';
+      throw new Error(errorMessage);
     }
 
-    return response.json();
+    // Parse BusinessApiResponse and return data
+    return parseBusinessResponse(responseData);
   },
 
   // Dashboard APIs
@@ -56,6 +62,10 @@ const adminApi = {
   updateProduct: (id, data) =>
     adminApi.request(`/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteProduct: (id) => adminApi.request(`/admin/products/${id}`, { method: 'DELETE' }),
+  toggleProductStatus: (id) =>
+    adminApi.request(`/admin/products/${id}/toggle-status`, { method: 'PUT' }),
+  updateProductStock: (id, quantity) =>
+    adminApi.request(`/admin/products/${id}/stock?quantity=${quantity}`, { method: 'PUT' }),
   
   // User Management APIs
   getUsers: (params = {}) => {
@@ -126,6 +136,53 @@ const adminApi = {
   getChatSettings: () => adminApi.request('/chat/settings'),
   updateChatSettings: (data) =>
     adminApi.request('/chat/settings', { method: 'PUT', body: JSON.stringify(data) }),
+
+  // Payment Management APIs (Admin)
+  getPaymentStatistics: () => adminApi.request('/payment/statistics'),
+  createRefund: (data) =>
+    adminApi.request('/payment/refund', { method: 'POST', body: JSON.stringify(data) }),
+  getRefundStatus: (refundId) => adminApi.request(`/payment/refund/${refundId}`),
+
+  // Review Management APIs (Admin)
+  getAllReviews: (params = {}) => {
+    const queryParams = new URLSearchParams(params);
+    return adminApi.request(`/admin/reviews?${queryParams}`);
+  },
+  deleteReview: (reviewId) => adminApi.request(`/admin/reviews/${reviewId}`, { method: 'DELETE' }),
+
+  // Flash Sale Management APIs (Admin)
+  getFlashSales: (params = {}) => {
+    const queryParams = new URLSearchParams(params);
+    return adminApi.request(`/admin/flash-sales?${queryParams}`);
+  },
+  getFlashSaleById: (id) => adminApi.request(`/admin/flash-sales/${id}`),
+  createFlashSale: (data) =>
+    adminApi.request('/admin/flash-sales', { method: 'POST', body: JSON.stringify(data) }),
+  updateFlashSale: (id, data) =>
+    adminApi.request(`/admin/flash-sales/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteFlashSale: (id) => adminApi.request(`/admin/flash-sales/${id}`, { method: 'DELETE' }),
+  activateFlashSale: (id) =>
+    adminApi.request(`/admin/flash-sales/${id}/activate`, { method: 'PUT' }),
+  deactivateFlashSale: (id) =>
+    adminApi.request(`/admin/flash-sales/${id}/deactivate`, { method: 'PUT' }),
+  getFlashSaleProducts: (flashSaleId, params = {}) => {
+    const queryParams = new URLSearchParams(params);
+    return adminApi.request(`/admin/flash-sales/${flashSaleId}/products?${queryParams}`);
+  },
+  addFlashSaleProduct: (flashSaleId, data) =>
+    adminApi.request(`/admin/flash-sales/${flashSaleId}/products`, { 
+      method: 'POST', 
+      body: JSON.stringify(data) 
+    }),
+  updateFlashSaleProduct: (flashSaleId, productId, data) =>
+    adminApi.request(`/admin/flash-sales/${flashSaleId}/products/${productId}`, { 
+      method: 'PUT', 
+      body: JSON.stringify(data) 
+    }),
+  removeFlashSaleProduct: (flashSaleId, productId) =>
+    adminApi.request(`/admin/flash-sales/${flashSaleId}/products/${productId}`, { method: 'DELETE' }),
+  getFlashSaleStatistics: (id) => adminApi.request(`/admin/flash-sales/${id}/statistics`),
+
 };
 
 export default adminApi;

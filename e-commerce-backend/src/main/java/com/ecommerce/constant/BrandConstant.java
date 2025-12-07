@@ -26,17 +26,17 @@ public final class BrandConstant {
     public static final String E207_BRAND_INVALID_DATA = "207_BRAND_INVALID_DATA";
     public static final String E208_BRAND_HAS_PRODUCTS = "208_BRAND_HAS_PRODUCTS";
     public static final String E209_BRAND_SLUG_EXISTS = "209_BRAND_SLUG_EXISTS";
-    
+
     // Brand Status Errors (210-219)
     public static final String E210_BRAND_TOGGLE_STATUS_ERROR = "210_BRAND_TOGGLE_STATUS_ERROR";
     public static final String E211_BRAND_ALREADY_ACTIVE = "211_BRAND_ALREADY_ACTIVE";
     public static final String E212_BRAND_ALREADY_INACTIVE = "212_BRAND_ALREADY_INACTIVE";
-    
+
     // Brand Search/Statistics Errors (220-229)
     public static final String E220_BRAND_SEARCH_ERROR = "220_BRAND_SEARCH_ERROR";
     public static final String E221_BRAND_STATISTICS_ERROR = "221_BRAND_STATISTICS_ERROR";
     public static final String E222_BRAND_PRODUCTS_ERROR = "222_BRAND_PRODUCTS_ERROR";
-    
+
     // Brand Image/URL Errors (230-239)
     public static final String E230_BRAND_IMAGE_UPLOAD_ERROR = "230_BRAND_IMAGE_UPLOAD_ERROR";
     public static final String E231_BRAND_IMAGE_DELETE_ERROR = "231_BRAND_IMAGE_DELETE_ERROR";
@@ -54,12 +54,12 @@ public final class BrandConstant {
     public static final String S202_BRAND_DELETED = "S202_BRAND_DELETED";
     public static final String S203_BRAND_FOUND = "S203_BRAND_FOUND";
     public static final String S204_BRAND_LIST_SUCCESS = "S204_BRAND_LIST_SUCCESS";
-    
+
     // Brand Status Success (S210-S214)
     public static final String S210_BRAND_STATUS_TOGGLED = "S210_BRAND_STATUS_TOGGLED";
     public static final String S211_BRAND_ACTIVATED = "S211_BRAND_ACTIVATED";
     public static final String S212_BRAND_DEACTIVATED = "S212_BRAND_DEACTIVATED";
-    
+
     // Brand Search/Statistics Success (S215-S219)
     public static final String S215_BRAND_SEARCH_SUCCESS = "S215_BRAND_SEARCH_SUCCESS";
     public static final String S216_BRAND_STATISTICS_SUCCESS = "S216_BRAND_STATISTICS_SUCCESS";

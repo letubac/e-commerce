@@ -19,94 +19,145 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.dto.CreateOrderRequest;
 import com.ecommerce.dto.OrderDTO;
+import com.ecommerce.exception.ErrorHandler;
+import com.ecommerce.exception.SuccessHandler;
 import com.ecommerce.security.UserPrincipal;
 import com.ecommerce.service.OrderService;
+import com.ecommerce.webapp.BusinessApiResponse;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/v1/orders")
-
+@Slf4j
 public class OrderController {
 
     @Autowired
     private OrderService orderService;
 
+    @Autowired
+    private ErrorHandler errorHandler;
+
+    @Autowired
+    private SuccessHandler successHandler;
+
     @PostMapping
-    public ResponseEntity<OrderDTO> createOrder(
+    public ResponseEntity<BusinessApiResponse> createOrder(
             @Valid @RequestBody CreateOrderRequest request,
             Authentication authentication) {
-    	try {
+        long start = System.currentTimeMillis();
+        try {
             Long userId = getUserIdFromAuthentication(authentication);
             OrderDTO order = orderService.createOrder(userId, request);
-            return ResponseEntity.ok(order);
-    	} catch (Exception ex) {
-    		throw ex;
-    	}
+            return ResponseEntity.ok(successHandler.handlerSuccess(order, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
     }
 
     @GetMapping
-    public ResponseEntity<List<OrderDTO>> getUserOrders(Authentication authentication) {
-        Long userId = getUserIdFromAuthentication(authentication);
-        List<OrderDTO> orders = orderService.getOrdersByUserId(userId);
-        return ResponseEntity.ok(orders);
+    public ResponseEntity<BusinessApiResponse> getUserOrders(Authentication authentication) {
+        long start = System.currentTimeMillis();
+        try {
+            Long userId = getUserIdFromAuthentication(authentication);
+            List<OrderDTO> orders = orderService.getOrdersByUserId(userId);
+            return ResponseEntity.ok(successHandler.handlerSuccess(orders, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<OrderDTO> getOrder(
+    public ResponseEntity<BusinessApiResponse> getOrder(
             @PathVariable Long orderId,
             Authentication authentication) {
-        Long userId = getUserIdFromAuthentication(authentication);
-        OrderDTO order = orderService.getOrderByIdAndUserId(orderId, userId);
-        return ResponseEntity.ok(order);
+        long start = System.currentTimeMillis();
+        try {
+            Long userId = getUserIdFromAuthentication(authentication);
+            OrderDTO order = orderService.getOrderByIdAndUserId(orderId, userId);
+            return ResponseEntity.ok(successHandler.handlerSuccess(order, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
     }
 
     @PutMapping("/{orderId}/cancel")
-    public ResponseEntity<Void> cancelOrder(
+    public ResponseEntity<BusinessApiResponse> cancelOrder(
             @PathVariable Long orderId,
             Authentication authentication) {
-        Long userId = getUserIdFromAuthentication(authentication);
-        orderService.cancelOrder(orderId, userId);
-        return ResponseEntity.ok().build();
+        long start = System.currentTimeMillis();
+        try {
+            Long userId = getUserIdFromAuthentication(authentication);
+            orderService.cancelOrder(orderId, userId);
+            return ResponseEntity.ok(successHandler.handlerSuccess(null, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
     }
 
     // Admin endpoints
     @GetMapping("/admin/all")
-    public ResponseEntity<Page<OrderDTO>> getAllOrders(Pageable pageable) {
-        Page<OrderDTO> orders = orderService.getAllOrders(pageable);
-        return ResponseEntity.ok(orders);
+    public ResponseEntity<BusinessApiResponse> getAllOrders(Pageable pageable) {
+        long start = System.currentTimeMillis();
+        try {
+            Page<OrderDTO> orders = orderService.getAllOrders(pageable);
+            return ResponseEntity.ok(successHandler.handlerSuccess(orders, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
     }
 
     @GetMapping("/admin/{id}")
-    public ResponseEntity<OrderDTO> getOrderById(
+    public ResponseEntity<BusinessApiResponse> getOrderById(
             @PathVariable Long id) {
-        OrderDTO order = orderService.getOrderById(id);
-        return ResponseEntity.ok(order);
+        long start = System.currentTimeMillis();
+        try {
+            OrderDTO order = orderService.getOrderById(id);
+            return ResponseEntity.ok(successHandler.handlerSuccess(order, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
     }
 
     @GetMapping("/admin/status/{status}")
-    public ResponseEntity<Page<OrderDTO>> getOrdersByStatus(
+    public ResponseEntity<BusinessApiResponse> getOrdersByStatus(
             @PathVariable String status,
             Pageable pageable) {
-        Page<OrderDTO> orders = orderService.getOrdersByStatus(status, pageable);
-        return ResponseEntity.ok(orders);
+        long start = System.currentTimeMillis();
+        try {
+            Page<OrderDTO> orders = orderService.getOrdersByStatus(status, pageable);
+            return ResponseEntity.ok(successHandler.handlerSuccess(orders, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
     }
 
     @PutMapping("/admin/{orderId}/status")
-    public ResponseEntity<OrderDTO> updateOrderStatus(
+    public ResponseEntity<BusinessApiResponse> updateOrderStatus(
             @PathVariable Long orderId,
             @RequestParam String status) {
-        OrderDTO order = orderService.updateOrderStatus(orderId, status);
-        return ResponseEntity.ok(order);
+        long start = System.currentTimeMillis();
+        try {
+            OrderDTO order = orderService.updateOrderStatus(orderId, status);
+            return ResponseEntity.ok(successHandler.handlerSuccess(order, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
     }
 
     @PutMapping("/admin/{orderId}/tracking")
-    public ResponseEntity<OrderDTO> updateTrackingNumber(
+    public ResponseEntity<BusinessApiResponse> updateTrackingNumber(
             @PathVariable Long orderId,
             @RequestBody Map<String, String> request) {
-        String trackingNumber = request.get("trackingNumber");
-        OrderDTO order = orderService.updateTrackingNumber(orderId, trackingNumber);
-        return ResponseEntity.ok(order);
+        long start = System.currentTimeMillis();
+        try {
+            String trackingNumber = request.get("trackingNumber");
+            OrderDTO order = orderService.updateTrackingNumber(orderId, trackingNumber);
+            return ResponseEntity.ok(successHandler.handlerSuccess(order, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
     }
 
     private Long getUserIdFromAuthentication(Authentication authentication) {

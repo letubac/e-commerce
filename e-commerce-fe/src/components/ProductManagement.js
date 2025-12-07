@@ -61,10 +61,9 @@ function ProductManagement() {
       const response = await api.getAllProductsAdmin(params);
       console.log('📦 Products response:', response); // Debug log
       
-      // Handle response structure: response.data.content or response.content
-      const data = response.data || response;
-      setProducts(data.content || []);
-      setTotalPages(data.totalPages || 0);
+      // parseBusinessResponse đã trả về data, kiểm tra nếu là pagination object
+      setProducts(response.content || (Array.isArray(response) ? response : []));
+      setTotalPages(response.totalPages || 0);
     } catch (error) {
       console.error('Error loading products:', error);
       alert('Có lỗi xảy ra khi tải danh sách sản phẩm!');
@@ -75,19 +74,17 @@ function ProductManagement() {
 
   const loadFilters = async () => {
     try {
-      const [categoriesResponse, brandsResponse] = await Promise.all([
+      // API đã parse BusinessApiResponse và trả về data trực tiếp
+      const [categories, brands] = await Promise.all([
         api.getAllCategoriesAdmin(),
         api.getAllBrandsAdmin()
       ]);
-      console.log('📂 Categories response:', categoriesResponse); // Debug
-      console.log('🏷️ Brands response:', brandsResponse); // Debug
+      console.log('📂 Categories data:', categories); // Debug
+      console.log('🏷️ Brands data:', brands); // Debug
       
-      // Handle response structure
-      const categoriesData = categoriesResponse.data || categoriesResponse;
-      const brandsData = brandsResponse.data || brandsResponse;
-      
-      setCategories(categoriesData.content || categoriesData || []);
-      setBrands(brandsData.content || brandsData || []);
+      // Data đã được parse, chỉ cần xử lý content nếu có pagination
+      setCategories(Array.isArray(categories) ? categories : (categories?.content || []));
+      setBrands(Array.isArray(brands) ? brands : (brands?.content || []));
     } catch (error) {
       console.error('Error loading filters:', error);
       setCategories([]);

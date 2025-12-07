@@ -2,30 +2,31 @@ package com.ecommerce.service;
 
 import com.ecommerce.dto.CreateOrderRequest;
 import com.ecommerce.dto.OrderDTO;
+import com.ecommerce.exception.DetailException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface OrderService {
-    OrderDTO createOrder(Long userId, CreateOrderRequest request);
+    OrderDTO createOrder(Long userId, CreateOrderRequest request) throws DetailException;
 
-    OrderDTO getOrderById(Long orderId);
+    OrderDTO getOrderById(Long orderId) throws DetailException;
 
-    OrderDTO getOrderByIdAndUserId(Long orderId, Long userId);
+    OrderDTO getOrderByIdAndUserId(Long orderId, Long userId) throws DetailException;
 
-    List<OrderDTO> getOrdersByUserId(Long userId);
+    List<OrderDTO> getOrdersByUserId(Long userId) throws DetailException;
 
-    Page<OrderDTO> getOrdersByUserId(Long userId, Pageable pageable);
+    Page<OrderDTO> getOrdersByUserId(Long userId, Pageable pageable) throws DetailException;
 
-    Page<OrderDTO> getAllOrders(Pageable pageable);
+    Page<OrderDTO> getAllOrders(Pageable pageable) throws DetailException;
 
-    Page<OrderDTO> getOrdersByStatus(String status, Pageable pageable);
+    Page<OrderDTO> getOrdersByStatus(String status, Pageable pageable) throws DetailException;
 
-    OrderDTO updateOrderStatus(Long orderId, String status);
+    OrderDTO updateOrderStatus(Long orderId, String status) throws DetailException;
 
-    OrderDTO updateTrackingNumber(Long orderId, String trackingNumber);
+    OrderDTO updateTrackingNumber(Long orderId, String trackingNumber) throws DetailException;
 
-    void cancelOrder(Long orderId, Long userId);
+    void cancelOrder(Long orderId, Long userId) throws DetailException;
 
-    String generateOrderNumber();
+    String generateOrderNumber() throws DetailException;
 }

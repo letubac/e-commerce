@@ -1,10 +1,7 @@
 package com.ecommerce.controller;
 
-import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,9 +14,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ecommerce.dto.ApiResponse;
 import com.ecommerce.dto.UserDTO;
+import com.ecommerce.exception.ErrorHandler;
+import com.ecommerce.exception.SuccessHandler;
 import com.ecommerce.service.UserService;
+import com.ecommerce.webapp.BusinessApiResponse;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * REST controller for managing users (Admin only).
@@ -27,32 +28,35 @@ import com.ecommerce.service.UserService;
  */
 @RestController
 @RequestMapping("/api/v1/admin")
+@Slf4j
 public class UserController {
-
-    private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private ErrorHandler errorHandler;
+
+    @Autowired
+    private SuccessHandler successHandler;
 
     /**
      * Get all users (Admin only)
      */
     @GetMapping("/users")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> getAllUsers(
+    public ResponseEntity<BusinessApiResponse> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDirection,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Boolean active,
-            @RequestParam(required = false) String role) {
+            @RequestParam(required = false) String keyword) {
 
+        long start = System.currentTimeMillis();
         try {
             Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
             PageRequest pageRequest = PageRequest.of(page, size, sort);
 
-            // Get users from service
             Page<UserDTO> users;
             if (keyword != null && !keyword.trim().isEmpty()) {
                 users = userService.searchUsers(keyword, pageRequest);
@@ -60,29 +64,9 @@ public class UserController {
                 users = userService.getAllUsersWithPagination(pageRequest);
             }
 
-            // Filter by role if provided
-            if (role != null && !role.trim().isEmpty()) {
-                List<UserDTO> filteredContent = users.getContent().stream()
-                        .filter(user -> user.getRole() != null && user.getRole().equalsIgnoreCase(role))
-                        .collect(java.util.stream.Collectors.toList());
-                users = new org.springframework.data.domain.PageImpl<>(filteredContent, pageRequest,
-                        filteredContent.size());
-            }
-
-            // Filter by active status if provided
-            if (active != null) {
-                List<UserDTO> filteredContent = users.getContent().stream()
-                        .filter(user -> user.isActive() == active)
-                        .collect(java.util.stream.Collectors.toList());
-                users = new org.springframework.data.domain.PageImpl<>(filteredContent, pageRequest,
-                        filteredContent.size());
-            }
-
-            return ResponseEntity.ok(new ApiResponse(true, "Lấy danh sách người dùng thành công", users));
+            return ResponseEntity.ok(successHandler.handlerSuccess(users, start));
         } catch (Exception e) {
-            log.error("Lỗi khi lấy danh sách người dùng", e);
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse(false, "Lỗi hệ thống khi lấy danh sách người dùng"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -91,19 +75,13 @@ public class UserController {
      */
     @GetMapping("/users/{id}")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> getUserById(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> getUserById(@PathVariable Long id) {
+        long start = System.currentTimeMillis();
         try {
-            // Get user from service
             UserDTO user = userService.getUserByIdOrThrow(id);
-
-            return ResponseEntity.ok(new ApiResponse(true, "Lấy thông tin người dùng thành công", user));
-        } catch (RuntimeException e) {
-            log.warn("Không tìm thấy người dùng ID: {}", id);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(successHandler.handlerSuccess(user, start));
         } catch (Exception e) {
-            log.error("Lỗi khi lấy người dùng ID: {}", id, e);
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse(false, "Lỗi hệ thống khi lấy thông tin người dùng"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -112,19 +90,14 @@ public class UserController {
      */
     @PutMapping("/users/{id}/lock")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> lockUser(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> lockUser(@PathVariable Long id) {
+        long start = System.currentTimeMillis();
         try {
-            // Lock user through service
             userService.lockUser(id);
-            log.info("Admin đã khóa tài khoản người dùng ID: {}", id);
-            return ResponseEntity.ok(new ApiResponse(true, "Khóa tài khoản người dùng thành công"));
-        } catch (RuntimeException e) {
-            log.warn("Không tìm thấy người dùng ID: {}", id);
-            return ResponseEntity.notFound().build();
+            log.info("Admin locked user account ID: {}", id);
+            return ResponseEntity.ok(successHandler.handlerSuccess(null, start));
         } catch (Exception e) {
-            log.error("Lỗi khi khóa tài khoản người dùng ID: {}", id, e);
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse(false, "Lỗi hệ thống khi khóa tài khoản"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -133,19 +106,14 @@ public class UserController {
      */
     @PutMapping("/users/{id}/unlock")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> unlockUser(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> unlockUser(@PathVariable Long id) {
+        long start = System.currentTimeMillis();
         try {
-            // Unlock user through service
             userService.unlockUser(id);
-            log.info("Admin đã mở khóa tài khoản người dùng ID: {}", id);
-            return ResponseEntity.ok(new ApiResponse(true, "Mở khóa tài khoản người dùng thành công"));
-        } catch (RuntimeException e) {
-            log.warn("Không tìm thấy người dùng ID: {}", id);
-            return ResponseEntity.notFound().build();
+            log.info("Admin unlocked user account ID: {}", id);
+            return ResponseEntity.ok(successHandler.handlerSuccess(null, start));
         } catch (Exception e) {
-            log.error("Lỗi khi mở khóa tài khoản người dùng ID: {}", id, e);
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse(false, "Lỗi hệ thống khi mở khóa tài khoản"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -154,15 +122,13 @@ public class UserController {
      */
     @GetMapping("/users/statistics")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> getUserStatistics() {
+    public ResponseEntity<BusinessApiResponse> getUserStatistics() {
+        long start = System.currentTimeMillis();
         try {
             Map<String, Object> statistics = userService.getUserStatistics();
-
-            return ResponseEntity.ok(new ApiResponse(true, "Lấy thống kê người dùng thành công", statistics));
+            return ResponseEntity.ok(successHandler.handlerSuccess(statistics, start));
         } catch (Exception e) {
-            log.error("Lỗi khi lấy thống kê người dùng", e);
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse(false, "Lỗi hệ thống khi lấy thống kê người dùng"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 }

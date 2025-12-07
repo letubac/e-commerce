@@ -1,14 +1,64 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Monitor, Smartphone, Laptop, Headphones, Watch, Camera, Gamepad2, Tv, Home, Zap } from 'lucide-react';
+import { Smartphone, Laptop, Monitor, Headphones, Watch, Camera, Gamepad2, Tv, Home, Zap, Package } from 'lucide-react';
 import FlashSale from '../components/FlashSale';
 import NewArrivals from '../components/NewArrivals';
 import TrendingSearch from '../components/TrendingSearch';
-import Sidebar from '../components/Sidebar';
+import CategoryBar from '../components/CategoryBar';
+import WelcomePopup from '../components/WelcomePopup';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
+
+// Icon mapping cho các danh mục
+const categoryIcons = {
+  'Điện thoại': Smartphone,
+  'Laptop': Laptop,
+  'Tablet': Monitor,
+  'Đồng hồ thông minh': Watch,
+  'Đồng hồ': Watch,
+  'Tai nghe': Headphones,
+  'Máy ảnh': Camera,
+  'TV': Tv,
+  'Màn hình': Monitor,
+  'Gaming': Gamepad2,
+  'Quần áo': Home,
+  'Thời trang': Home,
+};
 
 function HomePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  const [hasShownPopup, setHasShownPopup] = useState(false);
+  const [featuredCategories, setFeaturedCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Show welcome popup when user first logs in (only once per session)
+    if (user && !hasShownPopup) {
+      setShowWelcomePopup(true);
+      setHasShownPopup(true);
+    }
+  }, [user, hasShownPopup]);
+
+  useEffect(() => {
+    fetchFeaturedCategories();
+  }, []);
+
+  const fetchFeaturedCategories = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getCategories();
+      const categories = Array.isArray(data) ? data : (data?.content || []);
+      // Lấy 8 categories đầu tiên để hiển thị
+      setFeaturedCategories(categories.slice(0, 8));
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      setFeaturedCategories([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCategorySelect = (category) => {
     if (category) {
@@ -18,27 +68,27 @@ function HomePage() {
     }
   };
 
-  const handleBrandSelect = (brand) => {
-    if (brand) {
-      navigate(`/products?brandId=${brand.id}`);
-    } else {
-      navigate('/products');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-100">
-      <section className="bg-gradient-to-r from-red-600 to-red-800 text-white py-20">
+      {/* Welcome Popup */}
+      <WelcomePopup 
+        isOpen={showWelcomePopup}
+        onClose={() => setShowWelcomePopup(false)}
+        userName={user?.fullName || user?.username}
+      />
+
+      {/* Compact Hero Section */}
+      <section className="bg-gradient-to-r from-red-600 to-red-800 text-white py-12">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            Chào mừng đến với E-SHOP
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">
+            E-SHOP - Công nghệ hàng đầu
           </h1>
-          <p className="text-xl md:text-2xl mb-8">
-            Nơi mua sắm công nghệ hàng đầu Việt Nam
+          <p className="text-lg md:text-xl mb-4">
+            Sản phẩm chính hãng • Giao hàng nhanh • Bảo hành tận nơi
           </p>
           <button
             onClick={() => navigate('/products')}
-            className="bg-white text-red-600 px-8 py-3 rounded-lg font-semibold text-lg hover:bg-gray-100 transition"
+            className="bg-white text-red-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition"
           >
             Khám phá ngay
           </button>
@@ -82,46 +132,54 @@ function HomePage() {
         </div>
       </section>
 
+      {/* Category Bar */}
+      <CategoryBar 
+        onCategorySelect={handleCategorySelect}
+        selectedCategory={null}
+      />
+
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <div className="flex">
-            <div className="w-64 flex-shrink-0 mr-6">
-              <Sidebar 
-                onCategorySelect={handleCategorySelect}
-                onBrandSelect={handleBrandSelect}
-                selectedCategory={null}
-                selectedBrand={null}
-              />
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">Sản phẩm nổi bật</h2>
+            <p className="text-gray-600">Những sản phẩm công nghệ hot nhất hiện tại</p>
+          </div>
+          
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div key={index} className="animate-pulse">
+                  <div className="bg-gray-200 rounded-lg p-6 h-40"></div>
+                </div>
+              ))}
             </div>
-            <div className="flex-1">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl font-bold text-gray-800 mb-4">Sản phẩm nổi bật</h2>
-                <p className="text-gray-600">Những sản phẩm công nghệ hot nhất hiện tại</p>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {[
-                  { icon: Smartphone, name: 'Điện thoại', category: 'Điện thoại', color: 'bg-blue-500' },
-                  { icon: Laptop, name: 'Laptop', category: 'Laptop', color: 'bg-green-500' },
-                  { icon: Headphones, name: 'Tai nghe', category: 'Phụ kiện', color: 'bg-purple-500' },
-                  { icon: Watch, name: 'Đồng hồ', category: 'Đồng hồ thông minh', color: 'bg-yellow-500' },
-                  { icon: Camera, name: 'Máy ảnh', category: 'Máy ảnh', color: 'bg-pink-500' },
-                  { icon: Gamepad2, name: 'Gaming', category: 'Gaming', color: 'bg-indigo-500' },
-                  { icon: Tv, name: 'TV', category: 'TV', color: 'bg-red-500' },
-                  { icon: Monitor, name: 'Màn hình', category: 'Màn hình', color: 'bg-gray-500' }
-                ].map((item, index) => (
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {featuredCategories.map((category) => {
+                const IconComponent = categoryIcons[category.name] || Package;
+                const colors = [
+                  'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-yellow-500',
+                  'bg-pink-500', 'bg-indigo-500', 'bg-red-500', 'bg-gray-500'
+                ];
+                const colorIndex = category.id % colors.length;
+
+                return (
                   <div
-                    key={index}
-                    onClick={() => navigate(`/products?category=${encodeURIComponent(item.category)}`)}
+                    key={category.id}
+                    onClick={() => navigate(`/products?categoryId=${category.id}`)}
                     className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer p-6 text-center border border-gray-200 hover:border-red-300"
                   >
-                    <div className={`${item.color} rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4`}>
-                      <item.icon className="text-white" size={28} />
+                    <div className={`${colors[colorIndex]} rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4`}>
+                      <IconComponent className="text-white" size={28} />
                     </div>
-                    <h3 className="font-semibold text-gray-800">{item.name}</h3>
+                    <h3 className="font-semibold text-gray-800">{category.name}</h3>
                   </div>
-                ))}
-              </div>
-              <div className="text-center mt-8">
+                );
+              })}
+            </div>
+          )}
+          
+          <div className="text-center mt-8">
                 <button
                   onClick={() => navigate('/products')}
                   className="bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition"
@@ -129,8 +187,6 @@ function HomePage() {
                   Xem tất cả sản phẩm
                 </button>
               </div>
-            </div>
-          </div>
         </div>
       </section>
 

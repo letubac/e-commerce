@@ -1,4 +1,5 @@
 import toast from '../utils/toast';
+import { parseBusinessResponse } from '../utils/responseHandler';
 
 export const API_BASE_URL = 'http://localhost:8080/api/v1';
 export const IMAGE_BASE_URL = 'http://localhost:8080/api/v1/files';
@@ -30,15 +31,25 @@ const api = {
         headers,
       });
 
+      // Parse JSON response first
+      const contentType = response.headers.get('content-type');
+      let responseData;
+      
+      if (contentType && contentType.includes('application/json')) {
+        responseData = await response.json();
+      } else {
+        responseData = await response.text();
+      }
+
+      // Check if response is not ok
       if (!response.ok) {
         let errorMessage = 'Request failed';
-        let errorData = null;
         
-        try {
-          errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || `HTTP ${response.status}`;
-        } catch (e) {
-          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        // Try to extract error from BusinessApiResponse structure
+        if (responseData && typeof responseData === 'object') {
+          errorMessage = responseData.description || responseData.message || responseData.error || `HTTP ${response.status}`;
+        } else if (typeof responseData === 'string') {
+          errorMessage = responseData || `HTTP ${response.status}: ${response.statusText}`;
         }
 
         // Handle 401 Unauthorized - token expired or invalid
@@ -52,23 +63,18 @@ const api = {
           // Show toast notification
           toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
           
-          // Throw error but let the calling context decide how to handle redirect
-          // This prevents auto-redirect during checkAuth on page load
           throw new Error('Authentication required');
         }
 
-        // For other errors, just log and throw - let the calling component handle the toast
+        // For other errors, log and throw
         console.error(`API Error [${response.status}]:`, errorMessage);
-        
         throw new Error(errorMessage);
       }
 
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return response.json();
-      } else {
-        return response.text();
-      }
+      // Parse BusinessApiResponse and return data
+      // This will extract data from { codeStatus, messageStatus, description, data }
+      return parseBusinessResponse(responseData);
+      
     } catch (error) {
       console.error('API Request Error:', error);
       throw error;
@@ -109,11 +115,10 @@ const api = {
 
     // Gọi API và normalize response
     const res = await api.request(`/products?${queryParams.toString()}`);
-    // Có thể có các shape khác nhau; chuẩn hoá sang { items, totalPages, totalElements, raw }
-    const data = res?.data ?? res;
-    const items = data?.content ?? data?.items ?? [];
-    const totalPages = data?.totalPages ?? data?.totalPages ?? null;
-    const totalElements = data?.totalElements ?? data?.total ?? null;
+    // parseBusinessResponse đã trả về data, có thể là array hoặc pagination object
+    const items = res?.content ?? res?.items ?? (Array.isArray(res) ? res : []);
+    const totalPages = res?.totalPages ?? null;
+    const totalElements = res?.totalElements ?? res?.total ?? null;
 
     return { items, totalPages, totalElements, raw: res };
   },
@@ -122,6 +127,7 @@ const api = {
   getProductDetails: (id) => api.request(`/products/${id}`),
   searchProducts: (keyword, params = {}) => api.request(`/products/search?keyword=${encodeURIComponent(keyword)}&${new URLSearchParams(params)}`),
   searchSuggestions: (keyword) => api.request(`/products/search/suggestions?keyword=${keyword}`),
+  getFeaturedProducts: () => api.request('/products/featured'),
   
   // Admin Product Management
   getAllProductsAdmin: (params) => api.request(`/admin/products?${new URLSearchParams(params)}`),
@@ -166,25 +172,25 @@ const api = {
   createOrder: (data) => api.request('/orders', { method: 'POST', body: JSON.stringify(data) }),
   getOrders: () => api.request('/orders'),
 
-  // Payment
-  createPaymentIntent: (data) => api.request('/payments/create-intent', { method: 'POST', body: JSON.stringify(data) }),
+  // Payment APIs
+  getPaymentMethods: () => parseBusinessResponse(api.request('/payment/methods')),
+  processPayment: (data) => parseBusinessResponse(api.request('/payment/process', { method: 'POST', body: JSON.stringify(data) })),
+  verifyPayment: (data) => parseBusinessResponse(api.request('/payment/verify', { method: 'POST', body: JSON.stringify(data) })),
+  getPaymentStatus: (transactionId) => parseBusinessResponse(api.request(`/payment/status/${transactionId}`)),
+  getPaymentHistory: (page = 0, size = 10) => parseBusinessResponse(api.request(`/payment/history?page=${page}&size=${size}`)),
 
   // Chat APIs
   getUserConversations: async () => {
-    const response = await api.request('/chat/conversations');
-    return response.data || response; // Handle ApiResponse wrapper
+    return await api.request('/chat/conversations');
   },
   getConversationMessages: async (conversationId, page = 0, size = 50) => {
-    const response = await api.request(`/chat/conversations/${conversationId}/messages?page=${page}&size=${size}`);
-    return response.data || response; // Handle ApiResponse wrapper
+    return await api.request(`/chat/conversations/${conversationId}/messages?page=${page}&size=${size}`);
   },
   sendMessage: async (data) => {
-    const response = await api.request('/chat/messages', { method: 'POST', body: JSON.stringify(data) });
-    return response.data || response; // Handle ApiResponse wrapper
+    return await api.request('/chat/messages', { method: 'POST', body: JSON.stringify(data) });
   },
   createConversation: async (data) => {
-    const response = await api.request('/chat/conversations', { method: 'POST', body: JSON.stringify(data) });
-    return response.data || response; // Handle ApiResponse wrapper
+    return await api.request('/chat/conversations', { method: 'POST', body: JSON.stringify(data) });
   },
   uploadChatFile: (formData) => api.request('/chat/upload', { 
     method: 'POST', 

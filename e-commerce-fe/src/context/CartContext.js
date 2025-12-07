@@ -7,7 +7,7 @@ const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState({ items: [], totalPrice: 0, totalItems: 0 });
+  const [cart, setCart] = useState({ items: [], totalPrice: 0, itemCount: 0 });
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
@@ -20,8 +20,8 @@ export const CartProvider = ({ children }) => {
       console.log('🛒 CartContext - User role:', userRole);
       
       if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
-        console.log('🛒 CartContext - User is admin, skipping cart fetch');
-        setCart({ items: [], totalPrice: 0, totalItems: 0 });
+        console.log('🛍️ CartContext - User is admin, skipping cart fetch');
+        setCart({ items: [], totalPrice: 0, itemCount: 0 });
         setLoading(false);
         return;
       }
@@ -39,11 +39,12 @@ export const CartProvider = ({ children }) => {
       setLoading(true);
       const data = await api.getCart();
       console.log('Cart data from API:', data); // Debug log
-      setCart(data);
+      // BE trả về CartDTO: { id, userId, items, subtotal, totalPrice, itemCount }
+      setCart(data || { items: [], totalPrice: 0, itemCount: 0 });
     } catch (error) {
       console.error('Error fetching cart:', error);
       // Nếu lỗi, set cart rỗng thay vì crash
-      setCart({ items: [], totalPrice: 0, totalItems: 0 });
+      setCart({ items: [], totalPrice: 0, itemCount: 0 });
     } finally {
       setLoading(false);
     }
@@ -51,13 +52,15 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = async (productId, quantity) => {
     try {
+      // BE trả về CartDTO sau khi thêm item
       const data = await api.addToCart({ productId, quantity });
-      setCart(data);
+      setCart(data || { items: [], totalPrice: 0, itemCount: 0 });
       toast.success('Thêm sản phẩm vào giỏ hàng thành công!');
       return data;
     } catch (error) {
       console.error('Error adding to cart:', error);
       if (error.message !== 'Authentication required') {
+        // Error message đã được i18n từ BE
         toast.error(error.message || 'Đã xảy ra lỗi khi thêm vào giỏ hàng');
       }
       throw error;
@@ -67,13 +70,15 @@ export const CartProvider = ({ children }) => {
   const updateItemQuantity = async (itemId, quantity) => {
     try {
       console.log('🔄 Updating cart item:', itemId, 'to quantity:', quantity); // Debug
+      // BE trả về CartDTO sau khi update quantity
       const data = await api.updateCartItem(itemId, quantity);
       console.log('✅ Cart updated successfully:', data); // Debug
-      setCart(data);
+      setCart(data || { items: [], totalPrice: 0, itemCount: 0 });
       return data;
     } catch (error) {
       console.error('❌ Error updating cart item:', error);
       if (error.message !== 'Authentication required') {
+        // Error message đã được i18n từ BE (VD: "Không đủ số lượng tồn kho")
         toast.error(error.message || 'Đã xảy ra lỗi khi cập nhật giỏ hàng');
       }
       throw error;
@@ -83,14 +88,16 @@ export const CartProvider = ({ children }) => {
   const removeFromCart = async (itemId) => {
     try {
       console.log('🗑️ Removing cart item:', itemId); // Debug
+      // BE trả về CartDTO sau khi xóa item
       const data = await api.removeFromCart(itemId);
       console.log('✅ Cart after removal:', data); // Debug
-      setCart(data);
+      setCart(data || { items: [], totalPrice: 0, itemCount: 0 });
       toast.success('Xóa sản phẩm khỏi giỏ hàng thành công!');
       return data;
     } catch (error) {
       console.error('❌ Error removing cart item:', error);
       if (error.message !== 'Authentication required') {
+        // Error message đã được i18n từ BE
         toast.error(error.message || 'Đã xảy ra lỗi khi xóa sản phẩm');
       }
       throw error;
@@ -100,16 +107,17 @@ export const CartProvider = ({ children }) => {
   const clearCart = async (silent = false) => {
     try {
       console.log('🧹 Clearing entire cart'); // Debug
-      const data = await api.clearCart();
-      console.log('✅ Cart cleared:', data); // Debug
-      setCart(data || { items: [], totalPrice: 0, totalItems: 0 });
+      // BE trả về void, set cart rỗng
+      await api.clearCart();
+      console.log('✅ Cart cleared'); // Debug
+      setCart({ items: [], totalPrice: 0, itemCount: 0 });
       if (!silent) {
         toast.success('Xóa toàn bộ giỏ hàng thành công!');
       }
-      return data;
     } catch (error) {
       console.error('❌ Error clearing cart:', error);
       if (error.message !== 'Authentication required') {
+        // Error message đã được i18n từ BE
         toast.error(error.message || 'Đã xảy ra lỗi khi xóa giỏ hàng');
       }
       throw error;
@@ -128,10 +136,11 @@ export const CartProvider = ({ children }) => {
   };
 
   const getTotalItems = () => {
-    if (cart.totalItems) {
-      return cart.totalItems;
+    // BE trả về itemCount trong CartDTO
+    if (cart.itemCount !== undefined) {
+      return cart.itemCount;
     }
-    // Fallback calculation if API doesn't provide totalItems
+    // Fallback calculation
     return (cart.items || []).reduce((total, item) => total + item.quantity, 0);
   };
 
@@ -145,7 +154,8 @@ export const CartProvider = ({ children }) => {
     removeFromCart,
     clearCart,
     getTotalPrice,
-    getTotalItems
+    getTotalItems,
+    itemCount: cart.itemCount || 0 // Export itemCount từ BE
   };
 
   return (

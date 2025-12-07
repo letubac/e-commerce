@@ -1,15 +1,20 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.dto.ApiResponse;
-import com.ecommerce.service.DashboardService;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
+import com.ecommerce.exception.ErrorHandler;
+import com.ecommerce.exception.SuccessHandler;
+import com.ecommerce.service.DashboardService;
+import com.ecommerce.webapp.BusinessApiResponse;
 
 /**
  * REST controller for admin dashboard.
@@ -24,19 +29,25 @@ public class DashboardController {
     @Autowired
     private DashboardService dashboardService;
 
+    @Autowired
+    private ErrorHandler errorHandler;
+
+    @Autowired
+    private SuccessHandler successHandler;
+
     /**
      * Get dashboard overview (Admin only)
      */
     @GetMapping("/overview")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboardOverview() {
+    public ResponseEntity<BusinessApiResponse> getDashboardOverview() {
+        long start = System.currentTimeMillis();
         try {
             Map<String, Object> overview = dashboardService.getDashboardOverview();
-            return ResponseEntity.ok(ApiResponse.success(overview, "Lấy tổng quan dashboard thành công"));
+            return ResponseEntity.ok(successHandler.handlerSuccess(overview, start));
         } catch (Exception e) {
             log.error("Lỗi khi lấy tổng quan dashboard", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy tổng quan dashboard"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -45,16 +56,16 @@ public class DashboardController {
      */
     @GetMapping("/sales")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getSalesStatistics(
+    public ResponseEntity<BusinessApiResponse> getSalesStatistics(
             @RequestParam(defaultValue = "7") int days) {
 
+        long start = System.currentTimeMillis();
         try {
             Map<String, Object> salesStats = dashboardService.getSalesStatistics(days);
-            return ResponseEntity.ok(ApiResponse.success(salesStats, "Lấy thống kê bán hàng thành công"));
+            return ResponseEntity.ok(successHandler.handlerSuccess(salesStats, start));
         } catch (Exception e) {
             log.error("Lỗi khi lấy thống kê bán hàng", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy thống kê bán hàng"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -63,14 +74,14 @@ public class DashboardController {
      */
     @GetMapping("/users")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getUserStatistics() {
+    public ResponseEntity<BusinessApiResponse> getUserStatistics() {
+        long start = System.currentTimeMillis();
         try {
             Map<String, Object> userStats = dashboardService.getUserStatistics();
-            return ResponseEntity.ok(ApiResponse.success(userStats, "Lấy thống kê người dùng thành công"));
+            return ResponseEntity.ok(successHandler.handlerSuccess(userStats, start));
         } catch (Exception e) {
             log.error("Lỗi khi lấy thống kê người dùng", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy thống kê người dùng"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -79,14 +90,14 @@ public class DashboardController {
      */
     @GetMapping("/products")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getProductStatistics() {
+    public ResponseEntity<BusinessApiResponse> getProductStatistics() {
+        long start = System.currentTimeMillis();
         try {
             Map<String, Object> productStats = dashboardService.getProductStatistics();
-            return ResponseEntity.ok(ApiResponse.success(productStats, "Lấy thống kê sản phẩm thành công"));
+            return ResponseEntity.ok(successHandler.handlerSuccess(productStats, start));
         } catch (Exception e) {
             log.error("Lỗi khi lấy thống kê sản phẩm", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy thống kê sản phẩm"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -95,14 +106,14 @@ public class DashboardController {
      */
     @GetMapping("/orders")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getOrderStatistics() {
+    public ResponseEntity<BusinessApiResponse> getOrderStatistics() {
+        long start = System.currentTimeMillis();
         try {
             Map<String, Object> orderStats = dashboardService.getOrderStatistics();
-            return ResponseEntity.ok(ApiResponse.success(orderStats, "Lấy thống kê đơn hàng thành công"));
+            return ResponseEntity.ok(successHandler.handlerSuccess(orderStats, start));
         } catch (Exception e) {
             log.error("Lỗi khi lấy thống kê đơn hàng", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy thống kê đơn hàng"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -111,16 +122,16 @@ public class DashboardController {
      */
     @GetMapping("/activities")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getRecentActivities(
+    public ResponseEntity<BusinessApiResponse> getRecentActivities(
             @RequestParam(defaultValue = "20") int limit) {
 
+        long start = System.currentTimeMillis();
         try {
             Map<String, Object> activities = dashboardService.getRecentActivities(limit);
-            return ResponseEntity.ok(ApiResponse.success(activities, "Lấy hoạt động gần đây thành công"));
+            return ResponseEntity.ok(successHandler.handlerSuccess(activities, start));
         } catch (Exception e) {
             log.error("Lỗi khi lấy hoạt động gần đây", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy hoạt động gần đây"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -129,14 +140,14 @@ public class DashboardController {
      */
     @GetMapping("/health")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getSystemHealth() {
+    public ResponseEntity<BusinessApiResponse> getSystemHealth() {
+        long start = System.currentTimeMillis();
         try {
             Map<String, Object> health = dashboardService.getSystemHealth();
-            return ResponseEntity.ok(ApiResponse.success(health, "Lấy trạng thái hệ thống thành công"));
+            return ResponseEntity.ok(successHandler.handlerSuccess(health, start));
         } catch (Exception e) {
             log.error("Lỗi khi lấy trạng thái hệ thống", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy trạng thái hệ thống"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 }

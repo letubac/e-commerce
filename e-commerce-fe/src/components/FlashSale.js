@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, ShoppingCart, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api, { API_BASE_URL } from '../api/api';
@@ -6,6 +6,7 @@ import api, { API_BASE_URL } from '../api/api';
 export default function FlashSale() {
   const navigate = useNavigate();
   const [flashSaleProducts, setFlashSaleProducts] = useState([]);
+  const [activeFlashSale, setActiveFlashSale] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -13,76 +14,38 @@ export default function FlashSale() {
     minutes: 0,
     seconds: 0
   });
+  const [loading, setLoading] = useState(true);
 
-  // Flash sale end time (example: 24 hours from now)
-  const flashSaleEndTime = useMemo(() => {
-    const endTime = new Date();
-    endTime.setHours(endTime.getHours() + 24);
-    return endTime;
-  }, []);
-
-  const fetchFlashSaleProducts = useCallback(async () => {
+  const fetchFlashSaleData = useCallback(async () => {
     try {
-      // Fetch flash sale products from API (products with salePrice)
-      const response = await api.getProducts({ 
-        sortBy: 'createdAt',
-        sortDirection: 'desc',
-        size: 10
-      });
-      console.log('Flash Sale API Response:', response);
-      // Get all products (or filter if needed)
-      const products = response.items || response.content || response.data?.content || [];
-      console.log('Flash Sale - All products:', products);
-      // Show all products for now, or filter only if has real sale
-      // const onSaleProducts = products.filter(p => p.salePrice && p.salePrice < p.price);
-      setFlashSaleProducts(products);
+      setLoading(true);
+      // Fetch active Flash Sale
+      const flashSaleData = await api.request('/flash-sale/active');
+      if (flashSaleData) {
+        setActiveFlashSale(flashSaleData);
+        
+        // Fetch Flash Sale products
+        const productsData = await api.request('/flash-sale/products');
+        const products = Array.isArray(productsData) ? productsData : [];
+        setFlashSaleProducts(products);
+      }
     } catch (error) {
-      console.error('Error fetching flash sale products:', error);
-      // Fallback to mock data if API fails
-      const mockProducts = [
-        {
-          id: 1,
-          name: 'ASUS ROG Strix GeForce RTX 4080 SUPER OC 16GB',
-          price: 22990000,
-          originalPrice: 25990000,
-          discount: 12,
-          imageUrl: 'https://via.placeholder.com/300x200/f0f0f0/666666?text=ASUS+ROG+RTX+4080',
-          brand: { name: 'ASUS' },
-          stock: 15,
-          totalStock: 50
-        },
-        {
-          id: 2,
-          name: 'AMD Ryzen 9 7950X 16-Core, 32-Thread AM5',
-          price: 13490000,
-          originalPrice: 15990000,
-          discount: 16,
-          imageUrl: 'https://via.placeholder.com/300x200/f0f0f0/666666?text=AMD+Ryzen+9+7950X',
-          brand: { name: 'AMD' },
-          stock: 8,
-          totalStock: 30
-        },
-        {
-          id: 3,
-          name: 'Samsung 980 PRO 2TB NVMe M.2 SSD PCIe 4.0',
-          price: 4590000,
-          originalPrice: 5990000,
-          discount: 23,
-          imageUrl: 'https://via.placeholder.com/300x200/f0f0f0/666666?text=Samsung+980+PRO+SSD',
-          brand: { name: 'Samsung' },
-          stock: 25,
-          totalStock: 100
-        }
-      ];
-      setFlashSaleProducts(mockProducts);
+      console.error('Error fetching flash sale data:', error);
+      setFlashSaleProducts([]);
+      setActiveFlashSale(null);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // Update countdown timer
+  // Update countdown timer based on active Flash Sale
   useEffect(() => {
+    if (!activeFlashSale) return;
+
     const updateTimer = () => {
       const now = new Date().getTime();
-      const distance = flashSaleEndTime.getTime() - now;
+      const endTime = new Date(activeFlashSale.endTime).getTime();
+      const distance = endTime - now;
 
       if (distance > 0) {
         setTimeLeft({
@@ -91,18 +54,21 @@ export default function FlashSale() {
           minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
           seconds: Math.floor((distance % (1000 * 60)) / 1000)
         });
+      } else {
+        // Flash sale ended, refresh data
+        fetchFlashSaleData();
       }
     };
 
     updateTimer();
     const timer = setInterval(updateTimer, 1000);
     return () => clearInterval(timer);
-  }, [flashSaleEndTime]);
+  }, [activeFlashSale, fetchFlashSaleData]);
 
-  // Fetch products on component mount
+  // Fetch flash sale data on component mount
   useEffect(() => {
-    fetchFlashSaleProducts();
-  }, [fetchFlashSaleProducts]);
+    fetchFlashSaleData();
+  }, [fetchFlashSaleData]);
 
   const itemsPerSlide = 4;
   const totalSlides = Math.ceil(flashSaleProducts.length / itemsPerSlide);
@@ -120,7 +86,19 @@ export default function FlashSale() {
     (currentSlide + 1) * itemsPerSlide
   );
 
-  if (flashSaleProducts.length === 0) {
+  if (loading) {
+    return (
+      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white py-8 mb-8">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeFlashSale || flashSaleProducts.length === 0) {
     return null;
   }
 
@@ -131,7 +109,12 @@ export default function FlashSale() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <Zap className="h-8 w-8 text-yellow-400" />
-            <h2 className="text-3xl font-bold">Flash Sale</h2>
+            <div>
+              <h2 className="text-3xl font-bold">Flash Sale</h2>
+              {activeFlashSale?.name && (
+                <p className="text-sm text-white/80 mt-1">{activeFlashSale.name}</p>
+              )}
+            </div>
           </div>
           
           {/* Countdown Timer */}
@@ -166,51 +149,79 @@ export default function FlashSale() {
                 <div className="relative">
                   <img
                     src={
-                      product.productImages && product.productImages.length > 0 
-                        ? (product.productImages.find(img => img.primary)?.imageUrl || product.productImages[0]?.imageUrl).startsWith('http')
-                          ? product.productImages.find(img => img.primary)?.imageUrl || product.productImages[0]?.imageUrl
-                          : `${API_BASE_URL}/files${product.productImages.find(img => img.primary)?.imageUrl || product.productImages[0]?.imageUrl}`
-                        : product.imageUrl || product.image || `https://via.placeholder.com/300x200/f0f0f0/666666?text=${encodeURIComponent(product.name)}`
+                      product.productImageUrl 
+                        ? (product.productImageUrl.startsWith('http') 
+                          ? product.productImageUrl 
+                          : `${API_BASE_URL}/files${product.productImageUrl}`)
+                        : `https://via.placeholder.com/300x200/f0f0f0/666666?text=${encodeURIComponent(product.productName || product.name || 'Product')}`
                     }
-                    alt={product.productImages?.[0]?.altText || product.name}
+                    alt={product.productName || product.name}
                     className="w-full h-48 object-cover cursor-pointer"
-                    onClick={() => navigate(`/product/${product.id}`)}
+                    onClick={() => navigate(`/product/${product.productId || product.id}`)}
                     onError={(e) => {
-                      e.target.src = `https://via.placeholder.com/300x200/f0f0f0/666666?text=${encodeURIComponent(product.name)}`;
+                      e.target.src = `https://via.placeholder.com/300x200/f0f0f0/666666?text=${encodeURIComponent(product.productName || product.name || 'Product')}`;
                     }}
                   />
                   <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-sm font-bold">
-                    -{product.salePrice && product.price 
-                      ? Math.round(((product.price - product.salePrice) / product.price) * 100)
-                      : 0}%
+                    -{product.discountPercentage 
+                      ? Math.round(product.discountPercentage)
+                      : (product.originalPrice && product.flashPrice 
+                        ? Math.round(((product.originalPrice - product.flashPrice) / product.originalPrice) * 100)
+                        : 0)}%
                   </div>
+                  {product.remainingStock !== undefined && product.remainingStock <= 10 && (
+                    <div className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                      Còn {product.remainingStock}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="p-4 text-gray-900">
                   <h3 
                     className="font-semibold text-sm mb-2 line-clamp-2 cursor-pointer hover:text-red-600"
-                    onClick={() => navigate(`/product/${product.id}`)}
+                    onClick={() => navigate(`/product/${product.productId || product.id}`)}
                   >
-                    {product.name}
+                    {product.productName || product.name}
                   </h3>
                   
                   <div className="flex items-center space-x-2 mb-3">
                     <span className="text-lg font-bold text-red-600">
-                      {(product.salePrice || product.effectivePrice || product.price || 0).toLocaleString('vi-VN')}đ
+                      {(product.flashPrice || product.salePrice || product.effectivePrice || product.price || 0).toLocaleString('vi-VN')}đ
                     </span>
-                    {product.salePrice && product.price > product.salePrice && (
+                    {(product.originalPrice || product.price) && product.flashPrice && product.originalPrice > product.flashPrice && (
                       <span className="text-sm text-gray-500 line-through ml-2">
-                        {product.price.toLocaleString('vi-VN')}đ
+                        {product.originalPrice.toLocaleString('vi-VN')}đ
                       </span>
                     )}
                   </div>
 
+                  {/* Stock Progress Bar */}
+                  {product.stockLimit && (
+                    <div className="mb-3">
+                      <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <span>Đã bán {product.stockSold || 0}</span>
+                        <span>{product.stockLimit} sản phẩm</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-red-500 h-2 rounded-full transition-all" 
+                          style={{ width: `${Math.min(((product.stockSold || 0) / product.stockLimit) * 100, 100)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     onClick={() => console.log('Add to cart:', product)}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                    disabled={product.soldOut || !product.canPurchase}
+                    className={`w-full py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 ${
+                      product.soldOut || !product.canPurchase
+                        ? 'bg-gray-400 cursor-not-allowed text-gray-700'
+                        : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
                   >
                     <ShoppingCart className="h-4 w-4" />
-                    <span>Thêm vào giỏ</span>
+                    <span>{product.soldOut ? 'Đã hết hàng' : 'Thêm vào giỏ'}</span>
                   </button>
                 </div>
               </div>

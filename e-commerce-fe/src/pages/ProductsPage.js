@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Filter, Search } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
-import Sidebar from '../components/Sidebar';
+import CategoryBar from '../components/CategoryBar';
 import api from '../api/api';
 
 function ProductsPage() {
@@ -121,19 +121,15 @@ function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex">
-          <div className="w-64 flex-shrink-0 mr-6">
-            <Sidebar 
-              onCategorySelect={handleCategorySelect}
-              onBrandSelect={handleBrandSelect}
-              selectedCategory={selectedCategory}
-              selectedBrand={selectedBrand}
-            />
-          </div>
+      {/* Category Bar - Shopee Style */}
+      <CategoryBar 
+        onCategorySelect={handleCategorySelect}
+        selectedCategory={selectedCategory}
+      />
 
-          <div className="flex-1">
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex-1">
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-800 mb-2">Sản phẩm</h1>
@@ -318,7 +314,6 @@ function ProductsPage() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

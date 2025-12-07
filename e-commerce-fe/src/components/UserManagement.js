@@ -39,12 +39,12 @@ function UserManagement() {
       if (filters.status) params.status = filters.status;
 
       const response = await adminApi.getUsers(params);
-      const data = response.data || response;
       
-      setUsers(data.content || []);
+      // parseBusinessResponse đã trả về data
+      setUsers(response.content || []);
       setPagination({
-        totalPages: data.totalPages || 0,
-        totalElements: data.totalElements || 0
+        totalPages: response.totalPages || 0,
+        totalElements: response.totalElements || 0
       });
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -56,9 +56,8 @@ function UserManagement() {
 
   const handleViewUser = async (userId) => {
     try {
-      const response = await adminApi.getUserById(userId);
-      const data = response.data || response;
-      setSelectedUser(data);
+      const userDetails = await adminApi.getUserById(userId);
+      setSelectedUser(userDetails);
       setShowModal(true);
     } catch (error) {
       console.error('Error fetching user details:', error);

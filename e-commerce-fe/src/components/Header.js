@@ -152,9 +152,9 @@ export default function Header() {
                   className="relative p-2 hover:bg-red-700 rounded-full text-white"
                 >
                   <ShoppingCart size={24} />
-                  {cart.totalItems > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-yellow-400 text-red-800 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                      {cart.totalItems}
+                  {(cart.itemCount || 0) > 0 && (
+                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {cart.itemCount || 0}
                     </span>
                   )}
                 </button>

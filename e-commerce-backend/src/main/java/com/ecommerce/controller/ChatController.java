@@ -1,32 +1,42 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.dto.ApiResponse;
+import java.util.Map;
+import java.util.Optional;
+
+import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.ecommerce.constant.ChatConstant;
 import com.ecommerce.dto.ChatMessageDTO;
 import com.ecommerce.dto.ConversationDTO;
 import com.ecommerce.dto.UserDTO;
 import com.ecommerce.dto.request.CreateConversationRequest;
 import com.ecommerce.dto.request.SendMessageRequest;
 import com.ecommerce.entity.User;
-import com.ecommerce.exception.ResourceNotFoundException;
-import com.ecommerce.repository.UserRepository;
+import com.ecommerce.exception.DetailException;
+import com.ecommerce.exception.ErrorHandler;
+import com.ecommerce.exception.SuccessHandler;
+import com.ecommerce.service.ChatMessageService;
 import com.ecommerce.service.ConversationService;
 import com.ecommerce.service.UserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ecommerce.service.ChatMessageService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+import com.ecommerce.webapp.BusinessApiResponse;
 
 import jakarta.validation.Valid;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * REST controller for managing chat functionality.
@@ -39,6 +49,12 @@ public class ChatController {
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);
 
     @Autowired
+    private ErrorHandler errorHandler;
+
+    @Autowired
+    private SuccessHandler successHandler;
+
+    @Autowired
     private ConversationService conversationService;
 
     @Autowired
@@ -46,9 +62,9 @@ public class ChatController {
 
     @Autowired
     private UserService userService;
-    
+
     @Autowired
-    private ObjectMapper objectMapper;
+    private ModelMapper modelMapper;
 
     // USER ENDPOINTS
 
@@ -57,19 +73,18 @@ public class ChatController {
      */
     @GetMapping("/conversations")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<ConversationDTO>>> getUserConversations(Authentication authentication) {
+    public ResponseEntity<BusinessApiResponse> getUserConversations(Authentication authentication) {
+        long start = System.currentTimeMillis();
         try {
             String username = authentication.getName();
-            List<ConversationDTO> conversations = conversationService.findByUsername(
-                    username,
-                    org.springframework.data.domain.PageRequest.of(0, 100)).getContent();
+            Page<ConversationDTO> conversations = conversationService.findByUsername(
+                    username, PageRequest.of(0, 100));
 
-            return ResponseEntity
-                    .ok(new ApiResponse<>(true, "Lấy danh sách cuộc trò chuyện thành công", conversations));
+            return ResponseEntity.ok(successHandler.handlerSuccess(
+                    conversations, start));
         } catch (Exception e) {
-            log.error("Lỗi khi lấy danh sách cuộc trò chuyện", e);
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi lấy danh sách cuộc trò chuyện"));
+            log.error("Error fetching user conversations", e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -78,37 +93,28 @@ public class ChatController {
      */
     @GetMapping("/conversations/{conversationId}/messages")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<Page<ChatMessageDTO>>> getConversationMessages(
+    public ResponseEntity<BusinessApiResponse> getConversationMessages(
             @PathVariable Long conversationId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             Authentication authentication) {
-
+        long start = System.currentTimeMillis();
         try {
             String username = authentication.getName();
 
             // Verify user has access to conversation
             if (!conversationService.isUserOwnerOfConversation(username, conversationId)) {
-                return ResponseEntity.status(403)
-                        .body(new ApiResponse<>(false, "Bạn không có quyền truy cập cuộc trò chuyện này"));
+                throw new DetailException(ChatConstant.E520_USER_NOT_CONVERSATION_OWNER);
             }
 
             Page<ChatMessageDTO> messages = chatMessageService.getMessagesByConversationId(
-                    conversationId,
-                    org.springframework.data.domain.PageRequest.of(page, size));
+                    conversationId, PageRequest.of(page, size));
 
-            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy tin nhắn cuộc trò chuyện thành công", messages));
-        } catch (SecurityException e) {
-            log.warn("Không có quyền truy cập cuộc trò chuyện ID: {}", conversationId);
-            return ResponseEntity.status(403)
-                    .body(new ApiResponse<>(false, "Bạn không có quyền truy cập cuộc trò chuyện này"));
-        } catch (RuntimeException e) {
-            log.warn("Không tìm thấy cuộc trò chuyện ID: {}", conversationId);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(successHandler.handlerSuccess(
+                    messages, start));
         } catch (Exception e) {
-            log.error("Lỗi khi lấy tin nhắn cuộc trò chuyện ID: {}", conversationId, e);
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi lấy tin nhắn"));
+            log.error("Error fetching conversation messages for ID: {}", conversationId, e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -117,50 +123,31 @@ public class ChatController {
      */
     @PostMapping("/messages")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<ChatMessageDTO>> sendMessage(
+    public ResponseEntity<BusinessApiResponse> sendMessage(
             @Valid @RequestBody SendMessageRequest request,
             Authentication authentication) {
-
+        long start = System.currentTimeMillis();
         try {
             String username = authentication.getName();
 
             // Verify user has access to conversation
             if (!conversationService.isUserOwnerOfConversation(username, request.getConversationId())) {
-                return ResponseEntity.status(403)
-                        .body(new ApiResponse<>(false, "Bạn không có quyền gửi tin nhắn"));
+                throw new DetailException(ChatConstant.E520_USER_NOT_CONVERSATION_OWNER);
             }
 
             // Get userId from username
             Optional<UserDTO> user = userService.getUserByUsername(username);
-			if (user.isEmpty()) {
-				throw new ResourceNotFoundException("User not found");
-			}
-			// chuyển Optional<UserDTO> user sang User userEntity
-			User userEntity = new User();
-			userEntity.setId(user.get().getId());
-			
-			
-//            User user = userRepository.findByUsername(username)
-//                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            User userEntity = modelMapper.map(user.get(), User.class);
 
-            ChatMessageDTO message = chatMessageService.sendMessage(user.getId(), request);
+            ChatMessageDTO message = chatMessageService.sendMessage(userEntity.getId(), request);
 
-            log.info("Người dùng {} đã gửi tin nhắn trong cuộc trò chuyện ID: {}",
-                    username, request.getConversationId());
+            log.info("User {} sent message in conversation ID: {}", username, request.getConversationId());
 
-            return ResponseEntity.ok(new ApiResponse<>(true, "Gửi tin nhắn thành công", message));
-        } catch (SecurityException e) {
-            log.warn("Không có quyền gửi tin nhắn: {}", e.getMessage());
-            return ResponseEntity.status(403)
-                    .body(new ApiResponse<>(false, "Bạn không có quyền gửi tin nhắn"));
-        } catch (IllegalArgumentException e) {
-            log.warn("Dữ liệu không hợp lệ khi gửi tin nhắn: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Dữ liệu không hợp lệ: " + e.getMessage()));
+            return ResponseEntity.ok(successHandler.handlerSuccess(
+                    message, start));
         } catch (Exception e) {
-            log.error("Lỗi khi gửi tin nhắn", e);
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi gửi tin nhắn"));
+            log.error("Error sending message", e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -169,28 +156,23 @@ public class ChatController {
      */
     @PostMapping("/conversations")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<ConversationDTO>> createConversation(
+    public ResponseEntity<BusinessApiResponse> createConversation(
             @Valid @RequestBody CreateConversationRequest request,
             Authentication authentication) {
-
+        long start = System.currentTimeMillis();
         try {
             String username = authentication.getName();
 
             ConversationDTO conversation = conversationService.createConversation(
-                    username,
-                    request.getSubject());
+                    username, request.getSubject());
 
-            log.info("Người dùng {} đã tạo cuộc trò chuyện mới", username);
+            log.info("User {} created new conversation", username);
 
-            return ResponseEntity.ok(new ApiResponse<>(true, "Tạo cuộc trò chuyện thành công", conversation));
-        } catch (IllegalArgumentException e) {
-            log.warn("Dữ liệu không hợp lệ khi tạo cuộc trò chuyện: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Dữ liệu không hợp lệ: " + e.getMessage()));
+            return ResponseEntity.ok(successHandler.handlerSuccess(
+                    conversation, start));
         } catch (Exception e) {
-            log.error("Lỗi khi tạo cuộc trò chuyện", e);
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi tạo cuộc trò chuyện"));
+            log.error("Error creating conversation", e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -199,34 +181,29 @@ public class ChatController {
      */
     @PostMapping("/conversations/{conversationId}/read")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<String>> markMessagesAsRead(
+    public ResponseEntity<BusinessApiResponse> markMessagesAsRead(
             @PathVariable Long conversationId,
             Authentication authentication) {
-
+        long start = System.currentTimeMillis();
         try {
             String username = authentication.getName();
 
             // Verify user has access to conversation
             if (!conversationService.isUserOwnerOfConversation(username, conversationId)) {
-                return ResponseEntity.status(403)
-                        .body(new ApiResponse<>(false, "Bạn không có quyền thực hiện hành động này"));
+                throw new DetailException(ChatConstant.E520_USER_NOT_CONVERSATION_OWNER);
             }
 
             // Get userId from username
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            Optional<UserDTO> user = userService.getUserByUsername(username);
+            User userEntity = modelMapper.map(user.get(), User.class);
 
-            chatMessageService.markMessagesAsRead(conversationId, user.getId());
+            chatMessageService.markMessagesAsRead(conversationId, userEntity.getId());
 
-            return ResponseEntity.ok(new ApiResponse<>(true, "Đánh dấu đã đọc thành công"));
-        } catch (SecurityException e) {
-            log.warn("Không có quyền đánh dấu đã đọc cuộc trò chuyện ID: {}", conversationId);
-            return ResponseEntity.status(403)
-                    .body(new ApiResponse<>(false, "Bạn không có quyền thực hiện hành động này"));
+            return ResponseEntity.ok(successHandler.handlerSuccess(
+                    ChatConstant.S514_MESSAGES_MARKED_READ, null, start));
         } catch (Exception e) {
-            log.error("Lỗi khi đánh dấu tin nhắn đã đọc", e);
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi đánh dấu đã đọc"));
+            log.error("Error marking messages as read", e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -235,26 +212,26 @@ public class ChatController {
      */
     @PostMapping("/upload")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<Map<String, String>>> uploadChatFile(
+    public ResponseEntity<BusinessApiResponse> uploadChatFile(
             @RequestParam("file") MultipartFile file,
             Authentication authentication) {
-
+        long start = System.currentTimeMillis();
         try {
             String username = authentication.getName();
 
+            if (file.isEmpty()) {
+                throw new DetailException(ChatConstant.E543_FILE_EMPTY);
+            }
+
             Map<String, String> fileInfo = Map.of("url", "/uploads/" + file.getOriginalFilename());
 
-            log.info("Người dùng {} đã tải lên file: {}", username, file.getOriginalFilename());
+            log.info("User {} uploaded file: {}", username, file.getOriginalFilename());
 
-            return ResponseEntity.ok(new ApiResponse<>(true, "Tải lên file thành công", fileInfo));
-        } catch (IllegalArgumentException e) {
-            log.warn("File không hợp lệ: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "File không hợp lệ: " + e.getMessage()));
+            return ResponseEntity.ok(successHandler.handlerSuccess(
+                    fileInfo, null, start));
         } catch (Exception e) {
-            log.error("Lỗi khi tải lên file", e);
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi tải lên file"));
+            log.error("Error uploading file", e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -262,14 +239,15 @@ public class ChatController {
      * Get chat status
      */
     @GetMapping("/status")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getChatStatus() {
+    public ResponseEntity<BusinessApiResponse> getChatStatus() {
+        long start = System.currentTimeMillis();
         try {
             Map<String, Object> status = Map.of("online", true, "activeUsers", 100);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy trạng thái chat thành công", status));
+            return ResponseEntity.ok(successHandler.handlerSuccess(
+                    status, null, start));
         } catch (Exception e) {
-            log.error("Lỗi khi lấy trạng thái chat", e);
-            return ResponseEntity.internalServerError()
-                    .body(new ApiResponse<>(false, "Lỗi hệ thống khi lấy trạng thái chat"));
+            log.error("Error getting chat status", e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 }

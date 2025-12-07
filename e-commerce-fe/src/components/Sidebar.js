@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, ChevronDown, Cpu, Monitor, HardDrive, MemoryStick, Gamepad2, Mouse, Headphones, Keyboard, Zap, Fan } from 'lucide-react';
+import { ChevronRight, ChevronDown, Cpu, Monitor, HardDrive, MemoryStick, Gamepad2, Mouse, Headphones, Keyboard, Zap, Fan, Smartphone, Laptop, Watch, Shirt, Sparkles } from 'lucide-react';
 import api from '../api/api';
 
 // Icon mapping cho các danh mục
 const categoryIcons = {
+  // Điện tử
+  'Điện thoại': Smartphone,
+  'Laptop': Laptop,
+  'Tablet': Monitor,
+  'Đồng hồ thông minh': Watch,
+  'Tai nghe': Headphones,
+  'Phụ kiện điện tử': Sparkles,
+  
+  // Máy tính
   'CPU': Cpu,
   'Card Màn hình': Monitor, 
   'Bo mạch chủ': HardDrive,
@@ -23,7 +32,13 @@ const categoryIcons = {
   'ARM giá treo': Monitor,
   'Âm Thanh': Headphones,
   'Bàn & Ghế': Monitor,
-  'Phụ kiện máy tính': Gamepad2
+  'Phụ kiện máy tính': Gamepad2,
+  
+  // Thời trang
+  'Quần áo': Shirt,
+  'Giày dép': Shirt,
+  'Túi xách': Shirt,
+  'Phụ kiện thời trang': Shirt,
 };
 
 export default function Sidebar({ onCategorySelect, onBrandSelect, selectedCategory, selectedBrand }) {
@@ -39,13 +54,17 @@ export default function Sidebar({ onCategorySelect, onBrandSelect, selectedCateg
   const fetchCategoriesAndBrands = async () => {
     try {
       setLoading(true);
-      const [categoriesResponse, brandsResponse] = await Promise.all([
+      const [categoriesData, brandsData] = await Promise.all([
         api.getCategories(),
         api.getBrands()
       ]);
-      // Extract data từ ApiResponse wrapper
-      setCategories(categoriesResponse.data || []);
-      setBrands(brandsResponse.data || []);
+      
+      // parseBusinessResponse đã trả về data trực tiếp
+      const cats = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.content || []);
+      const brds = Array.isArray(brandsData) ? brandsData : (brandsData?.content || []);
+      
+      setCategories(cats);
+      setBrands(brds);
     } catch (error) {
       console.error('Error fetching categories and brands:', error);
       setCategories([]);

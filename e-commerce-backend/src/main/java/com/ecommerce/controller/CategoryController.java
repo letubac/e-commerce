@@ -1,10 +1,7 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.dto.CategoryDTO;
-import com.ecommerce.dto.ProductDTO;
-import com.ecommerce.dto.ApiResponse;
-import com.ecommerce.service.CategoryService;
-import com.ecommerce.service.ProductService;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +9,27 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.ecommerce.constant.CategoryConstant;
+import com.ecommerce.dto.ApiResponse;
+import com.ecommerce.dto.CategoryDTO;
+import com.ecommerce.dto.ProductDTO;
+import com.ecommerce.exception.ErrorHandler;
+import com.ecommerce.exception.SuccessHandler;
+import com.ecommerce.service.CategoryService;
+import com.ecommerce.service.ProductService;
+import com.ecommerce.webapp.BusinessApiResponse;
 
 import jakarta.validation.Valid;
-import java.util.List;
 
 /**
  * REST controller for managing categories.
@@ -33,18 +47,24 @@ public class CategoryController {
     @Autowired
     private ProductService productService;
 
+    @Autowired
+    private ErrorHandler errorHandler;
+
+    @Autowired
+    private SuccessHandler successHandler;
+
     /**
      * Get all active categories for public use
      */
     @GetMapping("/categories")
-    public ResponseEntity<ApiResponse<List<CategoryDTO>>> getAllCategories() {
+    public ResponseEntity<BusinessApiResponse> getAllCategories() {
+        long start = System.currentTimeMillis();
         try {
             List<CategoryDTO> categories = categoryService.findActiveCategories();
-            return ResponseEntity.ok(ApiResponse.success(categories, "Lấy danh sách danh mục thành công"));
+            return ResponseEntity.ok(successHandler.handlerSuccess(categories, start));
         } catch (Exception e) {
-            log.error("Lỗi khi lấy danh sách danh mục", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy danh sách danh mục"));
+            log.error("Error fetching active categories", e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 

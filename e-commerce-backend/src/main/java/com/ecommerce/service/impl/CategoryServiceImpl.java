@@ -11,10 +11,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ecommerce.constant.CategoryConstant;
 import com.ecommerce.dto.CategoryDTO;
 import com.ecommerce.entity.Category;
-import com.ecommerce.exception.BadRequestException;
-import com.ecommerce.exception.ResourceNotFoundException;
+import com.ecommerce.exception.DetailException;
 import com.ecommerce.repository.CategoryRepository;
 import com.ecommerce.service.CategoryService;
 
@@ -35,85 +35,141 @@ public class CategoryServiceImpl implements CategoryService {
 	}
 
 	@Override
-	public List<CategoryDTO> findActiveCategories() {
+	public List<CategoryDTO> findActiveCategories() throws DetailException {
 		log.debug("Fetching active categories");
-		List<Category> categories = categoryRepository.findByActiveTrue();
-		return categories.stream().map(this::convertToDTO).collect(Collectors.toList());
+		try {
+			List<Category> categories = categoryRepository.findByActiveTrue();
+			log.info("Found {} active categories", categories.size());
+			return categories.stream().map(this::convertToDTO).collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Error fetching active categories", e);
+			throw new DetailException(CategoryConstant.E405_CATEGORY_GET_ERROR);
+		}
 	}
 
 	@Override
-	public List<CategoryDTO> findAll() {
+	public List<CategoryDTO> findAll() throws DetailException {
 		log.debug("Fetching all categories");
-		List<Category> categories = categoryRepository.findAllData();
-		return categories.stream().map(this::convertToDTO).collect(Collectors.toList());
+		try {
+			List<Category> categories = categoryRepository.findAllData();
+			log.info("Found {} categories", categories.size());
+			return categories.stream().map(this::convertToDTO).collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Error fetching all categories", e);
+			throw new DetailException(CategoryConstant.E405_CATEGORY_GET_ERROR);
+		}
 	}
 
 	@Override
-	public CategoryDTO findById(Long id) {
+	public CategoryDTO findById(Long id) throws DetailException {
 		log.debug("Fetching category with ID: {}", id);
-		Category category = categoryRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + id));
-		return convertToDTO(category);
+		try {
+			Category category = categoryRepository.findById(id)
+					.orElseThrow(() -> new DetailException(CategoryConstant.E400_CATEGORY_NOT_FOUND));
+			log.info("Found category with ID: {}", id);
+			return convertToDTO(category);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error fetching category with ID: {}", id, e);
+			throw new DetailException(CategoryConstant.E405_CATEGORY_GET_ERROR);
+		}
 	}
 
 	@Override
-	public CategoryDTO save(CategoryDTO categoryDTO) {
+	public CategoryDTO save(CategoryDTO categoryDTO) throws DetailException {
 		log.debug("Creating new category: {}", categoryDTO.getName());
 
-		// Check if category name already exists
-		if (categoryRepository.existsByNameIgnoreCase(categoryDTO.getName())) {
-			throw new BadRequestException("Tên danh mục đã tồn tại");
+		try {
+			// Validate category name
+			if (categoryDTO.getName() == null || categoryDTO.getName().trim().isEmpty()) {
+				throw new DetailException(CategoryConstant.E410_CATEGORY_NAME_REQUIRED);
+			}
+
+			// Check if category name already exists
+			if (categoryRepository.existsByNameIgnoreCase(categoryDTO.getName())) {
+				throw new DetailException(CategoryConstant.E411_CATEGORY_NAME_EXISTS);
+			}
+
+			Category category = convertToEntity(categoryDTO);
+			category.setCreatedAt(new Date());
+			category.setUpdatedAt(new Date());
+			category.setActive(true);
+
+			Category savedCategory = categoryRepository.save(category);
+			log.info("Created category with ID: {}", savedCategory.getId());
+
+			return convertToDTO(savedCategory);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error creating category: {}", categoryDTO.getName(), e);
+			throw new DetailException(CategoryConstant.E406_CATEGORY_CREATE_ERROR);
 		}
-
-		Category category = convertToEntity(categoryDTO);
-		category.setCreatedAt(new Date());
-		category.setUpdatedAt(new Date());
-		category.setActive(true);
-
-		Category savedCategory = categoryRepository.save(category);
-		log.info("Created category with ID: {}", savedCategory.getId());
-
-		return convertToDTO(savedCategory);
 	}
 
 	@Override
-	public CategoryDTO update(CategoryDTO categoryDTO) {
+	public CategoryDTO update(CategoryDTO categoryDTO) throws DetailException {
 		log.debug("Updating category with ID: {}", categoryDTO.getId());
 
-		Category existingCategory = categoryRepository.findById(categoryDTO.getId()).orElseThrow(
-				() -> new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + categoryDTO.getId()));
+		try {
+			// Validate category ID
+			if (categoryDTO.getId() == null) {
+				throw new DetailException(CategoryConstant.E414_CATEGORY_ID_REQUIRED);
+			}
 
-		// Check if new name conflicts with other categories
-		if (!existingCategory.getName().equalsIgnoreCase(categoryDTO.getName())
-				&& categoryRepository.existsByNameIgnoreCase(categoryDTO.getName())) {
-			throw new BadRequestException("Tên danh mục đã tồn tại");
+			// Validate category name
+			if (categoryDTO.getName() == null || categoryDTO.getName().trim().isEmpty()) {
+				throw new DetailException(CategoryConstant.E410_CATEGORY_NAME_REQUIRED);
+			}
+
+			Category existingCategory = categoryRepository.findById(categoryDTO.getId())
+					.orElseThrow(() -> new DetailException(CategoryConstant.E400_CATEGORY_NOT_FOUND));
+
+			// Check if new name conflicts with other categories
+			if (!existingCategory.getName().equalsIgnoreCase(categoryDTO.getName())
+					&& categoryRepository.existsByNameIgnoreCase(categoryDTO.getName())) {
+				throw new DetailException(CategoryConstant.E411_CATEGORY_NAME_EXISTS);
+			}
+
+			existingCategory.setName(categoryDTO.getName());
+			existingCategory.setDescription(categoryDTO.getDescription());
+			existingCategory.setImageUrl(categoryDTO.getImageUrl());
+			existingCategory.setUpdatedAt(new Date());
+
+			Category updatedCategory = categoryRepository.save(existingCategory);
+			log.info("Updated category with ID: {}", updatedCategory.getId());
+
+			return convertToDTO(updatedCategory);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error updating category with ID: {}", categoryDTO.getId(), e);
+			throw new DetailException(CategoryConstant.E407_CATEGORY_UPDATE_ERROR);
 		}
-
-		existingCategory.setName(categoryDTO.getName());
-		existingCategory.setDescription(categoryDTO.getDescription());
-		existingCategory.setImageUrl(categoryDTO.getImageUrl());
-		existingCategory.setUpdatedAt(new Date());
-
-		Category updatedCategory = categoryRepository.save(existingCategory);
-		log.info("Updated category with ID: {}", updatedCategory.getId());
-
-		return convertToDTO(updatedCategory);
 	}
 
 	@Override
-	public void deleteById(Long id) {
+	public void deleteById(Long id) throws DetailException {
 		log.debug("Deleting category with ID: {}", id);
 
-		Category category = categoryRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + id));
+		try {
+			Category category = categoryRepository.findById(id)
+					.orElseThrow(() -> new DetailException(CategoryConstant.E400_CATEGORY_NOT_FOUND));
 
-		// Check if category has associated products
-		// if (category.getProducts() != null && !category.getProducts().isEmpty()) {
-		// throw new IllegalStateException("Không thể xóa danh mục có sản phẩm");
-		// }
+			// Check if category has associated products
+			// if (category.getProducts() != null && !category.getProducts().isEmpty()) {
+			// throw new DetailException(CategoryConstant.E425_CATEGORY_HAS_PRODUCTS);
+			// }
 
-		categoryRepository.delete(category);
-		log.info("Deleted category with ID: {}", id);
+			categoryRepository.delete(category);
+			log.info("Deleted category with ID: {}", id);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error deleting category with ID: {}", id, e);
+			throw new DetailException(CategoryConstant.E408_CATEGORY_DELETE_ERROR);
+		}
 	}
 
 	@Override
@@ -122,34 +178,54 @@ public class CategoryServiceImpl implements CategoryService {
 	}
 
 	@Override
-	public CategoryDTO toggleActiveStatus(Long id) {
+	public CategoryDTO toggleActiveStatus(Long id) throws DetailException {
 		log.debug("Toggling active status for category ID: {}", id);
 
-		Category category = categoryRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + id));
+		try {
+			Category category = categoryRepository.findById(id)
+					.orElseThrow(() -> new DetailException(CategoryConstant.E400_CATEGORY_NOT_FOUND));
 
-		category.setActive(!category.isActive());
-		category.setUpdatedAt(new Date());
+			category.setActive(!category.isActive());
+			category.setUpdatedAt(new Date());
 
-		Category updatedCategory = categoryRepository.save(category);
-		log.info("Toggled active status for category ID: {} to {}", id, updatedCategory.isActive());
+			Category updatedCategory = categoryRepository.save(category);
+			log.info("Toggled active status for category ID: {} to {}", id, updatedCategory.isActive());
 
-		return convertToDTO(updatedCategory);
+			return convertToDTO(updatedCategory);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error toggling active status for category ID: {}", id, e);
+			throw new DetailException(CategoryConstant.E409_CATEGORY_TOGGLE_ERROR);
+		}
 	}
 
 	@Override
-	public Page<CategoryDTO> search(String keyword, Pageable pageable) {
+	public Page<CategoryDTO> search(String keyword, Pageable pageable) throws DetailException {
 		log.debug("Searching categories with keyword: {}", keyword);
-		Page<Category> categories = categoryRepository
-				.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(keyword, pageable);
-		return categories.map(this::convertToDTO);
+		try {
+			Page<Category> categories = categoryRepository
+					.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(keyword, pageable);
+			log.info("Found {} categories with keyword: {}", categories.getTotalElements(), keyword);
+			return categories.map(this::convertToDTO);
+		} catch (Exception e) {
+			log.error("Error searching categories with keyword: {}", keyword, e);
+			throw new DetailException(CategoryConstant.E430_CATEGORY_SEARCH_ERROR);
+		}
 	}
 
 	@Override
-	public Page<CategoryDTO> findAll(Pageable pageable) {
+	public Page<CategoryDTO> findAll(Pageable pageable) throws DetailException {
 		log.debug("Fetching categories with pagination");
-		Page<Category> categories = categoryRepository.findAll(pageable);
-		return categories.map(this::convertToDTO);
+		try {
+			Page<Category> categories = categoryRepository.findAll(pageable);
+			log.info("Found {} categories (page {} of {})", categories.getTotalElements(),
+					categories.getNumber(), categories.getTotalPages());
+			return categories.map(this::convertToDTO);
+		} catch (Exception e) {
+			log.error("Error fetching categories with pagination", e);
+			throw new DetailException(CategoryConstant.E431_CATEGORY_PAGINATION_ERROR);
+		}
 	}
 
 	/**

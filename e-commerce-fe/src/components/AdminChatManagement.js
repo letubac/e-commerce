@@ -14,6 +14,7 @@ import {
   Archive,
   Star
 } from 'lucide-react';
+import adminApi from '../api/adminApi';
 
 function AdminChatManagement() {
   const [conversations, setConversations] = useState([]);
@@ -51,50 +52,36 @@ function AdminChatManagement() {
 
   const loadConversations = async () => {
     try {
-      let url = '/api/v1/admin/chat/conversations';
-      const params = new URLSearchParams();
+      const params = {};
+      if (searchTerm) params.search = searchTerm;
+      if (statusFilter !== 'all') params.status = statusFilter;
       
-      if (searchTerm) params.append('search', searchTerm);
-      if (statusFilter !== 'all') params.append('status', statusFilter);
-      
-      if (params.toString()) {
-        url += '?' + params.toString();
-      }
-
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
+      const data = await adminApi.getChatConversations(params);
       setConversations(data.content || data || []);
     } catch (error) {
       console.error('Error loading conversations:', error);
+      // Display error message from BE if available
+      if (error.message) {
+        alert(`Lỗi: ${error.message}`);
+      }
     }
   };
 
   const loadMessages = async (conversationId) => {
     try {
-      const response = await fetch(`/api/v1/admin/chat/conversations/${conversationId}/messages`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
+      const data = await adminApi.getChatMessages(conversationId, {});
       setMessages(data.content || data || []);
     } catch (error) {
       console.error('Error loading messages:', error);
+      if (error.message) {
+        alert(`Lỗi: ${error.message}`);
+      }
     }
   };
 
   const loadQuickReplies = async () => {
     try {
-      const response = await fetch('/api/v1/admin/chat/quick-replies', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
+      const data = await adminApi.getChatQuickReplies();
       setQuickReplies(data || []);
     } catch (error) {
       console.error('Error loading quick replies:', error);
@@ -111,34 +98,19 @@ function AdminChatManagement() {
     };
 
     try {
-      const response = await fetch('/api/v1/admin/chat/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(messageData)
-      });
-      
-      if (response.ok) {
-        setNewMessage('');
-        loadMessages(selectedConversation.id);
-        loadConversations(); // Update conversation list
-      }
+      await adminApi.sendChatMessage(messageData);
+      setNewMessage('');
+      loadMessages(selectedConversation.id);
+      loadConversations(); // Update conversation list
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Không thể gửi tin nhắn. Vui lòng thử lại.');
+      alert(error.message || 'Không thể gửi tin nhắn. Vui lòng thử lại.');
     }
   };
 
   const markAsRead = async (conversationId) => {
     try {
-      await fetch(`/api/v1/admin/chat/conversations/${conversationId}/read`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      await adminApi.markConversationAsRead(conversationId);
     } catch (error) {
       console.error('Error marking as read:', error);
     }
@@ -146,35 +118,28 @@ function AdminChatManagement() {
 
   const updateConversationStatus = async (conversationId, status) => {
     try {
-      await fetch(`/api/v1/admin/chat/conversations/${conversationId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ status })
-      });
-      
+      await adminApi.updateConversationStatus(conversationId, status);
       loadConversations();
       if (selectedConversation?.id === conversationId) {
         setSelectedConversation(prev => ({ ...prev, status }));
       }
     } catch (error) {
       console.error('Error updating status:', error);
+      if (error.message) {
+        alert(`Lỗi: ${error.message}`);
+      }
     }
   };
 
   const assignToMe = async (conversationId) => {
     try {
-      await fetch(`/api/v1/admin/chat/conversations/${conversationId}/assign`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      await adminApi.assignConversation(conversationId);
       loadConversations();
     } catch (error) {
       console.error('Error assigning conversation:', error);
+      if (error.message) {
+        alert(`Lỗi: ${error.message}`);
+      }
     }
   };
 

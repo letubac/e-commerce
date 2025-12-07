@@ -10,11 +10,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ecommerce.constant.ChatConstant;
 import com.ecommerce.dto.ConversationDTO;
 import com.ecommerce.entity.Conversation;
 import com.ecommerce.entity.ConversationStatus;
 import com.ecommerce.entity.User;
-import com.ecommerce.exception.ResourceNotFoundException;
+import com.ecommerce.exception.DetailException;
 import com.ecommerce.repository.ConversationRepository;
 import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.ConversationService;
@@ -32,244 +33,530 @@ public class ConversationServiceImpl implements ConversationService {
 	private final UserRepository userRepository;
 
 	@Override
-	public ConversationDTO createConversation(Long userId, String subject) {
-		log.debug("Creating conversation for user {} with subject: {}", userId, subject);
+	public ConversationDTO createConversation(Long userId, String subject) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Creating conversation for user {} with subject: {}", userId, subject);
 
-		// Create conversation without user validation for now
-		// In production, you would validate user exists through a service call
-		Conversation conversation = new Conversation();
-		conversation.setUserId(userId);
-		conversation.setSubject(subject);
-		conversation.setStatus("OPEN");
-		conversation.setPriority("NORMAL");
-		conversation.setUnreadCount(0);
-		conversation.setCreatedAt(new Date());
-		conversation.setUpdatedAt(new Date());
+			if (userId == null || userId <= 0) {
+				throw new DetailException(ChatConstant.E530_INVALID_USER_ID);
+			}
 
-		Conversation savedConversation = conversationRepository.create(conversation);
-		log.info("Conversation created with id: {}", savedConversation.getId());
+			if (subject == null || subject.trim().isEmpty()) {
+				throw new DetailException(ChatConstant.E531_INVALID_SUBJECT);
+			}
 
-		return convertToDTO(savedConversation);
+			// Verify user exists
+			if (!userRepository.findById(userId).isPresent()) {
+				throw new DetailException(ChatConstant.E521_USER_NOT_FOUND);
+			}
+
+			Conversation conversation = new Conversation();
+			conversation.setUserId(userId);
+			conversation.setSubject(subject.trim());
+			conversation.setStatus("OPEN");
+			conversation.setPriority("NORMAL");
+			conversation.setUnreadCount(0);
+			conversation.setCreatedAt(new Date());
+			conversation.setUpdatedAt(new Date());
+
+			Conversation savedConversation = conversationRepository.create(conversation);
+			log.info("Conversation created with id: {} - took: {}ms", savedConversation.getId(),
+					System.currentTimeMillis() - start);
+
+			return convertToDTO(savedConversation);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error creating conversation for user {}", userId, e);
+			throw new DetailException(ChatConstant.E503_CONVERSATION_CREATION_FAILED);
+		}
 	}
 
 	@Override
-	public ConversationDTO createConversation(Long userId, String subject, String initialMessage) {
-		log.debug("Creating conversation for user {} with subject: {} and initial message", userId, subject);
+	public ConversationDTO createConversation(Long userId, String subject, String initialMessage)
+			throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Creating conversation for user {} with subject: {} and initial message", userId, subject);
 
-		// Create conversation
-		Conversation conversation = new Conversation();
-		conversation.setUserId(userId);
-		conversation.setSubject(subject);
-		conversation.setStatus("OPEN");
-		conversation.setPriority("NORMAL");
-		conversation.setUnreadCount(0);
-		conversation.setCreatedAt(new Date());
-		conversation.setUpdatedAt(new Date());
+			if (userId == null || userId <= 0) {
+				throw new DetailException(ChatConstant.E530_INVALID_USER_ID);
+			}
 
-		Conversation savedConversation = conversationRepository.create(conversation);
-		log.info("Conversation created with id: {} and initial message", savedConversation.getId());
+			if (subject == null || subject.trim().isEmpty()) {
+				throw new DetailException(ChatConstant.E531_INVALID_SUBJECT);
+			}
 
-		return convertToDTO(savedConversation);
+			if (initialMessage == null || initialMessage.trim().isEmpty()) {
+				throw new DetailException(ChatConstant.E532_INVALID_MESSAGE_CONTENT);
+			}
+
+			// Verify user exists
+			if (!userRepository.findById(userId).isPresent()) {
+				throw new DetailException(ChatConstant.E521_USER_NOT_FOUND);
+			}
+
+			Conversation conversation = new Conversation();
+			conversation.setUserId(userId);
+			conversation.setSubject(subject.trim());
+			conversation.setStatus("OPEN");
+			conversation.setPriority("NORMAL");
+			conversation.setUnreadCount(0);
+			conversation.setCreatedAt(new Date());
+			conversation.setUpdatedAt(new Date());
+
+			Conversation savedConversation = conversationRepository.create(conversation);
+			log.info("Conversation created with id: {} and initial message - took: {}ms",
+					savedConversation.getId(), System.currentTimeMillis() - start);
+
+			return convertToDTO(savedConversation);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error creating conversation for user {} with initial message", userId, e);
+			throw new DetailException(ChatConstant.E503_CONVERSATION_CREATION_FAILED);
+		}
 	}
 
 	@Override
-	public ConversationDTO getConversationById(Long conversationId) {
-		log.debug("Fetching conversation with id: {}", conversationId);
+	public ConversationDTO getConversationById(Long conversationId) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Fetching conversation with id: {}", conversationId);
 
-		// Use findAll and filter since specific findById doesn't exist
-		List<Conversation> conversations = (List<Conversation>) conversationRepository.findAll();
-		Conversation conversation = conversations.stream().filter(c -> c.getId().equals(conversationId)).findFirst()
-				.orElseThrow(() -> new ResourceNotFoundException("Conversation not found with id: " + conversationId));
+			if (conversationId == null || conversationId <= 0) {
+				throw new DetailException(ChatConstant.E534_INVALID_CONVERSATION_ID);
+			}
 
-		return convertToDTO(conversation);
+			List<Conversation> conversations = (List<Conversation>) conversationRepository.findAll();
+			Conversation conversation = conversations.stream()
+					.filter(c -> c.getId().equals(conversationId))
+					.findFirst()
+					.orElseThrow(() -> new DetailException(ChatConstant.E500_CONVERSATION_NOT_FOUND));
+
+			log.info("Fetched conversation {} - took: {}ms", conversationId, System.currentTimeMillis() - start);
+			return convertToDTO(conversation);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error fetching conversation {}", conversationId, e);
+			throw new DetailException(ChatConstant.E501_CONVERSATION_FETCH_FAILED);
+		}
 	}
 
 	@Override
-	public ConversationDTO getConversationByIdAndUserId(Long conversationId, Long userId) {
-		log.debug("Fetching conversation {} for user {}", conversationId, userId);
+	public ConversationDTO getConversationByIdAndUserId(Long conversationId, Long userId) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Fetching conversation {} for user {}", conversationId, userId);
 
-		Conversation conversation = conversationRepository.findByIdAndUserId(conversationId, userId)
-				.orElseThrow(() -> new ResourceNotFoundException(
-						"Conversation not found with id: " + conversationId + " for user: " + userId));
+			if (conversationId == null || conversationId <= 0) {
+				throw new DetailException(ChatConstant.E534_INVALID_CONVERSATION_ID);
+			}
 
-		return convertToDTO(conversation);
+			if (userId == null || userId <= 0) {
+				throw new DetailException(ChatConstant.E530_INVALID_USER_ID);
+			}
+
+			Conversation conversation = conversationRepository.findByIdAndUserId(conversationId, userId)
+					.orElseThrow(() -> new DetailException(ChatConstant.E520_USER_NOT_CONVERSATION_OWNER));
+
+			log.info("Fetched conversation {} for user {} - took: {}ms", conversationId, userId,
+					System.currentTimeMillis() - start);
+			return convertToDTO(conversation);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error fetching conversation {} for user {}", conversationId, userId, e);
+			throw new DetailException(ChatConstant.E501_CONVERSATION_FETCH_FAILED);
+		}
 	}
 
 	@Override
-	public List<ConversationDTO> getConversationsByUserId(Long userId) {
-		log.debug("Fetching conversations for user: {}", userId);
+	public List<ConversationDTO> getConversationsByUserId(Long userId) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Fetching conversations for user: {}", userId);
 
-		List<Conversation> conversations = conversationRepository.findByUserId(userId);
-		return conversations.stream().map(this::convertToDTO).collect(Collectors.toList());
+			if (userId == null || userId <= 0) {
+				throw new DetailException(ChatConstant.E530_INVALID_USER_ID);
+			}
+
+			// Verify user exists
+			if (!userRepository.findById(userId).isPresent()) {
+				throw new DetailException(ChatConstant.E521_USER_NOT_FOUND);
+			}
+
+			List<Conversation> conversations = conversationRepository.findByUserId(userId);
+			log.info("Fetched {} conversations for user {} - took: {}ms", conversations.size(), userId,
+					System.currentTimeMillis() - start);
+			return conversations.stream().map(this::convertToDTO).collect(Collectors.toList());
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error fetching conversations for user {}", userId, e);
+			throw new DetailException(ChatConstant.E501_CONVERSATION_FETCH_FAILED);
+		}
 	}
 
 	@Override
-	public Page<ConversationDTO> getConversationsByUserId(Long userId, Pageable pageable) {
-		log.debug("Fetching paginated conversations for user: {}", userId);
+	public Page<ConversationDTO> getConversationsByUserId(Long userId, Pageable pageable) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Fetching paginated conversations for user: {}", userId);
 
-		Page<Conversation> conversationsPage = conversationRepository.findByUserIdPaged(userId, pageable);
-		return conversationsPage.map(this::convertToDTO);
+			if (userId == null || userId <= 0) {
+				throw new DetailException(ChatConstant.E530_INVALID_USER_ID);
+			}
+
+			// Verify user exists
+			if (!userRepository.findById(userId).isPresent()) {
+				throw new DetailException(ChatConstant.E521_USER_NOT_FOUND);
+			}
+
+			Page<Conversation> conversationsPage = conversationRepository.findByUserIdPaged(userId, pageable);
+			log.info("Fetched {} conversations (page {}) for user {} - took: {}ms",
+					conversationsPage.getContent().size(), pageable.getPageNumber(), userId,
+					System.currentTimeMillis() - start);
+			return conversationsPage.map(this::convertToDTO);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error fetching paginated conversations for user {}", userId, e);
+			throw new DetailException(ChatConstant.E501_CONVERSATION_FETCH_FAILED);
+		}
 	}
 
 	@Override
-	public Page<ConversationDTO> getAllConversations(Pageable pageable) {
-		log.debug("Fetching all conversations with pagination");
+	public Page<ConversationDTO> getAllConversations(Pageable pageable) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Fetching all conversations with pagination");
 
-		Page<Conversation> conversationsPage = conversationRepository.findAll(pageable);
-		return conversationsPage.map(this::convertToDTO);
+			Page<Conversation> conversationsPage = conversationRepository.findAll(pageable);
+			log.info("Fetched {} conversations (page {}) - took: {}ms",
+					conversationsPage.getContent().size(), pageable.getPageNumber(),
+					System.currentTimeMillis() - start);
+			return conversationsPage.map(this::convertToDTO);
+		} catch (Exception e) {
+			log.error("Error fetching all conversations", e);
+			throw new DetailException(ChatConstant.E501_CONVERSATION_FETCH_FAILED);
+		}
 	}
 
 	// Internal method for String status
-	public Page<ConversationDTO> getConversationsByStatus(String status, Pageable pageable) {
-		log.debug("Fetching conversations by status: {}", status);
+	public Page<ConversationDTO> getConversationsByStatus(String status, Pageable pageable) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Fetching conversations by status: {}", status);
 
-		// Use findAll and filter by status
-		List<Conversation> allConversations = (List<Conversation>) conversationRepository.findAll();
-		List<Conversation> filteredConversations = allConversations.stream().filter(c -> status.equals(c.getStatus()))
-				.collect(Collectors.toList());
+			if (status == null || status.trim().isEmpty()) {
+				throw new DetailException(ChatConstant.E535_INVALID_STATUS);
+			}
 
-		// Manual pagination
-		int start = (int) pageable.getOffset();
-		int end = Math.min(start + pageable.getPageSize(), filteredConversations.size());
-		List<Conversation> pageContent = filteredConversations.subList(start, end);
+			// Use findAll and filter by status
+			List<Conversation> allConversations = (List<Conversation>) conversationRepository.findAll();
+			List<Conversation> filteredConversations = allConversations.stream()
+					.filter(c -> status.equals(c.getStatus()))
+					.collect(Collectors.toList());
 
-		List<ConversationDTO> dtoContent = pageContent.stream().map(this::convertToDTO).collect(Collectors.toList());
+			// Manual pagination
+			int start2 = (int) pageable.getOffset();
+			int end = Math.min(start2 + pageable.getPageSize(), filteredConversations.size());
+			List<Conversation> pageContent = filteredConversations.subList(start2, end);
 
-		return new org.springframework.data.domain.PageImpl<>(dtoContent, pageable, filteredConversations.size());
+			List<ConversationDTO> dtoContent = pageContent.stream().map(this::convertToDTO)
+					.collect(Collectors.toList());
+
+			log.info("Fetched {} conversations with status {} - took: {}ms", pageContent.size(), status,
+					System.currentTimeMillis() - start);
+			return new org.springframework.data.domain.PageImpl<>(dtoContent, pageable, filteredConversations.size());
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error fetching conversations by status {}", status, e);
+			throw new DetailException(ChatConstant.E501_CONVERSATION_FETCH_FAILED);
+		}
 	}
 
 	// Interface-required method with enum parameter
 	@Override
-	public Page<ConversationDTO> getConversationsByStatus(ConversationStatus status, Pageable pageable) {
-		return getConversationsByStatus(status.name(), pageable);
+	public Page<ConversationDTO> getConversationsByStatus(ConversationStatus status, Pageable pageable)
+			throws DetailException {
+		try {
+			if (status == null) {
+				throw new DetailException(ChatConstant.E535_INVALID_STATUS);
+			}
+			return getConversationsByStatus(status.name(), pageable);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error fetching conversations by status enum {}", status, e);
+			throw new DetailException(ChatConstant.E501_CONVERSATION_FETCH_FAILED);
+		}
 	}
 
 	@Override
-	public ConversationDTO assignConversationToAdmin(Long conversationId, Long adminId) {
-		log.debug("Assigning conversation {} to admin {}", conversationId, adminId);
+	public ConversationDTO assignConversationToAdmin(Long conversationId, Long adminId) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Assigning conversation {} to admin {}", conversationId, adminId);
 
-		// Find conversation by filtering findAll results
-		List<Conversation> conversations = (List<Conversation>) conversationRepository.findAll();
-		Conversation conversation = conversations.stream().filter(c -> c.getId().equals(conversationId)).findFirst()
-				.orElseThrow(() -> new ResourceNotFoundException("Conversation not found with id: " + conversationId));
+			if (conversationId == null || conversationId <= 0) {
+				throw new DetailException(ChatConstant.E534_INVALID_CONVERSATION_ID);
+			}
 
-		// Skip admin validation for now - in production would use a service call
-		conversation.setAdminId(adminId);
-		conversation.setStatus("ASSIGNED");
-		conversation.setUpdatedAt(new Date());
+			if (adminId == null || adminId <= 0) {
+				throw new DetailException(ChatConstant.E536_INVALID_ADMIN_ID);
+			}
 
-		Conversation updatedConversation = conversationRepository.update(conversation);
-		log.info("Conversation {} assigned to admin {}", conversationId, adminId);
+			// Find conversation by filtering findAll results
+			List<Conversation> conversations = (List<Conversation>) conversationRepository.findAll();
+			Conversation conversation = conversations.stream()
+					.filter(c -> c.getId().equals(conversationId))
+					.findFirst()
+					.orElseThrow(() -> new DetailException(ChatConstant.E500_CONVERSATION_NOT_FOUND));
 
-		return convertToDTO(updatedConversation);
+			// Verify admin exists
+			if (!userRepository.findById(adminId).isPresent()) {
+				throw new DetailException(ChatConstant.E522_ADMIN_NOT_FOUND);
+			}
+
+			conversation.setAdminId(adminId);
+			conversation.setStatus("ASSIGNED");
+			conversation.setUpdatedAt(new Date());
+
+			Conversation updatedConversation = conversationRepository.update(conversation);
+			log.info("Conversation {} assigned to admin {} - took: {}ms", conversationId, adminId,
+					System.currentTimeMillis() - start);
+
+			return convertToDTO(updatedConversation);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error assigning conversation {} to admin {}", conversationId, adminId, e);
+			throw new DetailException(ChatConstant.E505_CONVERSATION_ASSIGNMENT_FAILED);
+		}
 	}
 
 	// String version for internal use
-	public ConversationDTO updateConversationStatus(Long conversationId, String status) {
-		log.debug("Updating conversation {} status to: {}", conversationId, status);
+	public ConversationDTO updateConversationStatus(Long conversationId, String status) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Updating conversation {} status to: {}", conversationId, status);
 
-		// Find conversation by filtering findAll results
-		List<Conversation> conversations = (List<Conversation>) conversationRepository.findAll();
-		Conversation conversation = conversations.stream().filter(c -> c.getId().equals(conversationId)).findFirst()
-				.orElseThrow(() -> new ResourceNotFoundException("Conversation not found with id: " + conversationId));
+			if (conversationId == null || conversationId <= 0) {
+				throw new DetailException(ChatConstant.E534_INVALID_CONVERSATION_ID);
+			}
 
-		conversation.setStatus(status);
-		conversation.setUpdatedAt(new Date());
+			if (status == null || status.trim().isEmpty()) {
+				throw new DetailException(ChatConstant.E535_INVALID_STATUS);
+			}
 
-		Conversation updatedConversation = conversationRepository.update(conversation);
-		log.info("Conversation {} status updated to: {}", conversationId, status);
+			// Find conversation by filtering findAll results
+			List<Conversation> conversations = (List<Conversation>) conversationRepository.findAll();
+			Conversation conversation = conversations.stream()
+					.filter(c -> c.getId().equals(conversationId))
+					.findFirst()
+					.orElseThrow(() -> new DetailException(ChatConstant.E500_CONVERSATION_NOT_FOUND));
 
-		return convertToDTO(updatedConversation);
+			conversation.setStatus(status.trim());
+			conversation.setUpdatedAt(new Date());
+
+			Conversation updatedConversation = conversationRepository.update(conversation);
+			log.info("Conversation {} status updated to: {} - took: {}ms", conversationId, status,
+					System.currentTimeMillis() - start);
+
+			return convertToDTO(updatedConversation);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error updating conversation {} status to {}", conversationId, status, e);
+			throw new DetailException(ChatConstant.E504_CONVERSATION_STATUS_UPDATE_FAILED);
+		}
 	}
 
 	// Interface-required method with enum parameter
 	@Override
-	public ConversationDTO updateConversationStatus(Long conversationId, ConversationStatus status) {
-		return updateConversationStatus(conversationId, status.name());
+	public ConversationDTO updateConversationStatus(Long conversationId, ConversationStatus status)
+			throws DetailException {
+		try {
+			if (status == null) {
+				throw new DetailException(ChatConstant.E535_INVALID_STATUS);
+			}
+			return updateConversationStatus(conversationId, status.name());
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error updating conversation {} status with enum {}", conversationId, status, e);
+			throw new DetailException(ChatConstant.E504_CONVERSATION_STATUS_UPDATE_FAILED);
+		}
 	}
 
 	@Override
-	public List<ConversationDTO> getUnassignedConversations() {
-		log.debug("Fetching unassigned conversations");
+	public List<ConversationDTO> getUnassignedConversations() throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Fetching unassigned conversations");
 
-		// Use findAll to get all conversations and filter
-		List<Conversation> allConversations = (List<Conversation>) conversationRepository.findAll();
-		List<Conversation> unassignedConversations = allConversations.stream()
-				.filter(c -> c.getAdminId() == null && "OPEN".equals(c.getStatus())).collect(Collectors.toList());
+			// Use findAll to get all conversations and filter
+			List<Conversation> allConversations = (List<Conversation>) conversationRepository.findAll();
+			List<Conversation> unassignedConversations = allConversations.stream()
+					.filter(c -> c.getAdminId() == null && "OPEN".equals(c.getStatus()))
+					.collect(Collectors.toList());
 
-		return unassignedConversations.stream().map(this::convertToDTO).collect(Collectors.toList());
+			log.info("Fetched {} unassigned conversations - took: {}ms", unassignedConversations.size(),
+					System.currentTimeMillis() - start);
+			return unassignedConversations.stream().map(this::convertToDTO).collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Error fetching unassigned conversations", e);
+			throw new DetailException(ChatConstant.E501_CONVERSATION_FETCH_FAILED);
+		}
 	}
 
 	// Additional methods for controller compatibility
 
 	@Override
-	public Page<ConversationDTO> findByUsername(String username, Pageable pageable) {
-		log.debug("Finding conversations by username: {}", username);
+	public Page<ConversationDTO> findByUsername(String username, Pageable pageable) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Finding conversations by username: {}", username);
 
-		Optional<User> userOpt = userRepository.findByUsername(username);
-		if (userOpt.isEmpty()) {
-			throw new ResourceNotFoundException("User not found with username: " + username);
+			if (username == null || username.trim().isEmpty()) {
+				throw new DetailException(ChatConstant.E533_INVALID_USERNAME);
+			}
+
+			Optional<User> userOpt = userRepository.findByUsername(username.trim());
+			if (userOpt.isEmpty()) {
+				throw new DetailException(ChatConstant.E521_USER_NOT_FOUND);
+			}
+
+			Page<ConversationDTO> result = getConversationsByUserId(userOpt.get().getId(), pageable);
+			log.info("Found conversations for username {} - took: {}ms", username,
+					System.currentTimeMillis() - start);
+			return result;
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error finding conversations by username {}", username, e);
+			throw new DetailException(ChatConstant.E501_CONVERSATION_FETCH_FAILED);
 		}
-
-		return getConversationsByUserId(userOpt.get().getId(), pageable);
 	}
 
 	@Override
-	public ConversationDTO findById(Long conversationId) {
+	public ConversationDTO findById(Long conversationId) throws DetailException {
 		return getConversationById(conversationId);
 	}
 
 	@Override
-	public ConversationDTO createConversation(String username, String subject) {
-		log.debug("Creating conversation for username {} with subject: {}", username, subject);
+	public ConversationDTO createConversation(String username, String subject) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Creating conversation for username {} with subject: {}", username, subject);
 
-		Optional<User> userOpt = userRepository.findByUsername(username);
-		if (userOpt.isEmpty()) {
-			throw new ResourceNotFoundException("User not found with username: " + username);
+			if (username == null || username.trim().isEmpty()) {
+				throw new DetailException(ChatConstant.E533_INVALID_USERNAME);
+			}
+
+			if (subject == null || subject.trim().isEmpty()) {
+				throw new DetailException(ChatConstant.E531_INVALID_SUBJECT);
+			}
+
+			Optional<User> userOpt = userRepository.findByUsername(username.trim());
+			if (userOpt.isEmpty()) {
+				throw new DetailException(ChatConstant.E521_USER_NOT_FOUND);
+			}
+
+			ConversationDTO result = createConversation(userOpt.get().getId(), subject.trim());
+			log.info("Created conversation for username {} - took: {}ms", username,
+					System.currentTimeMillis() - start);
+			return result;
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error creating conversation for username {}", username, e);
+			throw new DetailException(ChatConstant.E503_CONVERSATION_CREATION_FAILED);
 		}
-
-		return createConversation(userOpt.get().getId(), subject);
 	}
 
 	@Override
-	public Page<ConversationDTO> findAllConversationsAdmin(Pageable pageable) {
+	public Page<ConversationDTO> findAllConversationsAdmin(Pageable pageable) throws DetailException {
 		return getAllConversations(pageable);
 	}
 
 	@Override
-	public ConversationDTO closeConversation(Long conversationId) {
+	public ConversationDTO closeConversation(Long conversationId) throws DetailException {
 		return updateConversationStatus(conversationId, "CLOSED");
 	}
 
 	@Override
-	public ConversationDTO reopenConversation(Long conversationId) {
+	public ConversationDTO reopenConversation(Long conversationId) throws DetailException {
 		return updateConversationStatus(conversationId, "OPEN");
 	}
 
 	@Override
-	public boolean isUserOwnerOfConversation(String username, Long conversationId) {
-		log.debug("Checking if user {} owns conversation {}", username, conversationId);
+	public boolean isUserOwnerOfConversation(String username, Long conversationId) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Checking if user {} owns conversation {}", username, conversationId);
 
-		Optional<User> userOpt = userRepository.findByUsername(username);
-		if (userOpt.isEmpty()) {
-			return false;
+			if (username == null || username.trim().isEmpty()) {
+				throw new DetailException(ChatConstant.E533_INVALID_USERNAME);
+			}
+
+			if (conversationId == null || conversationId <= 0) {
+				throw new DetailException(ChatConstant.E534_INVALID_CONVERSATION_ID);
+			}
+
+			Optional<User> userOpt = userRepository.findByUsername(username.trim());
+			if (userOpt.isEmpty()) {
+				return false;
+			}
+
+			Optional<Conversation> conversationOpt = conversationRepository.findByIdAndUserId(conversationId,
+					userOpt.get().getId());
+			log.debug("Ownership check result: {} - took: {}ms", conversationOpt.isPresent(),
+					System.currentTimeMillis() - start);
+			return conversationOpt.isPresent();
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error checking conversation ownership for user {} and conversation {}", username, conversationId,
+					e);
+			throw new DetailException(ChatConstant.E537_OWNERSHIP_CHECK_FAILED);
 		}
-
-		Optional<Conversation> conversationOpt = conversationRepository.findByIdAndUserId(conversationId,
-				userOpt.get().getId());
-		return conversationOpt.isPresent();
 	}
 
 	@Override
-	public boolean canUserAccessConversation(Long userId, Long conversationId, boolean isAdmin) {
-		log.debug("Checking if user {} can access conversation {}", userId, conversationId);
+	public boolean canUserAccessConversation(Long userId, Long conversationId, boolean isAdmin) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Checking if user {} can access conversation {}", userId, conversationId);
 
-		if (isAdmin) {
-			return true; // Admins can access all conversations
+			if (userId == null || userId <= 0) {
+				throw new DetailException(ChatConstant.E530_INVALID_USER_ID);
+			}
+
+			if (conversationId == null || conversationId <= 0) {
+				throw new DetailException(ChatConstant.E534_INVALID_CONVERSATION_ID);
+			}
+
+			if (isAdmin) {
+				log.debug("Admin access granted - took: {}ms", System.currentTimeMillis() - start);
+				return true; // Admins can access all conversations
+			}
+
+			Optional<Conversation> conversationOpt = conversationRepository.findByIdAndUserId(conversationId, userId);
+			log.debug("Access check result: {} - took: {}ms", conversationOpt.isPresent(),
+					System.currentTimeMillis() - start);
+			return conversationOpt.isPresent();
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error checking conversation access for user {} and conversation {}", userId, conversationId, e);
+			throw new DetailException(ChatConstant.E537_OWNERSHIP_CHECK_FAILED);
 		}
-
-		Optional<Conversation> conversationOpt = conversationRepository.findByIdAndUserId(conversationId, userId);
-		return conversationOpt.isPresent();
 	}
 
 	private ConversationDTO convertToDTO(Conversation conversation) {
@@ -301,7 +588,7 @@ public class ConversationServiceImpl implements ConversationService {
 	}
 
 	// Override method that accepts ConversationStatus enum (but we'll use String)
-	public Page<ConversationDTO> getConversationsByStatus(Object status, Pageable pageable) {
+	public Page<ConversationDTO> getConversationsByStatus(Object status, Pageable pageable) throws DetailException {
 		String statusString = status != null ? status.toString() : "OPEN";
 		return getConversationsByStatus(statusString, pageable);
 	}

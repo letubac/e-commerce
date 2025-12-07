@@ -20,11 +20,8 @@ function ProductDetailsPage() {
   const fetchProductDetails = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await api.getProductDetails(id);
-      console.log('Product Details API Response:', response);
-      // Extract product data from response
-      const productData = response.data || response;
-      console.log('Product Data:', productData);
+      const productData = await api.getProductDetails(id);
+      console.log('Product Details:', productData);
       setProduct(productData);
       setSelectedImage(0);
     } catch (error) {

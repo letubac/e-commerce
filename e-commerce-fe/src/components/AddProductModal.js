@@ -64,12 +64,14 @@ function AddProductModal({ isOpen, onClose, onSuccess, editProduct = null }) {
 
   const loadCategoriesAndBrands = async () => {
     try {
-      const [categoriesResponse, brandsResponse] = await Promise.all([
+      // API đã parse BusinessApiResponse và trả về data trực tiếp
+      const [categories, brands] = await Promise.all([
         api.getAllCategoriesAdmin(),
         api.getAllBrandsAdmin()
       ]);
-      setCategories(categoriesResponse.data || []);
-      setBrands(brandsResponse.data || []);
+      // Data đã được parse, chỉ cần xử lý array hoặc pagination object
+      setCategories(Array.isArray(categories) ? categories : (categories?.content || []));
+      setBrands(Array.isArray(brands) ? brands : (brands?.content || []));
     } catch (error) {
       console.error('Error loading categories and brands:', error);
       setCategories([]);

@@ -1,8 +1,7 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.dto.ApiResponse;
-import com.ecommerce.dto.CouponDTO;
-import com.ecommerce.service.CouponService;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,11 +9,23 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.ecommerce.dto.CouponDTO;
+import com.ecommerce.exception.ErrorHandler;
+import com.ecommerce.exception.SuccessHandler;
+import com.ecommerce.service.CouponService;
+import com.ecommerce.webapp.BusinessApiResponse;
 
 import jakarta.validation.Valid;
-import java.util.Map;
 
 /**
  * REST controller for managing coupons.
@@ -30,12 +41,18 @@ public class CouponController {
     @Autowired
     private CouponService couponService;
 
+    @Autowired
+    private ErrorHandler errorHandler;
+
+    @Autowired
+    private SuccessHandler successHandler;
+
     /**
      * Get all coupons (Admin only)
      */
     @GetMapping("/coupons")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Page<CouponDTO>>> getCoupons(
+    public ResponseEntity<BusinessApiResponse> getCoupons(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -43,6 +60,7 @@ public class CouponController {
             @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) String keyword) {
 
+        long start = System.currentTimeMillis();
         try {
             Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
             PageRequest pageRequest = PageRequest.of(page, size, sort);
@@ -54,11 +72,10 @@ public class CouponController {
                 coupons = couponService.findAll(pageRequest);
             }
 
-            return ResponseEntity.ok(ApiResponse.success(coupons, "Lấy danh sách coupon thành công"));
+            return ResponseEntity.ok(successHandler.handlerSuccess(coupons, start));
         } catch (Exception e) {
             log.error("Lỗi khi lấy danh sách coupon", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy danh sách coupon"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -67,20 +84,15 @@ public class CouponController {
      */
     @PostMapping("/coupons")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<CouponDTO>> createCoupon(@Valid @RequestBody CouponDTO couponDTO) {
+    public ResponseEntity<BusinessApiResponse> createCoupon(@Valid @RequestBody CouponDTO couponDTO) {
+        long start = System.currentTimeMillis();
         try {
             CouponDTO createdCoupon = couponService.createCoupon(couponDTO);
-
             log.info("Admin đã tạo coupon mới: {}", couponDTO.getCode());
-            return ResponseEntity.ok(ApiResponse.success(createdCoupon, "Tạo coupon thành công"));
-        } catch (IllegalArgumentException e) {
-            log.warn("Dữ liệu không hợp lệ khi tạo coupon: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Dữ liệu không hợp lệ: " + e.getMessage()));
+            return ResponseEntity.ok(successHandler.handlerSuccess(createdCoupon, start));
         } catch (Exception e) {
             log.error("Lỗi khi tạo coupon", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi tạo coupon"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -89,26 +101,18 @@ public class CouponController {
      */
     @PutMapping("/coupons/{id}")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<CouponDTO>> updateCoupon(
+    public ResponseEntity<BusinessApiResponse> updateCoupon(
             @PathVariable Long id,
             @Valid @RequestBody CouponDTO couponDTO) {
+        long start = System.currentTimeMillis();
         try {
             couponDTO.setId(id);
             CouponDTO updatedCoupon = couponService.updateCoupon(id, couponDTO);
-
             log.info("Admin đã cập nhật coupon ID: {}", id);
-            return ResponseEntity.ok(ApiResponse.success(updatedCoupon, "Cập nhật coupon thành công"));
-        } catch (IllegalArgumentException e) {
-            log.warn("Dữ liệu không hợp lệ khi cập nhật coupon ID {}: {}", id, e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Dữ liệu không hợp lệ: " + e.getMessage()));
-        } catch (RuntimeException e) {
-            log.warn("Không tìm thấy coupon ID: {}", id);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(successHandler.handlerSuccess(updatedCoupon, start));
         } catch (Exception e) {
             log.error("Lỗi khi cập nhật coupon ID: {}", id, e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi cập nhật coupon"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -117,18 +121,15 @@ public class CouponController {
      */
     @DeleteMapping("/coupons/{id}")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> deleteCoupon(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> deleteCoupon(@PathVariable Long id) {
+        long start = System.currentTimeMillis();
         try {
             couponService.deleteCoupon(id);
             log.info("Admin đã xóa coupon ID: {}", id);
-            return ResponseEntity.ok(ApiResponse.success("Xóa coupon thành công"));
-        } catch (RuntimeException e) {
-            log.warn("Không tìm thấy coupon ID: {}", id);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(successHandler.handlerSuccess(null, start));
         } catch (Exception e) {
             log.error("Lỗi khi xóa coupon ID: {}", id, e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi xóa coupon"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -137,17 +138,14 @@ public class CouponController {
      */
     @GetMapping("/coupons/{id}")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<CouponDTO>> getCouponById(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> getCouponById(@PathVariable Long id) {
+        long start = System.currentTimeMillis();
         try {
             CouponDTO coupon = couponService.getCouponById(id);
-            return ResponseEntity.ok(ApiResponse.success(coupon, "Lấy thông tin coupon thành công"));
-        } catch (RuntimeException e) {
-            log.warn("Không tìm thấy coupon ID: {}", id);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(successHandler.handlerSuccess(coupon, start));
         } catch (Exception e) {
             log.error("Lỗi khi lấy coupon ID: {}", id, e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy thông tin coupon"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -155,24 +153,19 @@ public class CouponController {
      * Validate coupon code
      */
     @PostMapping("/coupons/validate")
-    public ResponseEntity<ApiResponse<CouponDTO>> validateCoupon(@RequestBody Map<String, String> request) {
+    public ResponseEntity<BusinessApiResponse> validateCoupon(@RequestBody Map<String, String> request) {
+        long start = System.currentTimeMillis();
         try {
             String couponCode = request.get("couponCode");
             if (couponCode == null || couponCode.trim().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Mã coupon không được để trống"));
+                throw new IllegalArgumentException("Mã coupon không được để trống");
             }
 
             CouponDTO coupon = couponService.validateCoupon(couponCode.trim());
-            return ResponseEntity.ok(ApiResponse.success(coupon, "Coupon hợp lệ"));
-        } catch (RuntimeException e) {
-            log.warn("Coupon không hợp lệ: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(e.getMessage()));
+            return ResponseEntity.ok(successHandler.handlerSuccess(coupon, start));
         } catch (Exception e) {
             log.error("Lỗi khi validate coupon", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi validate coupon"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -181,18 +174,15 @@ public class CouponController {
      */
     @PutMapping("/coupons/{id}/toggle-status")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<CouponDTO>> toggleCouponStatus(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> toggleCouponStatus(@PathVariable Long id) {
+        long start = System.currentTimeMillis();
         try {
             CouponDTO updatedCoupon = couponService.toggleActiveStatus(id);
             log.info("Admin đã thay đổi trạng thái coupon ID: {}", id);
-            return ResponseEntity.ok(ApiResponse.success(updatedCoupon, "Thay đổi trạng thái coupon thành công"));
-        } catch (RuntimeException e) {
-            log.warn("Không tìm thấy coupon ID: {}", id);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(successHandler.handlerSuccess(updatedCoupon, start));
         } catch (Exception e) {
             log.error("Lỗi khi thay đổi trạng thái coupon ID: {}", id, e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi thay đổi trạng thái coupon"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -201,17 +191,14 @@ public class CouponController {
      */
     @GetMapping("/coupons/{id}/statistics")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getCouponStatistics(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> getCouponStatistics(@PathVariable Long id) {
+        long start = System.currentTimeMillis();
         try {
             Map<String, Object> statistics = couponService.getCouponStatistics(id);
-            return ResponseEntity.ok(ApiResponse.success(statistics, "Lấy thống kê coupon thành công"));
-        } catch (RuntimeException e) {
-            log.warn("Không tìm thấy coupon ID: {}", id);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(successHandler.handlerSuccess(statistics, start));
         } catch (Exception e) {
             log.error("Lỗi khi lấy thống kê coupon ID: {}", id, e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy thống kê coupon"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -219,27 +206,25 @@ public class CouponController {
      * Apply coupon to order
      */
     @PostMapping("/coupons/apply")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> applyCoupon(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<BusinessApiResponse> applyCoupon(@RequestBody Map<String, Object> request) {
+        long start = System.currentTimeMillis();
         try {
             String couponCode = (String) request.get("couponCode");
             Double orderAmount = ((Number) request.get("orderAmount")).doubleValue();
 
             if (couponCode == null || couponCode.trim().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Mã coupon không được để trống"));
+                throw new IllegalArgumentException("Mã coupon không được để trống");
             }
 
             if (orderAmount == null || orderAmount <= 0) {
-                return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Số tiền đơn hàng không hợp lệ"));
+                throw new IllegalArgumentException("Số tiền đơn hàng không hợp lệ");
             }
 
             Map<String, Object> result = couponService.applyCoupon(couponCode.trim(), orderAmount);
-            return ResponseEntity.ok(ApiResponse.success(result, "Áp dụng coupon thành công"));
+            return ResponseEntity.ok(successHandler.handlerSuccess(result, start));
         } catch (Exception e) {
             log.error("Lỗi khi áp dụng coupon", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi áp dụng coupon"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 }

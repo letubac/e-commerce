@@ -49,12 +49,12 @@ function CouponManagement() {
       if (filters.search) params.keyword = filters.search;
 
       const response = await adminApi.getCoupons(params);
-      const data = response.data || response;
       
-      setCoupons(data.content || []);
+      // parseBusinessResponse đã trả về data
+      setCoupons(response.content || []);
       setPagination({
-        totalPages: data.totalPages || 0,
-        totalElements: data.totalElements || 0
+        totalPages: response.totalPages || 0,
+        totalElements: response.totalElements || 0
       });
     } catch (error) {
       console.error('Error fetching coupons:', error);

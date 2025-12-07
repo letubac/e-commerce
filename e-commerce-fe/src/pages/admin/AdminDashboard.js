@@ -15,7 +15,8 @@ import {
   Tags,
   FolderTree,
   FileText,
-  MessageCircle
+  MessageCircle,
+  Zap
 } from 'lucide-react';
 import AdminHeader from '../../components/AdminHeader';
 import AdminFooter from '../../components/AdminFooter';
@@ -24,6 +25,7 @@ import ProductManagement from '../../components/ProductManagement';
 import OrderManagement from '../../components/OrderManagement';
 import UserManagement from '../../components/UserManagement';
 import CouponManagement from '../../components/CouponManagement';
+import FlashSaleManagement from '../../components/FlashSaleManagement';
 import adminApi from '../../api/adminApi';
 
 function AdminDashboard() {
@@ -37,18 +39,30 @@ function AdminDashboard() {
   const [recentProducts, setRecentProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Category Management State
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    description: '',
+    parentId: null
+  });
 
   useEffect(() => {
     if (activeTab === 'overview') {
       fetchDashboardData();
+    } else if (activeTab === 'categories') {
+      fetchCategories();
     }
   }, [activeTab]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const response = await adminApi.getDashboardOverview();
-      const data = response.data || response;
+      const data = await adminApi.getDashboardOverview();
       
       setStats({
         totalUsers: data.totalUsers || 0,
@@ -79,6 +93,85 @@ function AdminDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Category Management Functions
+  const fetchCategories = async () => {
+    setCategoriesLoading(true);
+    try {
+      const data = await adminApi.getCategories();
+      setCategories(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      alert(error.message || 'Không thể tải danh sách danh mục');
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  const handleCreateCategory = () => {
+    setEditingCategory(null);
+    setCategoryForm({ name: '', description: '', parentId: null });
+    setShowCategoryModal(true);
+  };
+
+  const handleEditCategory = (category) => {
+    setEditingCategory(category);
+    setCategoryForm({
+      name: category.name,
+      description: category.description || '',
+      parentId: category.parentId || null
+    });
+    setShowCategoryModal(true);
+  };
+
+  const handleSaveCategory = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingCategory) {
+        await adminApi.updateCategory(editingCategory.id, categoryForm);
+        alert('Cập nhật danh mục thành công!');
+      } else {
+        await adminApi.createCategory(categoryForm);
+        alert('Tạo danh mục mới thành công!');
+      }
+      setShowCategoryModal(false);
+      fetchCategories();
+    } catch (error) {
+      console.error('Error saving category:', error);
+      alert(error.message || 'Có lỗi xảy ra khi lưu danh mục');
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa danh mục này?')) return;
+    
+    try {
+      await adminApi.deleteCategory(categoryId);
+      alert('Xóa danh mục thành công!');
+      fetchCategories();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      alert(error.message || 'Không thể xóa danh mục. Vui lòng kiểm tra xem danh mục có chứa sản phẩm không.');
+    }
+  };
+
+  const handleToggleCategoryStatus = async (categoryId) => {
+    try {
+      await adminApi.request(`/admin/categories/${categoryId}/toggle-status`, { method: 'PUT' });
+      fetchCategories();
+    } catch (error) {
+      console.error('Error toggling category status:', error);
+      alert(error.message || 'Không thể thay đổi trạng thái danh mục');
+    }
+  };
+
+  const getChildCategories = (parentId) => {
+    return categories.filter(cat => cat.parentId === parentId);
+  };
+
+  const getParentCategories = () => {
+    return categories.filter(cat => !cat.parentId || cat.parentId === null);
   };
 
   const StatCard = ({ title, value, icon: Icon, color, trend }) => (
@@ -143,6 +236,7 @@ function AdminDashboard() {
               { key: 'users', label: 'Người dùng', icon: Users },
               { key: 'chat', label: 'Chat hỗ trợ', icon: MessageCircle },
               { key: 'coupons', label: 'Mã giảm giá', icon: TicketPercent },
+              { key: 'flashsale', label: 'Flash Sale', icon: Zap },
               { key: 'reports', label: 'Báo cáo', icon: BarChart3 },
               { key: 'brands', label: 'Thương hiệu', icon: Tags },
               { key: 'categories', label: 'Danh mục', icon: FolderTree },
@@ -308,6 +402,11 @@ function AdminDashboard() {
           <CouponManagement />
         )}
 
+        {/* Flash Sale Tab */}
+        {activeTab === 'flashsale' && (
+          <FlashSaleManagement />
+        )}
+
         {/* Reports Tab */}
         {activeTab === 'reports' && (
           <div className="space-y-6">
@@ -418,94 +517,182 @@ function AdminDashboard() {
           <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">Quản lý danh mục</h3>
-              <button className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+              <button 
+                onClick={handleCreateCategory}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
                 <Plus size={20} />
                 Thêm danh mục
               </button>
             </div>
             
-            <div className="space-y-4">
-              {/* Parent categories */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <FolderTree size={20} className="text-gray-400" />
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Electronics</h4>
-                      <p className="text-sm text-gray-500">Thiết bị điện tử</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-500">156 sản phẩm</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" defaultChecked className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                    </label>
-                    <button className="text-gray-400 hover:text-gray-600">
-                      <Edit size={16} />
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Sub categories */}
-                <div className="ml-6 space-y-2">
-                  {['Điện thoại', 'Laptop', 'Tablet', 'Phụ kiện'].map((subcat) => (
-                    <div key={subcat} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-sm text-gray-700">{subcat}</span>
+            {categoriesLoading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Đang tải...</p>
+              </div>
+            ) : categories.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Chưa có danh mục nào</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Parent categories */}
+                {getParentCategories().map((parentCategory) => (
+                  <div key={parentCategory.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <FolderTree size={20} className="text-gray-400" />
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{parentCategory.name}</h4>
+                          <p className="text-sm text-gray-500">{parentCategory.description || 'Không có mô tả'}</p>
+                        </div>
+                      </div>
                       <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-500">25 SP</span>
                         <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" defaultChecked className="sr-only peer" />
-                          <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600"></div>
+                          <input 
+                            type="checkbox" 
+                            checked={parentCategory.active}
+                            onChange={() => handleToggleCategoryStatus(parentCategory.id)}
+                            className="sr-only peer" 
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                         </label>
-                        <button className="text-gray-400 hover:text-gray-600">
-                          <Edit size={14} />
+                        <button 
+                          onClick={() => handleEditCategory(parentCategory)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteCategory(parentCategory.id)}
+                          className="text-red-400 hover:text-red-600"
+                        >
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                    
+                    {/* Sub categories */}
+                    {getChildCategories(parentCategory.id).length > 0 && (
+                      <div className="ml-6 space-y-2">
+                        {getChildCategories(parentCategory.id).map((subCategory) => (
+                          <div key={subCategory.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div>
+                              <span className="text-sm text-gray-700">{subCategory.name}</span>
+                              {subCategory.description && (
+                                <p className="text-xs text-gray-500">{subCategory.description}</p>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input 
+                                  type="checkbox" 
+                                  checked={subCategory.active}
+                                  onChange={() => handleToggleCategoryStatus(subCategory.id)}
+                                  className="sr-only peer" 
+                                />
+                                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600"></div>
+                              </label>
+                              <button 
+                                onClick={() => handleEditCategory(subCategory)}
+                                className="text-gray-400 hover:text-gray-600"
+                              >
+                                <Edit size={14} />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteCategory(subCategory.id)}
+                                className="text-red-400 hover:text-red-600"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
+            )}
+          </div>
+        )}
 
-              <div className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <FolderTree size={20} className="text-gray-400" />
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Clothing</h4>
-                      <p className="text-sm text-gray-500">Thời trang</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-500">89 sản phẩm</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" defaultChecked className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                    </label>
-                    <button className="text-gray-400 hover:text-gray-600">
-                      <Edit size={16} />
-                    </button>
-                  </div>
+        {/* Category Modal */}
+        {showCategoryModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {editingCategory ? 'Cập nhật danh mục' : 'Thêm danh mục mới'}
+                </h3>
+                <button 
+                  onClick={() => setShowCategoryModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <form onSubmit={handleSaveCategory} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tên danh mục <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={categoryForm.name}
+                    onChange={(e) => setCategoryForm({...categoryForm, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                    required
+                  />
                 </div>
                 
-                <div className="ml-6 space-y-2">
-                  {['Áo nam', 'Áo nữ', 'Quần nam', 'Quần nữ'].map((subcat) => (
-                    <div key={subcat} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-sm text-gray-700">{subcat}</span>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-500">15 SP</span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" defaultChecked className="sr-only peer" />
-                          <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600"></div>
-                        </label>
-                        <button className="text-gray-400 hover:text-gray-600">
-                          <Edit size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mô tả
+                  </label>
+                  <textarea
+                    value={categoryForm.description}
+                    onChange={(e) => setCategoryForm({...categoryForm, description: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                    rows="3"
+                  />
                 </div>
-              </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Danh mục cha (nếu có)
+                  </label>
+                  <select
+                    value={categoryForm.parentId || ''}
+                    onChange={(e) => setCategoryForm({...categoryForm, parentId: e.target.value ? parseInt(e.target.value) : null})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  >
+                    <option value="">-- Không có (Danh mục cha) --</option>
+                    {getParentCategories().map((cat) => (
+                      <option key={cat.id} value={cat.id} disabled={editingCategory?.id === cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoryModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  >
+                    {editingCategory ? 'Cập nhật' : 'Tạo mới'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

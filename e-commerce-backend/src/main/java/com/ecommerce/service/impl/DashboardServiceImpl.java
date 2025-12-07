@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ecommerce.constant.DashboardConstant;
+import com.ecommerce.exception.DetailException;
 import com.ecommerce.repository.BrandRepository;
 import com.ecommerce.repository.CategoryRepository;
 import com.ecommerce.repository.OrderRepository;
@@ -40,12 +42,13 @@ public class DashboardServiceImpl implements DashboardService {
 	private final ReviewRepository reviewRepository;
 
 	@Override
-	public Map<String, Object> getDashboardOverview() {
-		log.debug("Fetching dashboard overview data");
-
-		Map<String, Object> overview = new HashMap<>();
-
+	public Map<String, Object> getDashboardOverview() throws DetailException {
+		long start = System.currentTimeMillis();
 		try {
+			log.debug("Fetching dashboard overview data");
+
+			Map<String, Object> overview = new HashMap<>();
+
 			// Get basic counts
 			long totalProducts = productRepository.countActive();
 			long totalUsers = userRepository.countAll();
@@ -88,23 +91,27 @@ public class DashboardServiceImpl implements DashboardService {
 			overview.put("topCategories", topCategories);
 			overview.put("recentActivity", recentActivity);
 
+			log.info("Lấy tổng quan dashboard thành công - took: {}ms", System.currentTimeMillis() - start);
+			return overview;
 		} catch (Exception e) {
-			log.error("Error fetching dashboard overview", e);
-			// Return fallback data
-			return getFallbackOverview();
+			log.error("Lỗi khi lấy tổng quan dashboard", e);
+			throw new DetailException(DashboardConstant.E700_DASHBOARD_OVERVIEW_FAILED);
 		}
-
-		return overview;
 	}
 
 	@Override
-	public Map<String, Object> getSalesStatistics(int days) {
-		log.debug("Fetching sales statistics for {} days", days);
-
-		Map<String, Object> salesStats = new HashMap<>();
-		Date fromDate = DateUtils.minusDays(days);
-
+	public Map<String, Object> getSalesStatistics(int days) throws DetailException {
+		long start = System.currentTimeMillis();
 		try {
+			log.debug("Fetching sales statistics for {} days", days);
+
+			if (days <= 0) {
+				throw new DetailException(DashboardConstant.E706_INVALID_DAYS_PARAMETER);
+			}
+
+			Map<String, Object> salesStats = new HashMap<>();
+			Date fromDate = DateUtils.minusDays(days);
+
 			// Get sales data for the period
 			BigDecimal totalSales = getSalesAfter(fromDate);
 			long totalOrders = getOrdersCreatedAfter(fromDate);
@@ -128,21 +135,25 @@ public class DashboardServiceImpl implements DashboardService {
 			salesStats.put("salesByDay", salesByDay);
 			salesStats.put("ordersByStatus", ordersByStatus);
 
+			log.info("Lấy thống kê bán hàng {} ngày thành công - took: {}ms", days,
+					System.currentTimeMillis() - start);
+			return salesStats;
+		} catch (DetailException e) {
+			throw e;
 		} catch (Exception e) {
-			log.error("Error fetching sales statistics", e);
-			return getFallbackSalesStats();
+			log.error("Lỗi khi lấy thống kê bán hàng", e);
+			throw new DetailException(DashboardConstant.E705_SALES_STATISTICS_FAILED);
 		}
-
-		return salesStats;
 	}
 
 	@Override
-	public Map<String, Object> getUserStatistics() {
-		log.debug("Fetching user statistics");
-
-		Map<String, Object> userStats = new HashMap<>();
-
+	public Map<String, Object> getUserStatistics() throws DetailException {
+		long start = System.currentTimeMillis();
 		try {
+			log.debug("Fetching user statistics");
+
+			Map<String, Object> userStats = new HashMap<>();
+
 			long totalUsers = userRepository.countAll();
 			long activeUsers = getActiveUsersCount();
 
@@ -170,21 +181,23 @@ public class DashboardServiceImpl implements DashboardService {
 					"growthRate", Math.round(growthRate * 10.0) / 10.0));
 			userStats.put("userActivity", userActivity);
 
+			log.info("Lấy thống kê người dùng thành công - took: {}ms",
+					System.currentTimeMillis() - start);
+			return userStats;
 		} catch (Exception e) {
-			log.error("Error fetching user statistics", e);
-			return getFallbackUserStats();
+			log.error("Lỗi khi lấy thống kê người dùng", e);
+			throw new DetailException(DashboardConstant.E710_USER_STATISTICS_FAILED);
 		}
-
-		return userStats;
 	}
 
 	@Override
-	public Map<String, Object> getProductStatistics() {
-		log.debug("Fetching product statistics");
-
-		Map<String, Object> productStats = new HashMap<>();
-
+	public Map<String, Object> getProductStatistics() throws DetailException {
+		long start = System.currentTimeMillis();
 		try {
+			log.debug("Fetching product statistics");
+
+			Map<String, Object> productStats = new HashMap<>();
+
 			long totalProducts = productRepository.countActive();
 			long activeProducts = getActiveProductsCount();
 			long lowStockProducts = getLowStockProductsCount();
@@ -208,21 +221,23 @@ public class DashboardServiceImpl implements DashboardService {
 			productStats.put("totalInventoryValue", totalInventoryValue);
 			productStats.put("topCategories", topCategories);
 
+			log.info("Lấy thống kê sản phẩm thành công - took: {}ms",
+					System.currentTimeMillis() - start);
+			return productStats;
 		} catch (Exception e) {
-			log.error("Error fetching product statistics", e);
-			return getFallbackProductStats();
+			log.error("Lỗi khi lấy thống kê sản phẩm", e);
+			throw new DetailException(DashboardConstant.E715_PRODUCT_STATISTICS_FAILED);
 		}
-
-		return productStats;
 	}
 
 	@Override
-	public Map<String, Object> getOrderStatistics() {
-		log.debug("Fetching order statistics");
-
-		Map<String, Object> orderStats = new HashMap<>();
-
+	public Map<String, Object> getOrderStatistics() throws DetailException {
+		long start = System.currentTimeMillis();
 		try {
+			log.debug("Fetching order statistics");
+
+			Map<String, Object> orderStats = new HashMap<>();
+
 			// Get order counts by status
 			Map<String, Long> ordersByStatus = getOrdersByStatus();
 
@@ -245,21 +260,27 @@ public class DashboardServiceImpl implements DashboardService {
 			orderStats.put("ordersByMonth", ordersByMonth);
 			orderStats.put("revenueByMonth", revenueByMonth);
 
+			log.info("Lấy thống kê đơn hàng thành công - took: {}ms",
+					System.currentTimeMillis() - start);
+			return orderStats;
 		} catch (Exception e) {
-			log.error("Error fetching order statistics", e);
-			return getFallbackOrderStats();
+			log.error("Lỗi khi lấy thống kê đơn hàng", e);
+			throw new DetailException(DashboardConstant.E720_ORDER_STATISTICS_FAILED);
 		}
-
-		return orderStats;
 	}
 
 	@Override
-	public Map<String, Object> getRecentActivities(int limit) {
-		log.debug("Fetching recent activities with limit {}", limit);
-
-		Map<String, Object> activities = new HashMap<>();
-
+	public Map<String, Object> getRecentActivities(int limit) throws DetailException {
+		long start = System.currentTimeMillis();
 		try {
+			log.debug("Fetching recent activities with limit {}", limit);
+
+			if (limit <= 0) {
+				throw new DetailException(DashboardConstant.E726_INVALID_LIMIT_PARAMETER);
+			}
+
+			Map<String, Object> activities = new HashMap<>();
+
 			// Get recent orders
 			Date last24Hours = DateUtils.minusHours(24);
 			long recentOrdersCount = getOrdersCreatedAfter(last24Hours);
@@ -287,21 +308,25 @@ public class DashboardServiceImpl implements DashboardService {
 			activities.put("stockAlerts", Map.of("lowStock", lowStock, "outOfStock", outOfStock));
 			activities.put("systemHealth", systemHealth);
 
+			log.info("Lấy hoạt động gần đây thành công - took: {}ms",
+					System.currentTimeMillis() - start);
+			return activities;
+		} catch (DetailException e) {
+			throw e;
 		} catch (Exception e) {
-			log.error("Error fetching recent activities", e);
-			return getFallbackActivities();
+			log.error("Lỗi khi lấy hoạt động gần đây", e);
+			throw new DetailException(DashboardConstant.E725_ACTIVITIES_FETCH_FAILED);
 		}
-
-		return activities;
 	}
 
 	@Override
-	public Map<String, Object> getSystemHealth() {
-		log.debug("Fetching system health status");
-
-		Map<String, Object> health = new HashMap<>();
-
+	public Map<String, Object> getSystemHealth() throws DetailException {
+		long start = System.currentTimeMillis();
 		try {
+			log.debug("Fetching system health status");
+
+			Map<String, Object> health = new HashMap<>();
+
 			// Runtime information
 			Runtime runtime = Runtime.getRuntime();
 			long maxMemory = runtime.maxMemory();
@@ -326,13 +351,13 @@ public class DashboardServiceImpl implements DashboardService {
 			health.put("errorRate", "0.2%"); // Would get from error tracking
 			health.put("requestsPerMinute", 150); // Would get from metrics
 
+			log.info("Lấy trạng thái hệ thống thành công - took: {}ms",
+					System.currentTimeMillis() - start);
+			return health;
 		} catch (Exception e) {
-			log.error("Error fetching system health", e);
-			health.put("status", "error");
-			health.put("error", "Unable to retrieve system health information");
+			log.error("Lỗi khi lấy trạng thái hệ thống", e);
+			throw new DetailException(DashboardConstant.E730_SYSTEM_HEALTH_FAILED);
 		}
-
-		return health;
 	}
 
 	// Helper methods (would implement based on actual repository methods)

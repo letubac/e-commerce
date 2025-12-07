@@ -15,9 +15,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ecommerce.constant.ProductConstant;
 import com.ecommerce.dto.ProductDTO;
 import com.ecommerce.entity.Product;
 import com.ecommerce.exception.BadRequestException;
+import com.ecommerce.exception.DetailException;
 import com.ecommerce.exception.ResourceNotFoundException;
 import com.ecommerce.mapper.ProductMapper;
 import com.ecommerce.repository.ProductRepository;
@@ -41,272 +43,426 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public ProductDTO createProduct(ProductDTO productDTO) {
-		// Validate SKU availability
-		if (!isSkuAvailable(productDTO.getSku())) {
-			throw new BadRequestException("SKU is already in use: " + productDTO.getSku());
-		}
+	public ProductDTO createProduct(ProductDTO productDTO) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Tạo sản phẩm mới: {}", productDTO.getName());
 
-		// Generate slug if not provided
-		if (productDTO.getSlug() == null || productDTO.getSlug().isEmpty()) {
-			String baseSlug = generateSlug(productDTO.getName());
-			String finalSlug = baseSlug;
-			int counter = 1;
-			while (!isSlugAvailable(finalSlug)) {
-				finalSlug = baseSlug + "-" + counter;
-				counter++;
+			// Validate SKU availability
+			if (!isSkuAvailable(productDTO.getSku())) {
+				throw new DetailException(ProductConstant.E856_PRODUCT_SKU_EXISTS);
 			}
-			productDTO.setSlug(finalSlug);
-		} else if (!isSlugAvailable(productDTO.getSlug())) {
-			throw new BadRequestException("Slug is already in use: " + productDTO.getSlug());
+
+			// Generate slug if not provided
+			if (productDTO.getSlug() == null || productDTO.getSlug().isEmpty()) {
+				String baseSlug = generateSlug(productDTO.getName());
+				String finalSlug = baseSlug;
+				int counter = 1;
+				while (!isSlugAvailable(finalSlug)) {
+					finalSlug = baseSlug + "-" + counter;
+					counter++;
+				}
+				productDTO.setSlug(finalSlug);
+			} else if (!isSlugAvailable(productDTO.getSlug())) {
+				throw new DetailException(ProductConstant.E855_PRODUCT_SLUG_EXISTS);
+			}
+
+			Date now = new Date();
+
+			Integer result = productRepository.insertProduct(productDTO.getName(), productDTO.getDescription(),
+					productDTO.getShortDescription(), productDTO.getSku(), productDTO.getPrice(),
+					productDTO.getSalePrice(),
+					productDTO.getCostPrice(), productDTO.getStockQuantity(),
+					productDTO.getLowStockThreshold() != null ? productDTO.getLowStockThreshold() : 10,
+					productDTO.getWeight(), productDTO.getDimensions(), productDTO.getCategoryId(),
+					productDTO.getBrandId(),
+					productDTO.isActive(), productDTO.isFeatured(),
+					productDTO.getStatus() != null ? productDTO.getStatus() : "PUBLISHED", productDTO.getMetaTitle(),
+					productDTO.getMetaDescription(), productDTO.getSlug(), now, now);
+
+			if (result == null || result <= 0) {
+				throw new DetailException(ProductConstant.E851_PRODUCT_CREATE_FAILED);
+			}
+
+			// Retrieve the created product
+			Optional<Product> createdProduct = productRepository.findBySku(productDTO.getSku());
+			if (createdProduct.isEmpty()) {
+				throw new DetailException(ProductConstant.E851_PRODUCT_CREATE_FAILED);
+			}
+
+			log.info("Tạo sản phẩm {} thành công - took: {}ms", productDTO.getName(),
+					System.currentTimeMillis() - start);
+			return productMapper.toDTO(createdProduct.get());
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi tạo sản phẩm", e);
+			throw new DetailException(ProductConstant.E851_PRODUCT_CREATE_FAILED);
 		}
-
-		Date now = new Date();
-
-		Integer result = productRepository.insertProduct(productDTO.getName(), productDTO.getDescription(),
-				productDTO.getShortDescription(), productDTO.getSku(), productDTO.getPrice(), productDTO.getSalePrice(),
-				productDTO.getCostPrice(), productDTO.getStockQuantity(),
-				productDTO.getLowStockThreshold() != null ? productDTO.getLowStockThreshold() : 10,
-				productDTO.getWeight(), productDTO.getDimensions(), productDTO.getCategoryId(), productDTO.getBrandId(),
-				productDTO.isActive(), productDTO.isFeatured(),
-				productDTO.getStatus() != null ? productDTO.getStatus() : "PUBLISHED", productDTO.getMetaTitle(),
-				productDTO.getMetaDescription(), productDTO.getSlug(), now, now);
-
-		if (result == null || result <= 0) {
-			throw new RuntimeException("Failed to create product");
-		}
-
-		// Retrieve the created product
-		Optional<Product> createdProduct = productRepository.findBySku(productDTO.getSku());
-		if (createdProduct.isEmpty()) {
-			throw new RuntimeException("Failed to retrieve created product");
-		}
-
-		return productMapper.toDTO(createdProduct.get());
 	}
 
 	@Override
-	public ProductDTO updateProduct(Long id, ProductDTO productDTO) {
-		Optional<Product> existingProductOpt = productRepository.findById(id);
-		if (existingProductOpt.isEmpty()) {
-			throw new ResourceNotFoundException("Product not found with id: " + id);
+	public ProductDTO updateProduct(Long id, ProductDTO productDTO) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Cập nhật sản phẩm ID: {}", id);
+
+			Optional<Product> existingProductOpt = productRepository.findById(id);
+			if (existingProductOpt.isEmpty()) {
+				throw new DetailException(ProductConstant.E850_PRODUCT_NOT_FOUND);
+			}
+
+			Product existingProduct = existingProductOpt.get();
+
+			// Check SKU availability if SKU is being changed
+			if (!existingProduct.getSku().equals(productDTO.getSku()) && !isSkuAvailable(productDTO.getSku())) {
+				throw new DetailException(ProductConstant.E856_PRODUCT_SKU_EXISTS);
+			}
+
+			// Check slug availability if slug is being changed
+			if (productDTO.getSlug() != null && !existingProduct.getSlug().equals(productDTO.getSlug())
+					&& !isSlugAvailable(productDTO.getSlug())) {
+				throw new DetailException(ProductConstant.E855_PRODUCT_SLUG_EXISTS);
+			}
+
+			Date now = new Date();
+
+			Integer result = productRepository.updateProduct(id, productDTO.getName(), productDTO.getDescription(),
+					productDTO.getPrice(), productDTO.getSalePrice(), productDTO.getStockQuantity(),
+					productDTO.getCategoryId(), productDTO.getBrandId(), productDTO.getWeight(),
+					productDTO.getDimensions(),
+					productDTO.isActive(), productDTO.isFeatured(),
+					productDTO.getStatus() != null ? productDTO.getStatus() : "PUBLISHED", productDTO.getMetaTitle(),
+					productDTO.getMetaDescription(), now);
+
+			if (result == null || result <= 0) {
+				throw new DetailException(ProductConstant.E852_PRODUCT_UPDATE_FAILED);
+			}
+
+			// Retrieve the updated product
+			Optional<Product> updatedProduct = productRepository.findById(id);
+			log.info("Cập nhật sản phẩm ID {} thành công - took: {}ms", id, System.currentTimeMillis() - start);
+			return productMapper.toDTO(updatedProduct.get());
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi cập nhật sản phẩm ID: {}", id, e);
+			throw new DetailException(ProductConstant.E852_PRODUCT_UPDATE_FAILED);
 		}
-
-		Product existingProduct = existingProductOpt.get();
-
-		// Check SKU availability if SKU is being changed
-		if (!existingProduct.getSku().equals(productDTO.getSku()) && !isSkuAvailable(productDTO.getSku())) {
-			throw new BadRequestException("SKU is already in use: " + productDTO.getSku());
-		}
-
-		// Check slug availability if slug is being changed
-		if (productDTO.getSlug() != null && !existingProduct.getSlug().equals(productDTO.getSlug())
-				&& !isSlugAvailable(productDTO.getSlug())) {
-			throw new BadRequestException("Slug is already in use: " + productDTO.getSlug());
-		}
-
-		Date now = new Date();
-
-		Integer result = productRepository.updateProduct(id, productDTO.getName(), productDTO.getDescription(),
-				productDTO.getPrice(), productDTO.getSalePrice(), productDTO.getStockQuantity(),
-				productDTO.getCategoryId(), productDTO.getBrandId(), productDTO.getWeight(), productDTO.getDimensions(),
-				productDTO.isActive(), productDTO.isFeatured(),
-				productDTO.getStatus() != null ? productDTO.getStatus() : "PUBLISHED", productDTO.getMetaTitle(),
-				productDTO.getMetaDescription(), now);
-
-		if (result == null || result <= 0) {
-			throw new RuntimeException("Failed to update product");
-		}
-
-		// Retrieve the updated product
-		Optional<Product> updatedProduct = productRepository.findById(id);
-		return productMapper.toDTO(updatedProduct.get());
 	}
 
 	@Override
-	public Optional<ProductDTO> getProductById(Long id) {
-		return productRepository.findById(id).map(productMapper::toDTO);
-	}
-
-	@Override
-	public ProductDTO getProductByIdOrThrow(Long id) {
-		Product product = productRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
-		if (Objects.isNull(product)) {
-			return productMapper.toDTO(product);
+	public Optional<ProductDTO> getProductById(Long id) throws DetailException {
+		try {
+			return productRepository.findById(id).map(productMapper::toDTO);
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy sản phẩm ID: {}", id, e);
+			throw new DetailException(ProductConstant.E854_PRODUCT_FETCH_FAILED);
 		}
-		ProductDTO productDTO = productMapper.toDTO(product);
-		// Lazy load images if needed
-		productDTO.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
-							.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
-		return productDTO;
 	}
 
 	@Override
-	public Optional<ProductDTO> getProductBySlug(String slug) {
-		return productRepository.findBySlug(slug).map(productMapper::toDTO);
-	}
-
-	@Override
-	public Optional<ProductDTO> getProductBySku(String sku) {
-		return productRepository.findBySku(sku).map(productMapper::toDTO);
-	}
-
-	@Override
-	public List<ProductDTO> getAllProducts() {
-		return productRepository.findAllData().stream().map(productMapper::toDTO).collect(Collectors.toList());
-	}
-
-	@Override
-	public Page<ProductDTO> getAllProducts(Pageable pageable) {
-		List<ProductDTO> products = getAllProducts();
-		if (products.isEmpty()) {
-			return Page.empty(pageable);
-		}
-		// Get images product for each product
-		products.forEach(product -> {
+	public ProductDTO getProductByIdOrThrow(Long id) throws DetailException {
+		try {
+			Product product = productRepository.findById(id)
+					.orElseThrow(() -> new DetailException(ProductConstant.E850_PRODUCT_NOT_FOUND));
+			if (Objects.isNull(product)) {
+				return productMapper.toDTO(product);
+			}
+			ProductDTO productDTO = productMapper.toDTO(product);
 			// Lazy load images if needed
-			product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+			productDTO.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
 					.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
-		});
-		int start = Math.min((int) pageable.getOffset(), products.size());
-		int end = Math.min((start + pageable.getPageSize()), products.size());
-		List<ProductDTO> subList = products.subList(start, end);
-		return new PageImpl<>(subList, pageable, products.size());
-	}
-
-	@Override
-	public List<ProductDTO> getActiveProducts() {
-		return productRepository.findActive().stream().map(productMapper::toDTO).collect(Collectors.toList());
-	}
-
-	@Override
-	public List<ProductDTO> getFeaturedProducts() {
-		return productRepository.findFeatured().stream().map(productMapper::toDTO).collect(Collectors.toList());
-	}
-
-	@Override
-	public void deleteProduct(Long id) {
-		Optional<Product> product = productRepository.findById(id);
-		if (product.isEmpty()) {
-			throw new ResourceNotFoundException("Product not found with id: " + id);
+			return productDTO;
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy sản phẩm ID: {}", id, e);
+			throw new DetailException(ProductConstant.E854_PRODUCT_FETCH_FAILED);
 		}
-		productRepository.hardDelete(id);
 	}
 
 	@Override
-	public void deactivateProduct(Long id) {
-		Optional<Product> productOpt = productRepository.findById(id);
-		if (productOpt.isEmpty()) {
-			throw new ResourceNotFoundException("Product not found with id: " + id);
+	public Optional<ProductDTO> getProductBySlug(String slug) throws DetailException {
+		try {
+			return productRepository.findBySlug(slug).map(productMapper::toDTO);
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy sản phẩm slug: {}", slug, e);
+			throw new DetailException(ProductConstant.E854_PRODUCT_FETCH_FAILED);
 		}
-
-		Product product = productOpt.get();
-		Date now = new Date();
-
-		productRepository.updateProduct(id, product.getName(), product.getDescription(), product.getPrice(),
-				product.getSalePrice(), product.getStockQuantity(), product.getCategoryId(), product.getBrandId(),
-				product.getWeight(), product.getDimensions(), false, // Set active to false
-				product.isFeatured(), product.getStatus(), product.getMetaTitle(), product.getMetaDescription(), now);
 	}
 
 	@Override
-	public void activateProduct(Long id) {
-		Optional<Product> productOpt = productRepository.findById(id);
-		if (productOpt.isEmpty()) {
-			throw new ResourceNotFoundException("Product not found with id: " + id);
+	public Optional<ProductDTO> getProductBySku(String sku) throws DetailException {
+		try {
+			return productRepository.findBySku(sku).map(productMapper::toDTO);
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy sản phẩm SKU: {}", sku, e);
+			throw new DetailException(ProductConstant.E854_PRODUCT_FETCH_FAILED);
 		}
+	}
 
-		Product product = productOpt.get();
-		Date now = new Date();
+	@Override
+	public List<ProductDTO> getAllProducts() throws DetailException {
+		try {
+			return productRepository.findAllData().stream().map(productMapper::toDTO).collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy danh sách sản phẩm", e);
+			throw new DetailException(ProductConstant.E854_PRODUCT_FETCH_FAILED);
+		}
+	}
 
-		productRepository.updateProduct(id, product.getName(), product.getDescription(), product.getPrice(),
-				product.getSalePrice(), product.getStockQuantity(), product.getCategoryId(), product.getBrandId(),
-				product.getWeight(), product.getDimensions(), true, // Set active to true
-				product.isFeatured(), product.getStatus(), product.getMetaTitle(), product.getMetaDescription(), now);
+	@Override
+	public Page<ProductDTO> getAllProducts(Pageable pageable) throws DetailException {
+		try {
+			List<ProductDTO> products = getAllProducts();
+			if (products.isEmpty()) {
+				return Page.empty(pageable);
+			}
+			// Get images product for each product
+			products.forEach(product -> {
+				// Lazy load images if needed
+				product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+						.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+			});
+			int start = Math.min((int) pageable.getOffset(), products.size());
+			int end = Math.min((start + pageable.getPageSize()), products.size());
+			List<ProductDTO> subList = products.subList(start, end);
+			return new PageImpl<>(subList, pageable, products.size());
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy danh sách sản phẩm", e);
+			throw new DetailException(ProductConstant.E854_PRODUCT_FETCH_FAILED);
+		}
+	}
+
+	@Override
+	public List<ProductDTO> getActiveProducts() throws DetailException {
+		try {
+			return productRepository.findActive().stream().map(productMapper::toDTO).collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy danh sách sản phẩm active", e);
+			throw new DetailException(ProductConstant.E854_PRODUCT_FETCH_FAILED);
+		}
+	}
+
+	@Override
+	public List<ProductDTO> getFeaturedProducts() throws DetailException {
+		try {
+			return productRepository.findFeatured().stream().map(productMapper::toDTO).collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy danh sách sản phẩm featured", e);
+			throw new DetailException(ProductConstant.E854_PRODUCT_FETCH_FAILED);
+		}
+	}
+
+	@Override
+	public void deleteProduct(Long id) throws DetailException {
+		try {
+			Optional<Product> product = productRepository.findById(id);
+			if (product.isEmpty()) {
+				throw new DetailException(ProductConstant.E850_PRODUCT_NOT_FOUND);
+			}
+			productRepository.hardDelete(id);
+			log.info("Xóa sản phẩm ID {} thành công", id);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi xóa sản phẩm ID: {}", id, e);
+			throw new DetailException(ProductConstant.E853_PRODUCT_DELETE_FAILED);
+		}
+	}
+
+	@Override
+	public ProductDTO deactivateProduct(Long id) throws DetailException {
+		try {
+			Optional<Product> productOpt = productRepository.findById(id);
+			if (productOpt.isEmpty()) {
+				throw new DetailException(ProductConstant.E850_PRODUCT_NOT_FOUND);
+			}
+
+			Product product = productOpt.get();
+			Date now = new Date();
+
+			productRepository.updateProduct(id, product.getName(), product.getDescription(), product.getPrice(),
+					product.getSalePrice(), product.getStockQuantity(), product.getCategoryId(), product.getBrandId(),
+					product.getWeight(), product.getDimensions(), false, // Set active to false
+					product.isFeatured(), product.getStatus(), product.getMetaTitle(), product.getMetaDescription(),
+					now);
+			log.info("Vô hiệu hóa sản phẩm ID {} thành công", id);
+
+			// Return updated product
+			product.setActive(false);
+			product.setUpdatedAt(now);
+			return productMapper.toDTO(product);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi vô hiệu hóa sản phẩm ID: {}", id, e);
+			throw new DetailException(ProductConstant.E862_PRODUCT_DEACTIVATE_FAILED);
+		}
+	}
+
+	@Override
+	public ProductDTO activateProduct(Long id) throws DetailException {
+		try {
+			Optional<Product> productOpt = productRepository.findById(id);
+			if (productOpt.isEmpty()) {
+				throw new DetailException(ProductConstant.E850_PRODUCT_NOT_FOUND);
+			}
+
+			Product product = productOpt.get();
+			Date now = new Date();
+
+			productRepository.updateProduct(id, product.getName(), product.getDescription(), product.getPrice(),
+					product.getSalePrice(), product.getStockQuantity(), product.getCategoryId(), product.getBrandId(),
+					product.getWeight(), product.getDimensions(), true, // Set active to true
+					product.isFeatured(), product.getStatus(), product.getMetaTitle(), product.getMetaDescription(),
+					now);
+			log.info("Kích hoạt sản phẩm ID {} thành công", id);
+
+			// Return updated product
+			product.setActive(true);
+			product.setUpdatedAt(now);
+			return productMapper.toDTO(product);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi kích hoạt sản phẩm ID: {}", id, e);
+			throw new DetailException(ProductConstant.E861_PRODUCT_ACTIVATE_FAILED);
+		}
 	}
 
 	// Product filtering and search
 	@Override
-	public List<ProductDTO> getProductsByCategory(Long categoryId) {
-		return productRepository.findByCategory(categoryId).stream().map(productMapper::toDTO)
-				.collect(Collectors.toList());
-	}
-
-	@Override
-	public Page<ProductDTO> getProductsByCategory(Long categoryId, Pageable pageable) {
-		List<ProductDTO> products = getProductsByCategory(categoryId);
-		if (products.isEmpty()) {
-			return Page.empty(pageable);
+	public List<ProductDTO> getProductsByCategory(Long categoryId) throws DetailException {
+		try {
+			return productRepository.findByCategory(categoryId).stream().map(productMapper::toDTO)
+					.collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy sản phẩm theo category ID: {}", categoryId, e);
+			throw new DetailException(ProductConstant.E875_PRODUCTS_BY_CATEGORY_FAILED);
 		}
-		// Get images product for each product
-		products.forEach(product -> {
-			// Lazy load images if needed
-			product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
-					.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
-		});
-		int start = Math.min((int) pageable.getOffset(), products.size());
-		int end = Math.min((start + pageable.getPageSize()), products.size());
-		List<ProductDTO> subList = products.subList(start, end);
-		return new PageImpl<>(subList, pageable, products.size());
 	}
 
 	@Override
-	public List<ProductDTO> getProductsByBrand(Long brandId) {
-		return productRepository.findByBrand(brandId).stream().map(productMapper::toDTO).collect(Collectors.toList());
-	}
-
-	@Override
-	public Page<ProductDTO> getProductsByBrand(Long brandId, Pageable pageable) {
-		List<ProductDTO> products = getProductsByBrand(brandId);
-		if (products.isEmpty()) {
-			return Page.empty(pageable);
+	public Page<ProductDTO> getProductsByCategory(Long categoryId, Pageable pageable) throws DetailException {
+		try {
+			List<ProductDTO> products = getProductsByCategory(categoryId);
+			if (products.isEmpty()) {
+				return Page.empty(pageable);
+			}
+			// Get images product for each product
+			products.forEach(product -> {
+				// Lazy load images if needed
+				product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+						.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+			});
+			int start = Math.min((int) pageable.getOffset(), products.size());
+			int end = Math.min((start + pageable.getPageSize()), products.size());
+			List<ProductDTO> subList = products.subList(start, end);
+			return new PageImpl<>(subList, pageable, products.size());
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy sản phẩm theo category ID: {}", categoryId, e);
+			throw new DetailException(ProductConstant.E875_PRODUCTS_BY_CATEGORY_FAILED);
 		}
-		// Get images product for each product
-		products.forEach(product -> {
-			// Lazy load images if needed
-			product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
-					.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
-		});
-		int start = Math.min((int) pageable.getOffset(), products.size());
-		int end = Math.min((start + pageable.getPageSize()), products.size());
-		List<ProductDTO> subList = products.subList(start, end);
-		return new PageImpl<>(subList, pageable, products.size());
 	}
 
 	@Override
-	public List<ProductDTO> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
-		return productRepository.findByPriceRange(minPrice, maxPrice).stream().map(productMapper::toDTO)
-				.collect(Collectors.toList());
-	}
-
-	@Override
-	public List<ProductDTO> searchProducts(String keyword) {
-		return productRepository.searchByName(keyword).stream().map(productMapper::toDTO).collect(Collectors.toList());
-	}
-
-	@Override
-	public Page<ProductDTO> searchProducts(String keyword, Pageable pageable) {
-		List<ProductDTO> products = searchProducts(keyword);
-		if (products.isEmpty()) {
-			return Page.empty(pageable);
+	public List<ProductDTO> getProductsByBrand(Long brandId) throws DetailException {
+		try {
+			return productRepository.findByBrand(brandId).stream().map(productMapper::toDTO)
+					.collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy sản phẩm theo brand ID: {}", brandId, e);
+			throw new DetailException(ProductConstant.E876_PRODUCTS_BY_BRAND_FAILED);
 		}
-		// Get images product for each product
-		products.forEach(product -> {
-			// Lazy load images if needed
-			product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
-					.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
-		});
-		int start = Math.min((int) pageable.getOffset(), products.size());
-		int end = Math.min((start + pageable.getPageSize()), products.size());
-		List<ProductDTO> subList = products.subList(start, end);
-		return new PageImpl<>(subList, pageable, products.size());
 	}
 
 	@Override
-	public List<ProductDTO> getLowStockProducts() {
-		return productRepository.findLowStock(10).stream() // Default threshold of 10
-				.map(productMapper::toDTO).collect(Collectors.toList());
+	public Page<ProductDTO> getProductsByBrand(Long brandId, Pageable pageable) throws DetailException {
+		try {
+			List<ProductDTO> products = getProductsByBrand(brandId);
+			if (products.isEmpty()) {
+				return Page.empty(pageable);
+			}
+			// Get images product for each product
+			products.forEach(product -> {
+				// Lazy load images if needed
+				product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+						.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+			});
+			int start = Math.min((int) pageable.getOffset(), products.size());
+			int end = Math.min((start + pageable.getPageSize()), products.size());
+			List<ProductDTO> subList = products.subList(start, end);
+			return new PageImpl<>(subList, pageable, products.size());
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy sản phẩm theo brand ID: {}", brandId, e);
+			throw new DetailException(ProductConstant.E876_PRODUCTS_BY_BRAND_FAILED);
+		}
+	}
+
+	@Override
+	public List<ProductDTO> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) throws DetailException {
+		try {
+			return productRepository.findByPriceRange(minPrice, maxPrice).stream().map(productMapper::toDTO)
+					.collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy sản phẩm theo khoảng giá", e);
+			throw new DetailException(ProductConstant.E880_INVALID_PRICE_RANGE);
+		}
+	}
+
+	@Override
+	public List<ProductDTO> searchProducts(String keyword) throws DetailException {
+		try {
+			return productRepository.searchByName(keyword).stream().map(productMapper::toDTO)
+					.collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Lỗi khi tìm kiếm sản phẩm với keyword: {}", keyword, e);
+			throw new DetailException(ProductConstant.E870_PRODUCT_SEARCH_FAILED);
+		}
+	}
+
+	@Override
+	public Page<ProductDTO> searchProducts(String keyword, Pageable pageable) throws DetailException {
+		try {
+			List<ProductDTO> products = searchProducts(keyword);
+			if (products.isEmpty()) {
+				return Page.empty(pageable);
+			}
+			// Get images product for each product
+			products.forEach(product -> {
+				// Lazy load images if needed
+				product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+						.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+			});
+			int start = Math.min((int) pageable.getOffset(), products.size());
+			int end = Math.min((start + pageable.getPageSize()), products.size());
+			List<ProductDTO> subList = products.subList(start, end);
+			return new PageImpl<>(subList, pageable, products.size());
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi tìm kiếm sản phẩm với keyword: {}", keyword, e);
+			throw new DetailException(ProductConstant.E870_PRODUCT_SEARCH_FAILED);
+		}
+	}
+
+	@Override
+	public List<ProductDTO> getLowStockProducts() throws DetailException {
+		try {
+			return productRepository.findLowStock(10).stream() // Default threshold of 10
+					.map(productMapper::toDTO).collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy danh sách sản phẩm tồn kho thấp", e);
+			throw new DetailException(ProductConstant.E854_PRODUCT_FETCH_FAILED);
+		}
 	}
 
 	// Pagination
@@ -318,7 +474,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public List<ProductDTO> getActiveProductsPaginated(int page, int size) {
+	public List<ProductDTO> getActiveProductsPaginated(int page, int size) throws DetailException {
 		List<ProductDTO> activeProducts = getActiveProducts();
 		int start = Math.min(page * size, activeProducts.size());
 		int end = Math.min(start + size, activeProducts.size());
@@ -326,7 +482,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public List<ProductDTO> getProductsByCategoryPaginated(Long categoryId, int page, int size) {
+	public List<ProductDTO> getProductsByCategoryPaginated(Long categoryId, int page, int size) throws DetailException {
 		List<ProductDTO> products = getProductsByCategory(categoryId);
 		int start = Math.min(page * size, products.size());
 		int end = Math.min(start + size, products.size());
@@ -335,22 +491,40 @@ public class ProductServiceImpl implements ProductService {
 
 	// Stock management
 	@Override
-	public void updateStock(Long productId, Integer newStock) {
-		Optional<Product> product = productRepository.findById(productId);
-		if (product.isEmpty()) {
-			throw new ResourceNotFoundException("Product not found with id: " + productId);
-		}
+	public ProductDTO updateStock(Long productId, Integer newStock) throws DetailException {
+		try {
+			Optional<Product> productOpt = productRepository.findById(productId);
+			if (productOpt.isEmpty()) {
+				throw new DetailException(ProductConstant.E850_PRODUCT_NOT_FOUND);
+			}
 
-		Date now = new Date();
-		Integer result = productRepository.updateStock(productId, newStock, now);
+			if (newStock < 0) {
+				throw new DetailException(ProductConstant.E867_INVALID_STOCK_QUANTITY);
+			}
 
-		if (result == null || result <= 0) {
-			throw new RuntimeException("Failed to update stock for product: " + productId);
+			Date now = new Date();
+			Integer result = productRepository.updateStock(productId, newStock, now);
+
+			if (result == null || result <= 0) {
+				throw new DetailException(ProductConstant.E865_PRODUCT_STOCK_UPDATE_FAILED);
+			}
+			log.info("Cập nhật tồn kho sản phẩm ID {} thành công: {}", productId, newStock);
+
+			// Return updated product
+			Product product = productOpt.get();
+			product.setStockQuantity(newStock);
+			product.setUpdatedAt(now);
+			return productMapper.toDTO(product);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi cập nhật tồn kho sản phẩm ID: {}", productId, e);
+			throw new DetailException(ProductConstant.E865_PRODUCT_STOCK_UPDATE_FAILED);
 		}
 	}
 
 	@Override
-	public void increaseStock(Long productId, Integer quantity) {
+	public void increaseStock(Long productId, Integer quantity) throws DetailException {
 		Optional<Product> productOpt = productRepository.findById(productId);
 		if (productOpt.isEmpty()) {
 			throw new ResourceNotFoundException("Product not found with id: " + productId);
@@ -362,7 +536,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public void decreaseStock(Long productId, Integer quantity) {
+	public void decreaseStock(Long productId, Integer quantity) throws DetailException {
 		Optional<Product> productOpt = productRepository.findById(productId);
 		if (productOpt.isEmpty()) {
 			throw new ResourceNotFoundException("Product not found with id: " + productId);
@@ -428,7 +602,7 @@ public class ProductServiceImpl implements ProductService {
 
 	// Statistics
 	@Override
-	public long getTotalProductCount() {
+	public long getTotalProductCount() throws DetailException {
 		return getAllProducts().size();
 	}
 

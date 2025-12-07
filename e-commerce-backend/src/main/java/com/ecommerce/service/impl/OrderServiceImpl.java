@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ecommerce.constant.OrderConstant;
 import com.ecommerce.dto.AddressDTO;
 import com.ecommerce.dto.CreateOrderRequest;
 import com.ecommerce.dto.OrderDTO;
@@ -24,9 +25,7 @@ import com.ecommerce.entity.Order;
 import com.ecommerce.entity.OrderItem;
 import com.ecommerce.entity.Product;
 import com.ecommerce.entity.ProductImage;
-import com.ecommerce.entity.User;
-import com.ecommerce.exception.BadRequestException;
-import com.ecommerce.exception.ResourceNotFoundException;
+import com.ecommerce.exception.DetailException;
 import com.ecommerce.mapper.UserMapper;
 import com.ecommerce.repository.AddressRepository;
 import com.ecommerce.repository.CartItemRepository;
@@ -37,10 +36,12 @@ import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.OrderService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class OrderServiceImpl implements OrderService {
 
 	private final OrderRepository orderRepository;
@@ -52,203 +53,333 @@ public class OrderServiceImpl implements OrderService {
 	private final UserMapper userMapper;
 
 	@Override
-	public OrderDTO createOrder(Long userId, CreateOrderRequest request) {
-		// Validate user exists
-		if (!userRepository.existsById(userId)) {
-			throw new ResourceNotFoundException("User not found with id: " + userId);
-		}
+	public OrderDTO createOrder(Long userId, CreateOrderRequest request) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Tạo đơn hàng cho người dùng: {}", userId);
 
-		// Generate order number
-		String orderNumber = generateOrderNumber();
-
-		// Create Order entity
-		Order order = new Order();
-		order.setOrderNumber(orderNumber);
-		order.setUserId(userId);
-		order.setGuestEmail(request.getCustomerInfo().getEmail());
-		order.setStatus("PENDING");
-		order.setPaymentStatus("PENDING");
-		order.setShippingMethod(request.getShippingMethod());
-		order.setCurrency("VND");
-		order.setCreatedAt(new Date());
-		order.setUpdatedAt(new Date());
-
-		// Calculate totals
-		BigDecimal subtotal = BigDecimal.ZERO;
-		for (CreateOrderRequest.OrderItemRequest itemRequest : request.getItems()) {
-			BigDecimal itemTotal = itemRequest.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
-			subtotal = subtotal.add(itemTotal);
-		}
-
-		BigDecimal shippingCost = request.getShippingFee() != null ? request.getShippingFee() : BigDecimal.ZERO;
-		BigDecimal total = subtotal.add(shippingCost);
-
-		order.setSubtotal(subtotal);
-		order.setShippingCost(shippingCost);
-		order.setDiscountAmount(BigDecimal.ZERO);
-		order.setTax(BigDecimal.ZERO);
-		order.setTotal(total);
-
-		// Insert order
-		order = orderRepository.create(order);
-
-		// Create order items
-		for (CreateOrderRequest.OrderItemRequest itemRequest : request.getItems()) {
-			Product product = productRepository.findById(itemRequest.getProductId()).orElse(null);
-			if (product == null) {
-				throw new ResourceNotFoundException("Product not found with id: " + itemRequest.getProductId());
+			// Validate user exists
+			if (!userRepository.existsById(userId)) {
+				throw new DetailException(OrderConstant.E751_USER_NOT_FOUND);
 			}
 
-			// Validate stock
-			if (product.getStockQuantity() < itemRequest.getQuantity()) {
-				throw new BadRequestException("Insufficient stock for product: " + product.getName());
+			// Generate order number
+			String orderNumber = generateOrderNumber();
+
+			// Create Order entity
+			Order order = new Order();
+			order.setOrderNumber(orderNumber);
+			order.setUserId(userId);
+			order.setGuestEmail(request.getCustomerInfo().getEmail());
+			order.setStatus("PENDING");
+			order.setPaymentStatus("PENDING");
+			order.setShippingMethod(request.getShippingMethod());
+			order.setCurrency("VND");
+			order.setCreatedAt(new Date());
+			order.setUpdatedAt(new Date());
+
+			// Calculate totals
+			BigDecimal subtotal = BigDecimal.ZERO;
+			for (CreateOrderRequest.OrderItemRequest itemRequest : request.getItems()) {
+				BigDecimal itemTotal = itemRequest.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
+				subtotal = subtotal.add(itemTotal);
 			}
 
-			OrderItem orderItem = new OrderItem();
-			orderItem.setOrderId(order.getId());
-			orderItem.setProductId(itemRequest.getProductId());
-			orderItem.setProductName(product.getName());
-			orderItem.setProductSku(product.getSku());
-			orderItem.setQuantity(itemRequest.getQuantity());
-			orderItem.setPrice(itemRequest.getPrice());
-			orderItem.setTotal(itemRequest.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity())));
-			orderItem.setCreatedAt(new Date());
+			BigDecimal shippingCost = request.getShippingFee() != null ? request.getShippingFee() : BigDecimal.ZERO;
+			BigDecimal total = subtotal.add(shippingCost);
 
-			orderItemRepository.create(orderItem);
+			order.setSubtotal(subtotal);
+			order.setShippingCost(shippingCost);
+			order.setDiscountAmount(BigDecimal.ZERO);
+			order.setTax(BigDecimal.ZERO);
+			order.setTotal(total);
 
-			// Update product stock
-			int newStock = product.getStockQuantity() - itemRequest.getQuantity();
-			productRepository.updateStock(product.getId(), newStock, new Date());
-		}
+			// Insert order
+			order = orderRepository.create(order);
 
-		// Clear user's cart
-		clearUserCart(userId);
+			// Create order items
+			for (CreateOrderRequest.OrderItemRequest itemRequest : request.getItems()) {
+				Product product = productRepository.findById(itemRequest.getProductId()).orElse(null);
+				if (product == null) {
+					throw new DetailException(OrderConstant.E753_PRODUCT_NOT_FOUND_IN_ORDER);
+				}
 
-		return convertToDTO(order);
-	}
+				// Validate stock
+				if (product.getStockQuantity() < itemRequest.getQuantity()) {
+					throw new DetailException(OrderConstant.E752_INSUFFICIENT_STOCK);
+				}
 
-	@Override
-	public OrderDTO getOrderById(Long orderId) {
-		Order order = orderRepository.findById(orderId);
-		if (order == null) {
-			throw new ResourceNotFoundException("Order not found with id: " + orderId);
-		}
-		return convertToDTO(order);
-	}
+				OrderItem orderItem = new OrderItem();
+				orderItem.setOrderId(order.getId());
+				orderItem.setProductId(itemRequest.getProductId());
+				orderItem.setProductName(product.getName());
+				orderItem.setProductSku(product.getSku());
+				orderItem.setQuantity(itemRequest.getQuantity());
+				orderItem.setPrice(itemRequest.getPrice());
+				orderItem.setTotal(itemRequest.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity())));
+				orderItem.setCreatedAt(new Date());
 
-	@Override
-	public OrderDTO getOrderByIdAndUserId(Long orderId, Long userId) {
-		Order order = orderRepository.findByIdAndUserId(orderId, userId).orElse(null);
-		if (order == null) {
-			throw new ResourceNotFoundException("Order not found with id: " + orderId + " for user: " + userId);
-		}
-		return convertToDTO(order);
-	}
+				orderItemRepository.create(orderItem);
 
-	@Override
-	public List<OrderDTO> getOrdersByUserId(Long userId) {
-		List<Order> orders = orderRepository.findByUserId(userId);
-		return orders.stream().map(this::convertToDTO).collect(Collectors.toList());
-	}
-
-	@Override
-	public Page<OrderDTO> getOrdersByUserId(Long userId, Pageable pageable) {
-		Page<Order> orderPage = orderRepository.findByUserIdPaged(userId, pageable);
-		List<OrderDTO> orderDTOs = orderPage.getContent().stream().map(this::convertToDTO).collect(Collectors.toList());
-		return new PageImpl<>(orderDTOs, pageable, orderPage.getTotalElements());
-	}
-
-	@Override
-	public Page<OrderDTO> getAllOrders(Pageable pageable) {
-		Page<Order> orderPage = orderRepository.findAllPaged(pageable);
-		List<OrderDTO> orderDTOs = orderPage.getContent().stream().map(this::convertToDTO).collect(Collectors.toList());
-		return new PageImpl<>(orderDTOs, pageable, orderPage.getTotalElements());
-	}
-
-	@Override
-	public Page<OrderDTO> getOrdersByStatus(String status, Pageable pageable) {
-		Page<Order> orderPage = orderRepository.findByStatusPaged(status, pageable);
-		List<OrderDTO> orderDTOs = orderPage.getContent().stream().map(this::convertToDTO).collect(Collectors.toList());
-		return new PageImpl<>(orderDTOs, pageable, orderPage.getTotalElements());
-	}
-
-	@Override
-	public OrderDTO updateOrderStatus(Long orderId, String status) {
-		Order order = orderRepository.findById(orderId);
-		if (order == null) {
-			throw new ResourceNotFoundException("Order not found with id: " + orderId);
-		}
-
-		order.setStatus(status);
-		order.setUpdatedAt(new Date());
-
-		// Set specific timestamps based on status
-		Date now = new Date();
-		switch (status) {
-			case "SHIPPED":
-				order.setShippedAt(now);
-				break;
-			case "DELIVERED":
-				order.setDeliveredAt(now);
-				order.setPaymentStatus("COMPLETED");
-				break;
-			case "CANCELLED":
-				order.setCancelledAt(now);
-				break;
-		}
-
-		orderRepository.updateOrder(order);
-		return convertToDTO(order);
-	}
-
-	@Override
-	public OrderDTO updateTrackingNumber(Long orderId, String trackingNumber) {
-		Order order = orderRepository.findById(orderId);
-		if (order == null) {
-			throw new ResourceNotFoundException("Order not found with id: " + orderId);
-		}
-
-		order.setTrackingNumber(trackingNumber);
-		order.setUpdatedAt(new Date());
-		orderRepository.updateOrder(order);
-
-		return convertToDTO(order);
-	}
-
-	@Override
-	public void cancelOrder(Long orderId, Long userId) {
-		Order order = orderRepository.findByIdAndUserId(orderId, userId).orElse(null);
-		if (order == null) {
-			throw new ResourceNotFoundException("Order not found with id: " + orderId + " for user: " + userId);
-		}
-
-		if (!"PENDING".equals(order.getStatus()) && !"CONFIRMED".equals(order.getStatus())) {
-			throw new BadRequestException("Order cannot be cancelled in current status: " + order.getStatus());
-		}
-
-		order.setStatus("CANCELLED");
-		order.setCancelledAt(new Date());
-		order.setCancellationReason("Cancelled by customer");
-		order.setUpdatedAt(new Date());
-
-		// Restore product stock
-		List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
-		for (OrderItem item : orderItems) {
-			Product product = productRepository.findById(item.getProductId()).orElse(null);
-			if (product != null) {
-				int newStock = product.getStockQuantity() + item.getQuantity();
+				// Update product stock
+				int newStock = product.getStockQuantity() - itemRequest.getQuantity();
 				productRepository.updateStock(product.getId(), newStock, new Date());
 			}
-		}
 
-		orderRepository.updateOrder(order);
+			// Clear user's cart
+			clearUserCart(userId);
+
+			log.info("Tạo đơn hàng {} thành công - took: {}ms", orderNumber, System.currentTimeMillis() - start);
+			return convertToDTO(order);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi tạo đơn hàng", e);
+			throw new DetailException(OrderConstant.E750_ORDER_CREATE_FAILED);
+		}
 	}
 
 	@Override
-	public String generateOrderNumber() {
-		String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-		int randomNumber = new Random().nextInt(9999);
-		return "ORD" + timestamp + String.format("%04d", randomNumber);
+	public OrderDTO getOrderById(Long orderId) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Lấy thông tin đơn hàng: {}", orderId);
+
+			Order order = orderRepository.findById(orderId);
+			if (order == null) {
+				throw new DetailException(OrderConstant.E755_ORDER_NOT_FOUND);
+			}
+
+			log.info("Lấy thông tin đơn hàng {} thành công - took: {}ms", orderId, System.currentTimeMillis() - start);
+			return convertToDTO(order);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy thông tin đơn hàng: {}", orderId, e);
+			throw new DetailException(OrderConstant.E755_ORDER_NOT_FOUND);
+		}
+	}
+
+	@Override
+	public OrderDTO getOrderByIdAndUserId(Long orderId, Long userId) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Lấy đơn hàng {} của người dùng: {}", orderId, userId);
+
+			Order order = orderRepository.findByIdAndUserId(orderId, userId).orElse(null);
+			if (order == null) {
+				throw new DetailException(OrderConstant.E756_ORDER_ACCESS_DENIED);
+			}
+
+			log.info("Lấy đơn hàng {} của người dùng {} thành công - took: {}ms", orderId, userId,
+					System.currentTimeMillis() - start);
+			return convertToDTO(order);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy đơn hàng {} của người dùng: {}", orderId, userId, e);
+			throw new DetailException(OrderConstant.E757_ORDERS_FETCH_FAILED);
+		}
+	}
+
+	@Override
+	public List<OrderDTO> getOrdersByUserId(Long userId) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Lấy danh sách đơn hàng của người dùng: {}", userId);
+
+			List<Order> orders = orderRepository.findByUserId(userId);
+
+			log.info("Lấy {} đơn hàng của người dùng {} thành công - took: {}ms", orders.size(), userId,
+					System.currentTimeMillis() - start);
+			return orders.stream().map(this::convertToDTO).collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy danh sách đơn hàng của người dùng: {}", userId, e);
+			throw new DetailException(OrderConstant.E776_ORDERS_BY_USER_FAILED);
+		}
+	}
+
+	@Override
+	public Page<OrderDTO> getOrdersByUserId(Long userId, Pageable pageable) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Lấy danh sách đơn hàng của người dùng {} với phân trang", userId);
+
+			Page<Order> orderPage = orderRepository.findByUserIdPaged(userId, pageable);
+			List<OrderDTO> orderDTOs = orderPage.getContent().stream()
+					.map(this::convertToDTO)
+					.collect(Collectors.toList());
+
+			log.info("Lấy {} đơn hàng của người dùng {} thành công - took: {}ms", orderDTOs.size(), userId,
+					System.currentTimeMillis() - start);
+			return new PageImpl<>(orderDTOs, pageable, orderPage.getTotalElements());
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy danh sách đơn hàng của người dùng: {}", userId, e);
+			throw new DetailException(OrderConstant.E776_ORDERS_BY_USER_FAILED);
+		}
+	}
+
+	@Override
+	public Page<OrderDTO> getAllOrders(Pageable pageable) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Lấy tất cả đơn hàng với phân trang");
+
+			Page<Order> orderPage = orderRepository.findAllPaged(pageable);
+			List<OrderDTO> orderDTOs = orderPage.getContent().stream()
+					.map(this::convertToDTO)
+					.collect(Collectors.toList());
+
+			log.info("Lấy {} đơn hàng thành công - took: {}ms", orderDTOs.size(), System.currentTimeMillis() - start);
+			return new PageImpl<>(orderDTOs, pageable, orderPage.getTotalElements());
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy tất cả đơn hàng", e);
+			throw new DetailException(OrderConstant.E777_ALL_ORDERS_FETCH_FAILED);
+		}
+	}
+
+	@Override
+	public Page<OrderDTO> getOrdersByStatus(String status, Pageable pageable) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Lấy đơn hàng theo trạng thái: {}", status);
+
+			Page<Order> orderPage = orderRepository.findByStatusPaged(status, pageable);
+			List<OrderDTO> orderDTOs = orderPage.getContent().stream()
+					.map(this::convertToDTO)
+					.collect(Collectors.toList());
+
+			log.info("Lấy {} đơn hàng theo trạng thái {} thành công - took: {}ms", orderDTOs.size(), status,
+					System.currentTimeMillis() - start);
+			return new PageImpl<>(orderDTOs, pageable, orderPage.getTotalElements());
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy đơn hàng theo trạng thái: {}", status, e);
+			throw new DetailException(OrderConstant.E775_ORDERS_BY_STATUS_FAILED);
+		}
+	}
+
+	@Override
+	public OrderDTO updateOrderStatus(Long orderId, String status) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Cập nhật trạng thái đơn hàng {} sang: {}", orderId, status);
+
+			Order order = orderRepository.findById(orderId);
+			if (order == null) {
+				throw new DetailException(OrderConstant.E755_ORDER_NOT_FOUND);
+			}
+
+			order.setStatus(status);
+			order.setUpdatedAt(new Date());
+
+			// Set specific timestamps based on status
+			Date now = new Date();
+			switch (status) {
+				case "SHIPPED":
+					order.setShippedAt(now);
+					break;
+				case "DELIVERED":
+					order.setDeliveredAt(now);
+					order.setPaymentStatus("COMPLETED");
+					break;
+				case "CANCELLED":
+					order.setCancelledAt(now);
+					break;
+			}
+
+			orderRepository.updateOrder(order);
+
+			log.info("Cập nhật trạng thái đơn hàng {} thành {} thành công - took: {}ms", orderId, status,
+					System.currentTimeMillis() - start);
+			return convertToDTO(order);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi cập nhật trạng thái đơn hàng: {}", orderId, e);
+			throw new DetailException(OrderConstant.E760_ORDER_UPDATE_FAILED);
+		}
+	}
+
+	@Override
+	public OrderDTO updateTrackingNumber(Long orderId, String trackingNumber) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Cập nhật mã vận đơn cho đơn hàng: {}", orderId);
+
+			Order order = orderRepository.findById(orderId);
+			if (order == null) {
+				throw new DetailException(OrderConstant.E755_ORDER_NOT_FOUND);
+			}
+
+			order.setTrackingNumber(trackingNumber);
+			order.setUpdatedAt(new Date());
+			orderRepository.updateOrder(order);
+
+			log.info("Cập nhật mã vận đơn {} thành công - took: {}ms", orderId, System.currentTimeMillis() - start);
+			return convertToDTO(order);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi cập nhật mã vận đơn: {}", orderId, e);
+			throw new DetailException(OrderConstant.E763_TRACKING_UPDATE_FAILED);
+		}
+	}
+
+	@Override
+	public void cancelOrder(Long orderId, Long userId) throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			log.debug("Hủy đơn hàng {} của người dùng: {}", orderId, userId);
+
+			Order order = orderRepository.findByIdAndUserId(orderId, userId).orElse(null);
+			if (order == null) {
+				throw new DetailException(OrderConstant.E756_ORDER_ACCESS_DENIED);
+			}
+
+			if (!"PENDING".equals(order.getStatus()) && !"CONFIRMED".equals(order.getStatus())) {
+				throw new DetailException(OrderConstant.E771_CANCEL_NOT_ALLOWED);
+			}
+
+			order.setStatus("CANCELLED");
+			order.setCancelledAt(new Date());
+			order.setCancellationReason("Cancelled by customer");
+			order.setUpdatedAt(new Date());
+
+			// Restore product stock
+			List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+			for (OrderItem item : orderItems) {
+				Product product = productRepository.findById(item.getProductId()).orElse(null);
+				if (product != null) {
+					int newStock = product.getStockQuantity() + item.getQuantity();
+					productRepository.updateStock(product.getId(), newStock, new Date());
+				}
+			}
+
+			orderRepository.updateOrder(order);
+
+			log.info("Hủy đơn hàng {} thành công - took: {}ms", orderId, System.currentTimeMillis() - start);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Lỗi khi hủy đơn hàng: {}", orderId, e);
+			throw new DetailException(OrderConstant.E770_ORDER_CANCEL_FAILED);
+		}
+	}
+
+	@Override
+	public String generateOrderNumber() throws DetailException {
+		long start = System.currentTimeMillis();
+		try {
+			String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+			int randomNumber = new Random().nextInt(9999);
+			String orderNumber = "ORD" + timestamp + String.format("%04d", randomNumber);
+
+			log.debug("Tạo mã đơn hàng: {} - took: {}ms", orderNumber, System.currentTimeMillis() - start);
+			return orderNumber;
+		} catch (Exception e) {
+			log.error("Lỗi khi tạo mã đơn hàng", e);
+			throw new DetailException(OrderConstant.E780_ORDER_NUMBER_GENERATION_FAILED);
+		}
 	}
 
 	private void clearUserCart(Long userId) {
