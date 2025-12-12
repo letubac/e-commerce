@@ -19,6 +19,7 @@ public class ReviewMapper {
         dto.setRating(review.getRating());
         dto.setTitle(review.getTitle());
         dto.setComment(review.getComment());
+        dto.setIsAnonymous(review.getIsAnonymous());
         dto.setIsVerified(review.getIsVerifiedPurchase());
         dto.setIsApproved(review.getIsApproved());
         dto.setCreatedAt(review.getCreatedAt());
@@ -39,6 +40,7 @@ public class ReviewMapper {
         review.setRating(dto.getRating());
         review.setTitle(dto.getTitle());
         review.setComment(dto.getComment());
+        review.setIsAnonymous(dto.getIsAnonymous());
         review.setIsVerifiedPurchase(dto.getIsVerified());
         review.setIsApproved(dto.getIsApproved());
         review.setCreatedAt(dto.getCreatedAt());

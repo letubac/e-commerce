@@ -1,33 +1,44 @@
 import React, { useState } from 'react';
-import { Star, MessageCircle, ThumbsUp, ThumbsDown, Flag, Edit, Trash2 } from 'lucide-react';
+import { Star, MessageCircle, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import api from '../api/api';
+import toast from '../utils/toast';
+import './ReviewSection.css';
 
 export default function ReviewSection({ productId, reviews = [], reviewStats = {}, onReviewAdded, currentUser }) {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [newReview, setNewReview] = useState({
     rating: 5,
-    comment: ''
+    comment: '',
+    isAnonymous: false
   });
   const [submitting, setSubmitting] = useState(false);
-  const [sortBy, setSortBy] = useState('newest');
+  const [filterRating, setFilterRating] = useState(null); // null = all, 1-5 = specific rating
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!currentUser) {
-      alert('Vui lòng đăng nhập để đánh giá sản phẩm');
+      toast.error('Vui lòng đăng nhập để đánh giá sản phẩm');
+      return;
+    }
+
+    if (!newReview.comment.trim()) {
+      toast.error('Vui lòng nhập nội dung đánh giá');
       return;
     }
 
     setSubmitting(true);
     try {
-      await api.createReview(productId, newReview);
-      setNewReview({ rating: 5, comment: '' });
+      await api.createReview(productId, {
+        ...newReview,
+        productId: productId
+      });
+      setNewReview({ rating: 5, comment: '', isAnonymous: false });
       setShowReviewForm(false);
       onReviewAdded();
-      alert('Đánh giá của bạn đã được gửi thành công!');
+      toast.success('Đánh giá của bạn đã được gửi thành công!');
     } catch (error) {
       console.error('Error submitting review:', error);
-      alert(error.message || 'Có lỗi xảy ra khi gửi đánh giá');
+      toast.error(error.message || 'Có lỗi xảy ra khi gửi đánh giá');
     } finally {
       setSubmitting(false);
     }
@@ -39,10 +50,10 @@ export default function ReviewSection({ productId, reviews = [], reviewStats = {
     try {
       await api.deleteReview(reviewId);
       onReviewAdded(); // Refresh reviews
-      alert('Đã xóa đánh giá thành công');
+      toast.success('Đã xóa đánh giá thành công');
     } catch (error) {
       console.error('Error deleting review:', error);
-      alert('Có lỗi xảy ra khi xóa đánh giá');
+      toast.error('Có lỗi xảy ra khi xóa đánh giá');
     }
   };
 
@@ -52,222 +63,245 @@ export default function ReviewSection({ productId, reviews = [], reviewStats = {
         key={i}
         size={size}
         className={`${
-          i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-        } ${interactive ? 'cursor-pointer hover:text-yellow-400' : ''}`}
+          i < rating ? 'star-filled' : 'star-empty'
+        } ${interactive ? 'star-interactive' : ''}`}
         onClick={() => interactive && onStarClick && onStarClick(i + 1)}
       />
     ));
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Hôm nay';
+    if (diffDays === 1) return 'Hôm qua';
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    
+    return date.toLocaleDateString('vi-VN', {
       year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      month: '2-digit',
+      day: '2-digit'
     });
   };
 
-  const sortedReviews = Array.isArray(reviews) ? [...reviews].sort((a, b) => {
-    switch (sortBy) {
-      case 'newest':
-        return new Date(b.createdAt) - new Date(a.createdAt);
-      case 'oldest':
-        return new Date(a.createdAt) - new Date(b.createdAt);
-      case 'highest':
-        return b.rating - a.rating;
-      case 'lowest':
-        return a.rating - b.rating;
-      default:
-        return 0;
-    }
-  }) : [];
+  const filteredReviews = filterRating 
+    ? reviews.filter(r => r.rating === filterRating)
+    : reviews;
+
+  const totalReviews = reviewStats?.totalReviews || 0;
+  const averageRating = reviewStats?.averageRating || 0;
 
   return (
-    <div className="border-t pt-8">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Đánh giá sản phẩm</h2>
+    <div className="review-section-shopee">
+      {/* Review Summary */}
+      <div className="review-summary">
+        <div className="review-summary-left">
+          <div className="rating-overview">
+            <div className="rating-score">
+              <span className="rating-number">{averageRating.toFixed(1)}</span>
+              <span className="rating-max">trên 5</span>
+            </div>
+            <div className="rating-stars">
+              {renderStars(Math.round(averageRating), 18)}
+            </div>
+          </div>
+        </div>
+
+        <div className="review-summary-right">
+          <div className="rating-bars">
+            {[5, 4, 3, 2, 1].map(star => {
+              const count = reviewStats?.ratingBreakdown?.[star] || 0;
+              const percentage = totalReviews > 0 
+                ? (count / totalReviews * 100).toFixed(0) 
+                : 0;
+              
+              return (
+                <button
+                  key={star}
+                  onClick={() => setFilterRating(filterRating === star ? null : star)}
+                  className={`rating-bar-row ${filterRating === star ? 'active' : ''}`}
+                >
+                  <div className="rating-bar-label">
+                    {renderStars(star, 12)}
+                  </div>
+                  <div className="rating-bar-container">
+                    <div 
+                      className="rating-bar-fill"
+                      style={{ width: `${percentage}%` }}
+                    ></div>
+                  </div>
+                  <div className="rating-bar-count">{count}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Filter & Write Review */}
+      <div className="review-actions">
+        <div className="review-filters">
+          <button
+            onClick={() => setFilterRating(null)}
+            className={`filter-btn ${filterRating === null ? 'active' : ''}`}
+          >
+            Tất cả ({totalReviews})
+          </button>
+          <button
+            onClick={() => setFilterRating(5)}
+            className={`filter-btn ${filterRating === 5 ? 'active' : ''}`}
+          >
+            5 sao ({reviewStats?.ratingBreakdown?.[5] || 0})
+          </button>
+          <button
+            onClick={() => setFilterRating(4)}
+            className={`filter-btn ${filterRating === 4 ? 'active' : ''}`}
+          >
+            4 sao ({reviewStats?.ratingBreakdown?.[4] || 0})
+          </button>
+          <button
+            onClick={() => setFilterRating(3)}
+            className={`filter-btn ${filterRating === 3 ? 'active' : ''}`}
+          >
+            3 sao ({reviewStats?.ratingBreakdown?.[3] || 0})
+          </button>
+          <button
+            onClick={() => setFilterRating(2)}
+            className={`filter-btn ${filterRating === 2 ? 'active' : ''}`}
+          >
+            2 sao ({reviewStats?.ratingBreakdown?.[2] || 0})
+          </button>
+          <button
+            onClick={() => setFilterRating(1)}
+            className={`filter-btn ${filterRating === 1 ? 'active' : ''}`}
+          >
+            1 sao ({reviewStats?.ratingBreakdown?.[1] || 0})
+          </button>
+        </div>
+
         {currentUser && !showReviewForm && (
           <button
             onClick={() => setShowReviewForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+            className="btn-write-review"
           >
-            <MessageCircle size={16} />
-            <span>Viết đánh giá</span>
+            Viết đánh giá
           </button>
         )}
       </div>
 
-      {/* Review Stats */}
-      {reviewStats && (
-        <div className="bg-gray-50 rounded-lg p-6 mb-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">
-                {reviewStats.averageRating?.toFixed(1) || '0.0'}
-              </div>
-              <div className="flex items-center justify-center space-x-1 mb-2">
-                {renderStars(Math.round(reviewStats.averageRating || 0), 20)}
-              </div>
-              <div className="text-gray-600">
-                Trung bình từ {reviewStats.totalReviews} đánh giá
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              {[5, 4, 3, 2, 1].map(star => {
-                const count = reviewStats.ratingBreakdown?.[star] || 0;
-                const percentage = reviewStats.totalReviews > 0 
-                  ? (count / reviewStats.totalReviews * 100).toFixed(0) 
-                  : 0;
-                
-                return (
-                  <div key={star} className="flex items-center space-x-2">
-                    <span className="text-sm w-8">{star} sao</span>
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-yellow-400 h-2 rounded-full"
-                        style={{ width: `${percentage}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm text-gray-600 w-12">{count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Review Form */}
       {showReviewForm && (
-        <div className="bg-white border rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4">Viết đánh giá của bạn</h3>
-          <form onSubmit={handleSubmitReview} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Đánh giá</label>
-              <div className="flex items-center space-x-1">
-                {renderStars(newReview.rating, 24, true, (rating) => 
+        <div className="review-form-container">
+          <div className="review-form-header">
+            <h3>Đánh giá của bạn</h3>
+          </div>
+          <form onSubmit={handleSubmitReview} className="review-form">
+            <div className="form-group">
+              <label>Chất lượng sản phẩm</label>
+              <div className="rating-input">
+                {renderStars(newReview.rating, 32, true, (rating) => 
                   setNewReview(prev => ({ ...prev, rating }))
                 )}
-                <span className="ml-2 text-sm text-gray-600">
-                  ({newReview.rating} sao)
+                <span className="rating-text">
+                  {newReview.rating === 5 ? 'Tuyệt vời' :
+                   newReview.rating === 4 ? 'Hài lòng' :
+                   newReview.rating === 3 ? 'Bình thường' :
+                   newReview.rating === 2 ? 'Không hài lòng' : 'Tệ'}
                 </span>
               </div>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium mb-2">Nhận xét</label>
+            <div className="form-group">
+              <label>Nhận xét của bạn *</label>
               <textarea
                 value={newReview.comment}
                 onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..."
+                rows={5}
+                className="review-textarea"
+                placeholder="Hãy chia sẻ những điều bạn thích về sản phẩm này với những người mua khác nhé."
                 required
               />
             </div>
+
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={newReview.isAnonymous}
+                  onChange={(e) => setNewReview(prev => ({ ...prev, isAnonymous: e.target.checked }))}
+                  className="checkbox-input"
+                />
+                <span>Đăng với chế độ ẩn danh</span>
+              </label>
+            </div>
             
-            <div className="flex space-x-3">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300"
-              >
-                {submitting ? 'Đang gửi...' : 'Gửi đánh giá'}
-              </button>
+            <div className="form-actions">
               <button
                 type="button"
                 onClick={() => setShowReviewForm(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="btn-cancel"
               >
                 Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="btn-submit"
+              >
+                {submitting ? 'Đang gửi...' : 'Hoàn thành'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Sort Controls */}
-      {reviews.length > 0 && (
-        <div className="flex items-center space-x-4 mb-6">
-          <span className="text-sm font-medium">Sắp xếp theo:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
-          >
-            <option value="newest">Mới nhất</option>
-            <option value="oldest">Cũ nhất</option>
-            <option value="highest">Đánh giá cao nhất</option>
-            <option value="lowest">Đánh giá thấp nhất</option>
-          </select>
-        </div>
-      )}
-
       {/* Reviews List */}
-      <div className="space-y-6">
-        {sortedReviews.length > 0 ? (
-          sortedReviews.map((review) => (
-            <div key={review.id} className="border-b pb-6 last:border-b-0">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-bold">
-                    {review.user?.fullName?.[0] || 'U'}
+      <div className="reviews-list">
+        {filteredReviews.length > 0 ? (
+          filteredReviews.map((review) => (
+            <div key={review.id} className="review-item">
+              <div className="review-header">
+                <div className="reviewer-info">
+                  <div className="reviewer-avatar">
+                    {review.isAnonymous ? 'A' : (review.userName?.[0]?.toUpperCase() || 'U')}
                   </div>
-                  <div>
-                    <div className="font-medium">{review.user?.fullName || 'Người dùng ẩn danh'}</div>
-                    <div className="flex items-center space-x-2">
-                      <div className="flex items-center space-x-1">
-                        {renderStars(review.rating)}
-                      </div>
-                      <span className="text-sm text-gray-600">
-                        {formatDate(review.createdAt)}
-                      </span>
-                    </div>
+                  <div className="reviewer-details">
+                    <div className="reviewer-name">{review.isAnonymous ? 'Người dùng ẩn danh' : (review.userName || 'Người dùng ẩn danh')}</div>
+                    <div className="review-date">{formatDate(review.createdAt)}</div>
                   </div>
                 </div>
                 
-                {currentUser && currentUser.id === review.user?.id && (
-                  <div className="flex items-center space-x-2">
-                    <button className="p-1 text-gray-400 hover:text-blue-600">
-                      <Edit size={16} />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteReview(review.id)}
-                      className="p-1 text-gray-400 hover:text-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                {currentUser && currentUser.username === review.userName && (
+                  <button 
+                    onClick={() => handleDeleteReview(review.id)}
+                    className="btn-delete-review"
+                    title="Xóa đánh giá"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 )}
               </div>
               
-              <p className="text-gray-700 mb-3 leading-relaxed">{review.comment}</p>
+              <div className="review-rating">
+                {renderStars(review.rating, 14)}
+              </div>
               
-              <div className="flex items-center space-x-4 text-sm">
-                <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-600">
-                  <ThumbsUp size={14} />
-                  <span>Hữu ích ({review.helpfulCount || 0})</span>
-                </button>
-                <button className="flex items-center space-x-1 text-gray-500 hover:text-red-600">
-                  <ThumbsDown size={14} />
-                  <span>Không hữu ích</span>
-                </button>
-                <button className="flex items-center space-x-1 text-gray-500 hover:text-orange-600">
-                  <Flag size={14} />
-                  <span>Báo cáo</span>
-                </button>
+              <div className="review-comment">
+                {review.comment}
               </div>
             </div>
           ))
         ) : (
-          <div className="text-center py-8">
-            <MessageCircle size={48} className="text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Chưa có đánh giá nào
-            </h3>
-            <p className="text-gray-600">
-              Hãy là người đầu tiên đánh giá sản phẩm này!
+          <div className="empty-reviews">
+            <MessageCircle size={64} className="empty-icon" />
+            <h3>{filterRating ? `Chưa có đánh giá ${filterRating} sao` : 'Chưa có đánh giá nào'}</h3>
+            <p>
+              {filterRating 
+                ? 'Hãy thử lọc theo số sao khác'
+                : 'Hãy là người đầu tiên đánh giá sản phẩm này!'}
             </p>
           </div>
         )}

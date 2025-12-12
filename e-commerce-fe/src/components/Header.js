@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, User, Search, Menu, X, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import NotificationBell from './NotificationBell';
 import api from '../api/api';
 
 export default function Header() {
@@ -144,6 +145,9 @@ export default function Header() {
                   Quản trị
                 </button>
               )}
+
+              {/* Notification Bell - chỉ hiển thị khi đã login */}
+              {user && <NotificationBell />}
 
               {/* Cart - chỉ hiển thị cho customer, không hiển thị cho admin */}
               {user && !isAdmin() && (

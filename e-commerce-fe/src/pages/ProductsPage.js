@@ -228,7 +228,7 @@ function ProductsPage() {
             </div>
 
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {[...Array(8)].map((_, index) => (
                   <div key={index} className="bg-white rounded-lg shadow-sm p-4 animate-pulse">
                     <div className="bg-gray-300 h-48 rounded-lg mb-4"></div>
@@ -240,7 +240,7 @@ function ProductsPage() {
               </div>
             ) : products.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {products.map((product) => (
                     <ProductCard
                       key={product.id}

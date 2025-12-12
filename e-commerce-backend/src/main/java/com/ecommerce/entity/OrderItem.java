@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.Date;
+import vn.com.unit.miragesql.miragesql.annotation.Transient;
 
 import com.ecommerce.constant.TableConstant;
 

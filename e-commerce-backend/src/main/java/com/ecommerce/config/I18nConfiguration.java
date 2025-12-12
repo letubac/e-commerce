@@ -16,9 +16,7 @@ public class I18nConfiguration {
 	@Bean(name = "messageSource")
     public ResourceBundleMessageSource getMessageResource()  {
     	ResourceBundleMessageSource rs = new ResourceBundleMessageSource();
-        rs.setBasenames("i18n/messages", 
-        		"i18n/error_messages_app_api", 
-                "i18n/error_messages_app_core");
+        rs.setBasenames("messages/messages");
         rs.setDefaultEncoding(AppApiConstant.UTF_8);
         rs.setUseCodeAsDefaultMessage(true);
         return rs;

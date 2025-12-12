@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ecommerce.constant.OrderConstant;
+import com.ecommerce.event.OrderEvent;
 import com.ecommerce.dto.AddressDTO;
 import com.ecommerce.dto.CreateOrderRequest;
 import com.ecommerce.dto.OrderDTO;
@@ -51,6 +53,7 @@ public class OrderServiceImpl implements OrderService {
 	private final CartItemRepository cartItemRepository;
 	private final AddressRepository addressRepository;
 	private final UserMapper userMapper;
+	private final ApplicationEventPublisher eventPublisher;
 
 	@Override
 	public OrderDTO createOrder(Long userId, CreateOrderRequest request) throws DetailException {
@@ -128,6 +131,21 @@ public class OrderServiceImpl implements OrderService {
 
 			// Clear user's cart
 			clearUserCart(userId);
+
+			// Publish OrderEvent for notification
+			try {
+				eventPublisher.publishEvent(new OrderEvent(
+						this,
+						order.getId(),
+						userId,
+						orderNumber,
+						"PLACED",
+						total.doubleValue()));
+				log.debug("Published ORDER_PLACED event for order: {}", orderNumber);
+			} catch (Exception e) {
+				log.error("Failed to publish OrderEvent for order: {}", orderNumber, e);
+				// Don't throw - notification failure shouldn't break order creation
+			}
 
 			log.info("Tạo đơn hàng {} thành công - took: {}ms", orderNumber, System.currentTimeMillis() - start);
 			return convertToDTO(order);
@@ -289,6 +307,42 @@ public class OrderServiceImpl implements OrderService {
 
 			orderRepository.updateOrder(order);
 
+			// Publish OrderEvent for notification
+			try {
+				String eventType = null;
+				switch (status) {
+					case "CONFIRMED":
+						eventType = "CONFIRMED";
+						break;
+					case "SHIPPED":
+						eventType = "SHIPPED";
+						break;
+					case "DELIVERED":
+						eventType = "DELIVERED";
+						break;
+					case "CANCELLED":
+						eventType = "CANCELLED";
+						break;
+					default:
+						// Don't send notification for other status changes
+						break;
+				}
+
+				if (eventType != null) {
+					eventPublisher.publishEvent(new OrderEvent(
+							this,
+							order.getId(),
+							order.getUserId(),
+							order.getOrderNumber(),
+							eventType,
+							order.getTotal().doubleValue()));
+					log.debug("Published ORDER_{} event for order: {}", eventType, order.getOrderNumber());
+				}
+			} catch (Exception e) {
+				log.error("Failed to publish OrderEvent for order: {}", order.getOrderNumber(), e);
+				// Don't throw - notification failure shouldn't break status update
+			}
+
 			log.info("Cập nhật trạng thái đơn hàng {} thành {} thành công - took: {}ms", orderId, status,
 					System.currentTimeMillis() - start);
 			return convertToDTO(order);
@@ -356,6 +410,21 @@ public class OrderServiceImpl implements OrderService {
 			}
 
 			orderRepository.updateOrder(order);
+
+			// Publish OrderEvent for notification
+			try {
+				eventPublisher.publishEvent(new OrderEvent(
+						this,
+						order.getId(),
+						order.getUserId(),
+						order.getOrderNumber(),
+						"CANCELLED",
+						order.getTotal().doubleValue()));
+				log.debug("Published ORDER_CANCELLED event for order: {}", order.getOrderNumber());
+			} catch (Exception e) {
+				log.error("Failed to publish OrderEvent for order: {}", order.getOrderNumber(), e);
+				// Don't throw - notification failure shouldn't break cancellation
+			}
 
 			log.info("Hủy đơn hàng {} thành công - took: {}ms", orderId, System.currentTimeMillis() - start);
 		} catch (DetailException e) {

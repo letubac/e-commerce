@@ -25,7 +25,7 @@ import vn.com.unit.miragesql.miragesql.annotation.PrimaryKey;
 public class Review {
     @Id
     @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ
-    + TableConstant.REVIEWS)
+            + TableConstant.REVIEWS)
     @Column(name = "id")
     private Long id;
 
@@ -46,6 +46,9 @@ public class Review {
 
     @Column(name = "comment")
     private String comment;
+
+    @Column(name = "is_anonymous")
+    private Boolean isAnonymous;
 
     @Column(name = "is_verified_purchase")
     private Boolean isVerifiedPurchase;

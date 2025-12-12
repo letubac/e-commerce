@@ -29,9 +29,10 @@ public class ReviewDTO {
     private String title;
 
     @NotBlank(message = "Nội dung đánh giá không được để trống")
-    @Size(min = 10, max = 1000, message = "Nội dung đánh giá phải từ 10 đến 1000 ký tự")
+    @Size(min = 1, max = 1000, message = "Nội dung đánh giá phải từ 1 đến 1000 ký tự")
     private String comment;
 
+    private Boolean isAnonymous;
     private Boolean isVerified;
     private Boolean isApproved;
     private Date createdAt;

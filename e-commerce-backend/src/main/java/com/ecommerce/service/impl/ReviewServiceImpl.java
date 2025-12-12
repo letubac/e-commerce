@@ -33,16 +33,16 @@ public class ReviewServiceImpl implements ReviewService {
 	private static final Logger log = LoggerFactory.getLogger(ReviewServiceImpl.class);
 
 	// @Autowired - removed for Lombok
-	private ReviewRepository reviewRepository;
+	private final ReviewRepository reviewRepository;
 
 	// @Autowired - removed for Lombok
-	private ProductRepository productRepository;
+	private final ProductRepository productRepository;
 
 	// @Autowired - removed for Lombok
-	private UserRepository userRepository;
+	private final UserRepository userRepository;
 
 	// @Autowired - removed for Lombok
-	private ReviewMapper reviewMapper;
+	private final ReviewMapper reviewMapper;
 
 	@Override
 	public ReviewDTO createReview(Long productId, Long userId, CreateReviewRequest request) throws DetailException {
@@ -69,11 +69,13 @@ public class ReviewServiceImpl implements ReviewService {
 			review.setUserId(userId);
 			review.setRating(request.getRating());
 			review.setComment(request.getComment());
-			review.setIsVerifiedPurchase(false); // Default to not verified
+			review.setIsAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false);
+			review.setIsVerifiedPurchase(true); // Default to not verified
+			review.setIsApproved(true); // Default to approved);
 			review.setCreatedAt(new Date());
 			review.setUpdatedAt(new Date());
 
-			Review savedReview = reviewRepository.save(review);
+			Review savedReview = reviewRepository.create(review);
 			log.info("Tạo đánh giá thành công cho sản phẩm ID {} bởi user ID {}", productId, userId);
 			return reviewMapper.toDTO(savedReview);
 		} catch (DetailException e) {
@@ -99,7 +101,7 @@ public class ReviewServiceImpl implements ReviewService {
 			review.setComment(request.getComment());
 			review.setUpdatedAt(new Date());
 
-			Review updatedReview = reviewRepository.save(review);
+			Review updatedReview = reviewRepository.update(review);
 			log.info("Cập nhật đánh giá ID {} thành công", reviewId);
 			return reviewMapper.toDTO(updatedReview);
 		} catch (DetailException e) {
@@ -306,7 +308,7 @@ public class ReviewServiceImpl implements ReviewService {
 			review.setComment(review.getComment() + " [Status: " + status + "]");
 			review.setUpdatedAt(new Date());
 
-			Review updatedReview = reviewRepository.save(review);
+			Review updatedReview = reviewRepository.update(review);
 			log.info("Cập nhật trạng thái đánh giá ID {} thành {}", reviewId, status);
 			return reviewMapper.toDTO(updatedReview);
 		} catch (DetailException e) {
@@ -368,10 +370,11 @@ public class ReviewServiceImpl implements ReviewService {
 			review.setRating(reviewDTO.getRating());
 			review.setComment(reviewDTO.getComment());
 			review.setIsVerifiedPurchase(false);
+			review.setIsApproved(true); // Default to approved);
 			review.setCreatedAt(new Date());
 			review.setUpdatedAt(new Date());
 
-			Review savedReview = reviewRepository.save(review);
+			Review savedReview = reviewRepository.create(review);
 			log.info("Đã tạo đánh giá thành công ID: {} cho sản phẩm ID: {} bởi user: {}", savedReview.getId(),
 					reviewDTO.getProductId(), username);
 
@@ -407,7 +410,7 @@ public class ReviewServiceImpl implements ReviewService {
 			review.setComment(reviewDTO.getComment());
 			review.setUpdatedAt(new Date());
 
-			Review updatedReview = reviewRepository.save(review);
+			Review updatedReview = reviewRepository.update(review);
 			log.info("Cập nhật đánh giá ID {} thành công bởi user: {}", reviewDTO.getId(), username);
 			return reviewMapper.toDTO(updatedReview);
 		} catch (DetailException e) {

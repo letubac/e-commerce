@@ -58,8 +58,13 @@ public class ProductDTO {
     private String slug;
     private Date createdAt;
     private Date updatedAt;
-    
+
     private List<ProductImageDTO> productImages;
+
+    // Review and sales stats
+    private Double averageRating;
+    private Integer reviewCount;
+    private Integer soldCount;
 
     // Custom constructor for basic product info
     public ProductDTO(String name, String sku, BigDecimal price, Integer stockQuantity) {

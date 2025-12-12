@@ -1,0 +1,129 @@
+/* Cart Page Styles - Professional Table Layout */
+
+/* Prevent content hidden by sticky bottom bar */
+body {
+  padding-bottom: 100px;
+}
+
+/* Sticky bottom bar */
+.sticky-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: white;
+  border-top: 2px solid #e5e7eb;
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Prevent table cell shifting */
+.cart-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* Fixed column widths */
+.cart-table th:nth-child(1),
+.cart-table td:nth-child(1) {
+  width: 48px; /* Checkbox column */
+}
+
+.cart-table th:nth-child(2),
+.cart-table td:nth-child(2) {
+  width: auto; /* Product info - flexible */
+  min-width: 300px;
+}
+
+.cart-table th:nth-child(3),
+.cart-table td:nth-child(3) {
+  width: 128px; /* Unit price column */
+}
+
+.cart-table th:nth-child(4),
+.cart-table td:nth-child(4) {
+  width: 160px; /* Quantity column */
+}
+
+.cart-table th:nth-child(5),
+.cart-table td:nth-child(5) {
+  width: 128px; /* Subtotal column */
+}
+
+.cart-table th:nth-child(6),
+.cart-table td:nth-child(6) {
+  width: 80px; /* Action column */
+}
+
+/* Quantity input - prevent layout shift */
+.quantity-input {
+  width: 64px;
+  min-width: 64px;
+  max-width: 64px;
+}
+
+/* Remove spinner arrows from number input */
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.quantity-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Modal backdrop animation */
+.modal-backdrop {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal content animation */
+.modal-content {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Coupon card hover effect */
+.coupon-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.coupon-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Smooth transitions */
+.smooth-transition {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}

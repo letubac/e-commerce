@@ -16,6 +16,7 @@ function CheckoutPage() {
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderId, setOrderId] = useState(null);
   const [orderNumber, setOrderNumber] = useState(null);
+  const [savedOrderTotal, setSavedOrderTotal] = useState(0); // Save total before clearing cart
 
   // Form states
   const [customerInfo, setCustomerInfo] = useState({
@@ -38,10 +39,11 @@ function CheckoutPage() {
   const finalTotal = totalPrice + shippingFee;
 
   useEffect(() => {
-    if (safeCartItems.length === 0) {
+    // Don't redirect if order was just placed successfully
+    if (safeCartItems.length === 0 && !orderSuccess) {
       navigate('/cart');
     }
-  }, [safeCartItems, navigate]);
+  }, [safeCartItems, navigate, orderSuccess]);
 
   const handleInputChange = (field, value) => {
     setCustomerInfo(prev => ({ ...prev, [field]: value }));
@@ -118,6 +120,7 @@ function CheckoutPage() {
       
       setOrderId(response.id || response.orderId);
       setOrderNumber(response.orderNumber || response.orderCode);
+      setSavedOrderTotal(finalTotal); // Save total before clearing cart
       setOrderSuccess(true);
       setStep(3);
       
@@ -178,7 +181,7 @@ function CheckoutPage() {
                 </div>
                 <div className="flex justify-between">
                   <span>Tổng tiền:</span>
-                  <span className="font-semibold text-red-600">{finalTotal.toLocaleString('vi-VN')}₫</span>
+                  <span className="font-semibold text-red-600">{savedOrderTotal.toLocaleString('vi-VN')}₫</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Phương thức thanh toán:</span>

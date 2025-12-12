@@ -29,10 +29,12 @@ import jakarta.validation.Valid;
 
 /**
  * REST controller for managing coupons.
- * Provides endpoints for coupon CRUD operations (Admin only).
+ * Provides endpoints for coupon CRUD operations.
+ * Admin endpoints: /api/v1/admin/coupons/*
+ * Public endpoints: /api/v1/public/coupons/*
  */
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/v1")
 
 public class CouponController {
 
@@ -50,7 +52,7 @@ public class CouponController {
     /**
      * Get all coupons (Admin only)
      */
-    @GetMapping("/coupons")
+    @GetMapping("/admin/coupons")
     // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> getCoupons(
             @RequestParam(defaultValue = "0") int page,
@@ -82,7 +84,7 @@ public class CouponController {
     /**
      * Create new coupon (Admin only)
      */
-    @PostMapping("/coupons")
+    @PostMapping("/admin/coupons")
     // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> createCoupon(@Valid @RequestBody CouponDTO couponDTO) {
         long start = System.currentTimeMillis();
@@ -99,7 +101,7 @@ public class CouponController {
     /**
      * Update coupon (Admin only)
      */
-    @PutMapping("/coupons/{id}")
+    @PutMapping("/admin/coupons/{id}")
     // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> updateCoupon(
             @PathVariable Long id,
@@ -119,7 +121,7 @@ public class CouponController {
     /**
      * Delete coupon (Admin only)
      */
-    @DeleteMapping("/coupons/{id}")
+    @DeleteMapping("/admin/coupons/{id}")
     // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> deleteCoupon(@PathVariable Long id) {
         long start = System.currentTimeMillis();
@@ -136,7 +138,7 @@ public class CouponController {
     /**
      * Get coupon by ID (Admin only)
      */
-    @GetMapping("/coupons/{id}")
+    @GetMapping("/admin/coupons/{id}")
     // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> getCouponById(@PathVariable Long id) {
         long start = System.currentTimeMillis();
@@ -150,9 +152,9 @@ public class CouponController {
     }
 
     /**
-     * Validate coupon code
+     * Validate coupon code (Admin only)
      */
-    @PostMapping("/coupons/validate")
+    @PostMapping("/admin/coupons/validate")
     public ResponseEntity<BusinessApiResponse> validateCoupon(@RequestBody Map<String, String> request) {
         long start = System.currentTimeMillis();
         try {
@@ -172,7 +174,7 @@ public class CouponController {
     /**
      * Toggle coupon active status (Admin only)
      */
-    @PutMapping("/coupons/{id}/toggle-status")
+    @PutMapping("/admin/coupons/{id}/toggle-status")
     // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> toggleCouponStatus(@PathVariable Long id) {
         long start = System.currentTimeMillis();
@@ -189,7 +191,7 @@ public class CouponController {
     /**
      * Get coupon usage statistics (Admin only)
      */
-    @GetMapping("/coupons/{id}/statistics")
+    @GetMapping("/admin/coupons/{id}/statistics")
     // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> getCouponStatistics(@PathVariable Long id) {
         long start = System.currentTimeMillis();
@@ -203,10 +205,66 @@ public class CouponController {
     }
 
     /**
-     * Apply coupon to order
+     * Apply coupon to order (Admin only)
      */
-    @PostMapping("/coupons/apply")
+    @PostMapping("/admin/coupons/apply")
     public ResponseEntity<BusinessApiResponse> applyCoupon(@RequestBody Map<String, Object> request) {
+        long start = System.currentTimeMillis();
+        try {
+            String couponCode = (String) request.get("couponCode");
+            Double orderAmount = ((Number) request.get("orderAmount")).doubleValue();
+
+            if (couponCode == null || couponCode.trim().isEmpty()) {
+                throw new IllegalArgumentException("Mã coupon không được để trống");
+            }
+
+            if (orderAmount == null || orderAmount <= 0) {
+                throw new IllegalArgumentException("Số tiền đơn hàng không hợp lệ");
+            }
+
+            Map<String, Object> result = couponService.applyCoupon(couponCode.trim(), orderAmount);
+            return ResponseEntity.ok(successHandler.handlerSuccess(result, start));
+        } catch (Exception e) {
+            log.error("Lỗi khi áp dụng coupon", e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
+    }
+
+    // ========== PUBLIC ENDPOINTS FOR USERS ==========
+
+    /**
+     * Get all active coupons (Public - for users)
+     */
+    @GetMapping("/public/coupons")
+    public ResponseEntity<BusinessApiResponse> getActiveCoupons(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        long start = System.currentTimeMillis();
+        try {
+            Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+            PageRequest pageRequest = PageRequest.of(page, size, sort);
+            Page<CouponDTO> coupons = couponService.findAll(pageRequest);
+
+            // Filter only active coupons
+            Page<CouponDTO> activeCoupons = coupons.map(coupon -> {
+                if (coupon.getIsActive() != null && coupon.getIsActive()) {
+                    return coupon;
+                }
+                return null;
+            });
+
+            return ResponseEntity.ok(successHandler.handlerSuccess(activeCoupons, start));
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy danh sách coupon công khai", e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
+    }
+
+    /**
+     * Apply coupon (Public - for users)
+     */
+    @PostMapping("/public/coupons/apply")
+    public ResponseEntity<BusinessApiResponse> applyCouponPublic(@RequestBody Map<String, Object> request) {
         long start = System.currentTimeMillis();
         try {
             String couponCode = (String) request.get("couponCode");

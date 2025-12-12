@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, LogOut, User, Bell, Menu, X, Search } from 'lucide-react';
+import { Settings, LogOut, User, Menu, X, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import NotificationBell from './NotificationBell';
 
 export default function AdminHeader() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [notifications] = useState([
-    { id: 1, title: 'Đơn hàng mới', message: '5 đơn hàng chờ xử lý', time: '5 phút trước', unread: true },
-    { id: 2, title: 'Sản phẩm hết hàng', message: 'iPhone 15 Pro Max đã hết hàng', time: '2 giờ trước', unread: true },
-    { id: 3, title: 'Đánh giá mới', message: '3 đánh giá sản phẩm mới', time: '1 ngày trước', unread: false }
-  ]);
-  const unreadCount = notifications.filter(n => n.unread).length;
 
   const handleLogout = () => {
     if (window.confirm('Bạn có chắc chắn muốn đăng xuất?')) {
@@ -69,16 +64,7 @@ export default function AdminHeader() {
             </div>
 
             {/* Notifications */}
-            <div className="relative">
-              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors relative">
-                <Bell size={20} />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-            </div>
+            <NotificationBell variant="dark" />
 
             {/* User menu */}
             <div className="relative">

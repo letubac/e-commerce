@@ -123,7 +123,7 @@ export default function NewArrivals() {
 
         {/* Products Grid */}
         <div className="relative">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {currentProducts.map((product) => {
               // Lấy primary image hoặc image đầu tiên
               const primaryImage = product.productImages?.find(img => img.primary) || product.productImages?.[0];

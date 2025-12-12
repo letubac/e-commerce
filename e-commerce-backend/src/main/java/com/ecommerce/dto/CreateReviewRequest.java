@@ -11,6 +11,8 @@ public class CreateReviewRequest {
     @Size(max = 2000, message = "Comment must not exceed 2000 characters")
     private String comment;
 
+    private Boolean isAnonymous;
+
     // Constructors
     public CreateReviewRequest() {
     }
@@ -35,5 +37,13 @@ public class CreateReviewRequest {
 
     public void setComment(String comment) {
         this.comment = comment;
+    }
+
+    public Boolean getIsAnonymous() {
+        return isAnonymous;
+    }
+
+    public void setIsAnonymous(Boolean isAnonymous) {
+        this.isAnonymous = isAnonymous;
     }
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ChatWidget from './components/ChatWidget';
@@ -20,6 +21,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import EmailVerificationPage from './pages/EmailVerificationPage';
+import NotificationListPage from './pages/NotificationListPage';
 
 function AppContent() {
   const location = useLocation();
@@ -72,6 +74,14 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationListPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Auth routes */}
           <Route path="/login" element={<LoginPage />} />
@@ -101,7 +111,9 @@ export default function App() {
     <AuthProvider>
       <CartProvider>
         <Router>
-          <AppContent />
+          <NotificationProvider>
+            <AppContent />
+          </NotificationProvider>
         </Router>
       </CartProvider>
     </AuthProvider>

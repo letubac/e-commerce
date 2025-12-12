@@ -311,6 +311,7 @@ CREATE TABLE reviews (
     rating INTEGER NOT NULL,
     title VARCHAR(255),
     comment TEXT,
+    is_anonymous BOOLEAN NOT NULL DEFAULT FALSE,
     is_verified_purchase BOOLEAN NOT NULL DEFAULT FALSE,
     is_approved BOOLEAN NOT NULL DEFAULT TRUE,
     helpful_count INTEGER DEFAULT 0,

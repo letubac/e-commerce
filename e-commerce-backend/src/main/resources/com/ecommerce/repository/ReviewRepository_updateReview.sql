@@ -4,6 +4,7 @@ UPDATE reviews SET
     rating = /* rating */,
     title = /* title */,
     comment = /* comment */,
+    is_anonymous = /* isAnonymous */,
     is_verified_purchase = /* isVerifiedPurchase */,
     is_approved = /* isApproved */,
     updated_at = /* updatedAt */

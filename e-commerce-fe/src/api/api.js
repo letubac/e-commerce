@@ -123,6 +123,13 @@ const api = {
     return { items, totalPages, totalElements, raw: res };
   },
 
+  getProductsByCategory: async (categoryId, params = {}) => {
+    const query = { ...params, categoryId };
+    const queryParams = new URLSearchParams(query);
+    const res = await api.request(`/products?${queryParams.toString()}`);
+    return res; // Return full response with pagination
+  },
+
   getProduct: (id) => api.request(`/products/${id}`),
   getProductDetails: (id) => api.request(`/products/${id}`),
   searchProducts: (keyword, params = {}) => api.request(`/products/search?keyword=${encodeURIComponent(keyword)}&${new URLSearchParams(params)}`),
@@ -171,6 +178,7 @@ const api = {
   // Orders
   createOrder: (data) => api.request('/orders', { method: 'POST', body: JSON.stringify(data) }),
   getOrders: () => api.request('/orders'),
+  cancelOrder: (orderId) => api.request(`/orders/${orderId}/cancel`, { method: 'PUT' }),
 
   // Payment APIs
   getPaymentMethods: () => parseBusinessResponse(api.request('/payment/methods')),

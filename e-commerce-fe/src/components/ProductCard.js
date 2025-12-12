@@ -66,39 +66,39 @@ export default function ProductCard({ product, onViewDetails }) {
         )}
       </div>
 
-      <div className="p-4">
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2">{product.name}</h3>
-        <div className="flex items-center justify-between mb-3">
+      <div className="p-3">
+        <h3 className="font-medium text-sm mb-1.5 line-clamp-2 h-10">{product.name}</h3>
+        <div className="flex items-center justify-between mb-2">
           {product.salePrice ? (
             <>
-              <span className="text-2xl font-bold text-red-600">
+              <span className="text-lg font-bold text-red-600">
                 {Number(product.salePrice).toLocaleString('vi-VN')}đ
               </span>
-              <span className="text-sm text-gray-500 line-through">
+              <span className="text-xs text-gray-500 line-through">
                 {Number(product.price).toLocaleString('vi-VN')}đ
               </span>
             </>
           ) : (
-            <span className="text-2xl font-bold text-red-600">
+            <span className="text-lg font-bold text-red-600">
               {Number(displayPrice).toLocaleString('vi-VN')}đ
             </span>
           )}
         </div>
 
-        <div className="flex space-x-2">
+        <div className="flex space-x-1.5">
           <button
             onClick={handleViewDetails}
-            className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center justify-center space-x-1"
+            className="flex-1 py-1.5 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition flex items-center justify-center space-x-1"
           >
-            <Eye size={16} />
-            <span>Xem chi tiết</span>
+            <Eye size={14} />
+            <span>Xem</span>
           </button>
           <button
             onClick={handleAddToCart}
             disabled={adding || !product.stockQuantity}
-            className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+            className="flex-1 py-1.5 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
           >
-            {adding ? 'Đang thêm...' : product.stockQuantity ? 'Thêm vào giỏ' : 'Hết hàng'}
+            {adding ? 'Đang thêm...' : product.stockQuantity ? 'Thêm giỏ' : 'Hết hàng'}
           </button>
         </div>
       </div>
