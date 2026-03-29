@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Smartphone, Laptop, Monitor, Headphones, Watch, Camera, Gamepad2, Tv, Home, Zap, Package, ChevronLeft, ChevronRight, Star, Shield, RefreshCw, CreditCard, Truck } from 'lucide-react';
 import FlashSale from '../components/FlashSale';
@@ -77,33 +77,38 @@ function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoadingCategories(true);
-      const catData = await api.getCategories().catch(() => []);
-      const cats = Array.isArray(catData) ? catData : (catData?.content || []);
-      setCategories(cats.slice(0, 10));
-    } catch (e) {
-      setCategories([]);
-    } finally {
-      setLoadingCategories(false);
-    }
-
-    try {
-      setLoadingProducts(true);
-      const prodData = await api.getFeaturedProducts().catch(() => []);
-      const prods = Array.isArray(prodData) ? prodData : (prodData?.content || prodData?.items || []);
-      setFeaturedProducts(prods.slice(0, 8));
-    } catch (e) {
-      setFeaturedProducts([]);
-    } finally {
-      setLoadingProducts(false);
-    }
-  }, []);
-
   useEffect(() => {
+    let cancelled = false;
+    async function fetchData() {
+      try {
+        setLoadingCategories(true);
+        const catData = await api.getCategories().catch(() => []);
+        if (!cancelled) {
+          const cats = Array.isArray(catData) ? catData : (catData?.content || []);
+          setCategories(cats.slice(0, 10));
+        }
+      } catch (e) {
+        if (!cancelled) setCategories([]);
+      } finally {
+        if (!cancelled) setLoadingCategories(false);
+      }
+
+      try {
+        setLoadingProducts(true);
+        const prodData = await api.getFeaturedProducts().catch(() => []);
+        if (!cancelled) {
+          const prods = Array.isArray(prodData) ? prodData : (prodData?.content || prodData?.items || []);
+          setFeaturedProducts(prods.slice(0, 8));
+        }
+      } catch (e) {
+        if (!cancelled) setFeaturedProducts([]);
+      } finally {
+        if (!cancelled) setLoadingProducts(false);
+      }
+    }
     fetchData();
-  }, [fetchData]);
+    return () => { cancelled = true; };
+  }, []);
 
   const handleCategorySelect = (category) => {
     navigate(category ? `/products?categoryId=${category.id}` : '/products');
