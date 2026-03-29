@@ -86,7 +86,7 @@ public class AdminAnalyticsAiService {
                     .tools(dashboardAnalyticsTool)
                     .systemMessageProvider(adminId -> systemPrompt)
                     .chatMemoryProvider(adminId -> memoryStore.computeIfAbsent(
-                            adminId.toString(),
+                            String.valueOf(adminId),
                             id -> MessageWindowChatMemory.withMaxMessages(memoryMaxMessages)))
                     .build();
 

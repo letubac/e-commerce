@@ -4,7 +4,6 @@ import com.ecommerce.dto.TaskDTO;
 import com.ecommerce.entity.Task;
 import com.ecommerce.exception.DetailException;
 import com.ecommerce.repository.TaskRepository;
-import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +26,6 @@ public class TaskServiceImpl implements TaskService {
     private static final String STATUS_DONE = "DONE";
 
     private final TaskRepository taskRepository;
-    private final UserRepository userRepository;
 
     @Override
     public List<TaskDTO> getAllTasks() throws DetailException {
@@ -225,17 +223,9 @@ public class TaskServiceImpl implements TaskService {
         dto.setCompletedAt(task.getCompletedAt());
         dto.setCreatedAt(task.getCreatedAt());
         dto.setUpdatedAt(task.getUpdatedAt());
-
-        // Resolve usernames via separate lookup
-        if (task.getAssignedTo() != null) {
-            userRepository.findById(task.getAssignedTo())
-                    .ifPresent(u -> dto.setAssignedUsername(u.getUsername()));
-        }
-        if (task.getCreatedBy() != null) {
-            userRepository.findById(task.getCreatedBy())
-                    .ifPresent(u -> dto.setCreatedByUsername(u.getUsername()));
-        }
-
+        // Usernames are populated via SQL JOIN in the repository queries
+        dto.setAssignedUsername(task.getAssignedUsername());
+        dto.setCreatedByUsername(task.getCreatedByUsername());
         return dto;
     }
 }

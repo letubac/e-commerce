@@ -56,4 +56,11 @@ public class Task {
 
     @Column(name = "updated_at")
     private Date updatedAt;
+
+    // Mapped from SQL JOIN result (not a DB column on tasks table)
+    @Column(name = "assigned_username")
+    private String assignedUsername;
+
+    @Column(name = "created_by_username")
+    private String createdByUsername;
 }
