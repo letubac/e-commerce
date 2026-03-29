@@ -130,9 +130,10 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 				log.error("⚠️ Error broadcasting message via WebSocket", e);
 			}
 
-			// Trigger async AI auto-reply when user sends a message and conversation
-			// has no assigned admin (status == OPEN)
+			// Trigger async AI auto-reply when user sends a message, AI is enabled globally
+			// and conversation has AI enabled (not disabled by admin) and no assigned admin (status == OPEN)
 			if (ChatConstant.SENDER_TYPE_USER.equals(senderType) && aiSupportService.isEnabled()
+					&& conversation.isAiEnabled()
 					&& ChatConstant.STATUS_OPEN.equals(conversation.getStatus())) {
 				final Long convId = request.getConversationId();
 				final String userText = request.getContent().trim();
@@ -311,22 +312,24 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 	private void sendAiReply(Long conversationId, String userMessage) {
 		try {
 			log.info("AI generating reply for conversation {}", conversationId);
+
+			// Broadcast AI typing indicator before calling AI model
+			webSocketChatService.notifyAiTyping(conversationId, true);
+
 			String aiResponse = aiSupportService.respond(conversationId, userMessage);
+
+			// Stop AI typing indicator
+			webSocketChatService.notifyAiTyping(conversationId, false);
+
 			if (aiResponse == null || aiResponse.isBlank()) {
 				return;
 			}
 
-			// Save AI message directly via repository (new transaction)
+			// Save AI message using dedicated insertAiMessage (sets is_ai_response=true)
 			Date now = new Date();
-			ChatMessage aiMessage = chatMessageRepository.insertChatMessage(
+			ChatMessage aiMessage = chatMessageRepository.insertAiMessage(
 					conversationId,
-					null,        // AI has no senderId
-					ChatConstant.SENDER_TYPE_AI,
 					aiResponse.trim(),
-					"TEXT",
-					null,
-					null,
-					false,
 					now,
 					now);
 
@@ -337,6 +340,11 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 			webSocketChatService.broadcastMessage(conversationId, aiDTO);
 			log.info("✅ AI message broadcasted for conversation {}", conversationId);
 		} catch (Exception e) {
+			// Ensure typing indicator is stopped even on error
+			try {
+				webSocketChatService.notifyAiTyping(conversationId, false);
+			} catch (Exception ignored) {
+			}
 			log.error("❌ Error sending AI reply for conversation {}: {}", conversationId, e.getMessage(), e);
 		}
 	}

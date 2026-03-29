@@ -1,7 +1,11 @@
 package com.ecommerce.ai;
 
+import com.ecommerce.ai.tools.CartTool;
+import com.ecommerce.ai.tools.CategoryTool;
+import com.ecommerce.ai.tools.CouponTool;
 import com.ecommerce.ai.tools.OrderLookupTool;
 import com.ecommerce.ai.tools.ProductSearchTool;
+import com.ecommerce.ai.tools.ReviewTool;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.AiServices;
@@ -21,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * AI Support Agent Service.
  * <p>
  * Tích hợp LangChain4j + OpenAI để tạo AI agent hỗ trợ khách hàng trong chat.
- * Agent có thể: tìm sản phẩm, tra cứu đơn hàng, trả lời FAQ về cửa hàng.
+ * Agent có thể: tìm sản phẩm, tra cứu đơn hàng, xem giỏ hàng, kiểm tra coupon, danh mục sản phẩm, đánh giá sản phẩm.
  * </p>
  */
 @Slf4j
@@ -54,6 +58,18 @@ public class AiSupportService {
 
     @Autowired
     private OrderLookupTool orderLookupTool;
+
+    @Autowired
+    private CartTool cartTool;
+
+    @Autowired
+    private CouponTool couponTool;
+
+    @Autowired
+    private CategoryTool categoryTool;
+
+    @Autowired
+    private ReviewTool reviewTool;
 
     // Per-conversation chat memory (conversationId -> memory)
     private final Map<Long, MessageWindowChatMemory> memoryStore = new ConcurrentHashMap<>();
@@ -91,14 +107,14 @@ public class AiSupportService {
             final String systemPrompt = systemPromptText;
             assistant = AiServices.builder(SupportAssistant.class)
                     .chatLanguageModel(chatModel)
-                    .tools(productSearchTool, orderLookupTool)
+                    .tools(productSearchTool, orderLookupTool, cartTool, couponTool, categoryTool, reviewTool)
                     .systemMessageProvider(convId -> systemPrompt)
                     .chatMemoryProvider(convId -> memoryStore.computeIfAbsent(
                             (Long) convId,
                             id -> MessageWindowChatMemory.withMaxMessages(memoryMaxMessages)))
                     .build();
 
-            log.info("✅ AI Support Agent initialized successfully with model: {}", model);
+            log.info("✅ AI Support Agent initialized successfully with model: {} and {} tools", model, 6);
         } catch (Exception e) {
             log.error("❌ Failed to initialize AI Support Agent: {}", e.getMessage());
             aiEnabled = false;

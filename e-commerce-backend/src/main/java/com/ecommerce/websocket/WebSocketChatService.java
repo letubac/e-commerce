@@ -89,6 +89,17 @@ public class WebSocketChatService {
         sendToConversation(conversationId, wsMessage);
     }
 
+    public void notifyAiTyping(Long conversationId, boolean isTyping) {
+        log.debug("AI is {} in conversation {}", isTyping ? "typing" : "stopped typing", conversationId);
+
+        Map<String, Object> wsMessage = Map.of(
+                "type", "AI_TYPING",
+                "conversationId", conversationId,
+                "isTyping", isTyping);
+
+        sendToConversation(conversationId, wsMessage);
+    }
+
     public void notifyMessagesRead(Long conversationId, Long userId) {
         log.debug("Messages read by user {} in conversation {}", userId, conversationId);
 

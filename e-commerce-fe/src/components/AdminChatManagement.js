@@ -243,6 +243,22 @@ function AdminChatManagement() {
     }
   };
 
+  const toggleAi = async (conversationId, currentAiEnabled) => {
+    try {
+      const newAiEnabled = !currentAiEnabled;
+      const updated = await adminApi.toggleConversationAi(conversationId, newAiEnabled);
+      setConversations(prev =>
+        prev.map(c => c.id === conversationId ? { ...c, ...updated } : c)
+      );
+      if (selectedConversation?.id === conversationId) {
+        setSelectedConversation(prev => ({ ...prev, ...updated }));
+      }
+    } catch (error) {
+      console.error('Error toggling AI:', error);
+      alert(error.message || 'Không thể thay đổi cài đặt AI.');
+    }
+  };
+
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -452,6 +468,18 @@ function AdminChatManagement() {
                       Nhận xử lý
                     </button>
                   )}
+                  <button
+                    onClick={() => toggleAi(selectedConversation.id, selectedConversation.aiEnabled !== false)}
+                    className={`px-3 py-1 text-sm rounded flex items-center gap-1 ${
+                      selectedConversation.aiEnabled !== false
+                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                    title={selectedConversation.aiEnabled !== false ? 'Tắt AI tự trả lời' : 'Bật AI tự trả lời'}
+                  >
+                    <span>🤖</span>
+                    <span>{selectedConversation.aiEnabled !== false ? 'AI: Bật' : 'AI: Tắt'}</span>
+                  </button>
                   <select
                     value={selectedConversation.status}
                     onChange={(e) => updateConversationStatus(selectedConversation.id, e.target.value)}

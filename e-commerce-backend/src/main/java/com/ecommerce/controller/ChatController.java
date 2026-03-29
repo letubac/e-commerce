@@ -408,4 +408,27 @@ public class ChatController {
             return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
+
+    /**
+     * Toggle AI auto-reply for a conversation (admin only).
+     * When disabled, the AI will not reply in that conversation.
+     */
+    @PutMapping("/admin/conversations/{conversationId}/ai-toggle")
+    public ResponseEntity<BusinessApiResponse> toggleAiForConversation(
+            @PathVariable(name = "conversationId") Long conversationId,
+            @RequestBody Map<String, Boolean> body) {
+        long start = System.currentTimeMillis();
+        try {
+            Boolean aiEnabled = body.get("aiEnabled");
+            if (aiEnabled == null) {
+                return ResponseEntity.ok(errorHandler.handlerException(
+                        new IllegalArgumentException("aiEnabled field is required"), start));
+            }
+            ConversationDTO updated = conversationService.toggleAiForConversation(conversationId, aiEnabled);
+            return ResponseEntity.ok(successHandler.handlerSuccess(updated, start));
+        } catch (Exception e) {
+            log.error("Admin: Error toggling AI for conversation {}", conversationId, e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
+    }
 }

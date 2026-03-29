@@ -30,7 +30,10 @@ public class ChatMessage {
     private Long senderId;
 
     @Column(name = "sender_type")
-    private String senderType; // USER, ADMIN
+    private String senderType; // USER, ADMIN, AI
+
+    @Column(name = "is_ai_response")
+    private Boolean isAiResponse = false;
 
     @Column(name = "content")
     private String content;

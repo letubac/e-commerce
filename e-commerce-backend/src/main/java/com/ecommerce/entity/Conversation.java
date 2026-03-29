@@ -44,6 +44,9 @@ public class Conversation {
     @Column(name = "last_message_at")
     private Date lastMessageAt;
 
+    @Column(name = "ai_enabled")
+    private Boolean aiEnabled = true;
+
     @Column(name = "created_at")
     private Date createdAt;
 
@@ -65,6 +68,18 @@ public class Conversation {
 
     public boolean hasAdmin() {
         return adminId != null;
+    }
+
+    public boolean isAiEnabled() {
+        return !Boolean.FALSE.equals(aiEnabled);
+    }
+
+    public void enableAi() {
+        this.aiEnabled = true;
+    }
+
+    public void disableAi() {
+        this.aiEnabled = false;
     }
 
     public void assignToAdmin(Long adminId) {

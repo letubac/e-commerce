@@ -81,6 +81,7 @@ function ChatWidget() {
   const [wsConnected, setWsConnected] = useState(false);
   const [wsConnecting, setWsConnecting] = useState(false);
   const [typingUsers, setTypingUsers] = useState({});
+  const [isAiTyping, setIsAiTyping] = useState(false);
   const websocketRef = useRef(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -165,6 +166,11 @@ function ChatWidget() {
                   return updated;
                 });
               }
+              break;
+
+            case 'AI_TYPING':
+              // Xử lý AI typing indicator
+              setIsAiTyping(data.isTyping === true);
               break;
 
             case 'MESSAGES_READ':
@@ -596,6 +602,12 @@ function ChatWidget() {
                 <h3 className="font-semibold text-sm">Hỗ trợ E-SHOP</h3>
                 {renderConnectionStatus()}
               </div>
+              {conversation?.aiEnabled !== false && (
+                <div className="flex items-center gap-1 bg-red-700 px-2 py-0.5 rounded-full text-xs">
+                  <span>🤖</span>
+                  <span>AI</span>
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -685,6 +697,21 @@ function ChatWidget() {
                       <div className="flex justify-start">
                         <div className="bg-gray-100 text-gray-600 px-3 py-2 rounded-lg text-sm italic">
                           {Object.values(typingUsers).join(', ')} đang nhập...
+                        </div>
+                      </div>
+                    )}
+
+                    {/* AI typing indicator */}
+                    {isAiTyping && (
+                      <div className="flex justify-start">
+                        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2">
+                          <span>🤖</span>
+                          <span className="italic">AI Assistant đang trả lời...</span>
+                          <span className="flex gap-1">
+                            <span className="animate-bounce" style={{ animationDelay: '0ms' }}>●</span>
+                            <span className="animate-bounce" style={{ animationDelay: '150ms' }}>●</span>
+                            <span className="animate-bounce" style={{ animationDelay: '300ms' }}>●</span>
+                          </span>
                         </div>
                       </div>
                     )}

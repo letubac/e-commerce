@@ -122,6 +122,11 @@ const adminApi = {
     }),
   assignConversation: (conversationId) =>
     adminApi.request(`/chat/admin/conversations/${conversationId}/assign`, { method: 'POST' }),
+  toggleConversationAi: (conversationId, aiEnabled) =>
+    adminApi.request(`/chat/admin/conversations/${conversationId}/ai-toggle`, {
+      method: 'PUT',
+      body: JSON.stringify({ aiEnabled })
+    }),
   getChatQuickReplies: () => adminApi.request('/chat/quick-replies'),
   createChatQuickReply: (data) =>
     adminApi.request('/chat/quick-replies', { method: 'POST', body: JSON.stringify(data) }),

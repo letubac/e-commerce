@@ -22,6 +22,7 @@ public class ConversationDTO {
     private String status; // OPEN, ASSIGNED, RESOLVED, CLOSED
     private String priority; // LOW, NORMAL, HIGH, URGENT
     private Integer unreadCount;
+    private Boolean aiEnabled;
     private List<ChatMessageDTO> messages;
     private Date lastMessageAt;
     private Date createdAt;
