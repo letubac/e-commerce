@@ -7,6 +7,8 @@ import { API_BASE_URL } from '../api/api';
 import toast from '../utils/toast';
 import './CartPage.css';
 
+const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23f0f0f0'/%3E%3Ctext x='40' y='44' text-anchor='middle' fill='%23999' font-family='sans-serif' font-size='10'%3ENo Image%3C/text%3E%3C/svg%3E";
+
 function CartPage() {
   const navigate = useNavigate();
   const { cartItems, updateItemQuantity, removeFromCart, clearCart, loading } = useCart();
@@ -318,12 +320,13 @@ function CartPage() {
                                 src={
                                   item.productImage
                                     ? `${API_BASE_URL}/files${item.productImage}`
-                                    : `https://via.placeholder.com/80x80/f0f0f0/666666?text=${encodeURIComponent(item.productName || 'Product')}`
+                                    : PLACEHOLDER_IMG
                                 }
                                 alt={item.productName || 'Product'}
                                 className="w-full h-full object-cover rounded-lg border border-gray-200"
                                 onError={(e) => {
-                                  e.target.src = `https://via.placeholder.com/80x80/f0f0f0/666666?text=${encodeURIComponent(item.productName || 'Product')}`;
+                                  e.target.onerror = null;
+                                  e.target.src = PLACEHOLDER_IMG;
                                 }}
                               />
                             </div>

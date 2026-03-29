@@ -3,8 +3,6 @@ package com.ecommerce.service.impl;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -44,26 +42,37 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
 			// Validation
 			if (senderId == null || senderId <= 0) {
+				log.error("❌ Invalid sender ID: {}", senderId);
 				throw new DetailException(ChatConstant.E530_INVALID_USER_ID);
 			}
 
 			if (request.getConversationId() == null || request.getConversationId() <= 0) {
+				log.error("❌ Invalid conversation ID: {}", request.getConversationId());
 				throw new DetailException(ChatConstant.E534_INVALID_CONVERSATION_ID);
 			}
 
 			if (request.getContent() == null || request.getContent().trim().isEmpty()) {
+				log.error("❌ Invalid message content: null or empty");
 				throw new DetailException(ChatConstant.E532_INVALID_MESSAGE_CONTENT);
 			}
 
 			// Validate conversation exists
-			Conversation conversation = StreamSupport.stream(conversationRepository.findAll().spliterator(), false)
-					.filter(c -> c.getId().equals(request.getConversationId()))
-					.findFirst()
-					.orElseThrow(() -> new DetailException(ChatConstant.E500_CONVERSATION_NOT_FOUND));
+			log.debug("Checking conversation with ID: {}", request.getConversationId());
+			Conversation conversation = conversationRepository.findById(request.getConversationId())
+					.orElseThrow(() -> {
+						log.error("❌ Conversation not found: {}", request.getConversationId());
+						return new DetailException(ChatConstant.E500_CONVERSATION_NOT_FOUND);
+					});
 
 			// Validate sender exists
+			log.debug("Checking sender with ID: {}", senderId);
 			User sender = userRepository.findById(senderId)
-					.orElseThrow(() -> new DetailException(ChatConstant.E521_USER_NOT_FOUND));
+					.orElseThrow(() -> {
+						log.error("❌ Sender not found: {}", senderId);
+						return new DetailException(ChatConstant.E521_USER_NOT_FOUND);
+					});
+
+			log.info("✅ Validated sender: {}, conversation: {}", sender.getUsername(), conversation.getId());
 
 			// Determine sender type
 			String senderType = "ADMIN".equals(sender.getRole()) ? "ADMIN" : "USER";
@@ -81,7 +90,21 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 			chatMessage.setCreatedAt(new Date());
 			chatMessage.setUpdatedAt(new Date());
 
-			ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
+			// Use insertChatMessage to auto-generate ID with sequence
+			log.debug("Inserting chat message...");
+			ChatMessage savedMessage = chatMessageRepository.insertChatMessage(
+					request.getConversationId(),
+					senderId,
+					senderType,
+					request.getContent().trim(),
+					request.getMessageType() != null ? request.getMessageType() : "TEXT",
+					request.getAttachmentUrl(),
+					request.getAttachmentName(),
+					false,
+					new Date(),
+					new Date());
+
+			log.info("✅ Message saved with ID: {}", savedMessage.getId());
 
 			// Update conversation last message time and unread count
 			conversation.updateLastMessage();
@@ -90,6 +113,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 			}
 			conversation.setUpdatedAt(new Date());
 			conversationRepository.save(conversation);
+			log.info("✅ Conversation updated");
 
 			log.info("Message sent successfully with id: {} - took: {}ms", savedMessage.getId(),
 					System.currentTimeMillis() - start);
@@ -98,16 +122,18 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 			ChatMessageDTO messageDTO = convertToDTO(savedMessage, sender.getUsername());
 			try {
 				webSocketChatService.broadcastMessage(request.getConversationId(), messageDTO);
+				log.info("✅ Message broadcasted via WebSocket");
 			} catch (Exception e) {
-				log.error("Error broadcasting message via WebSocket", e);
+				log.error("⚠️ Error broadcasting message via WebSocket", e);
 			}
 
 			return messageDTO;
 		} catch (DetailException e) {
+			log.error("❌ DetailException in sendMessage: {}", e.getMessage());
 			throw e;
 		} catch (Exception e) {
-			log.error("Error sending message from sender {} to conversation {}", senderId,
-					request.getConversationId(), e);
+			log.error("❌ Unexpected error sending message from sender {} to conversation {}: {}", senderId,
+					request.getConversationId(), e.getMessage(), e);
 			throw new DetailException(ChatConstant.E511_MESSAGE_SEND_ERROR);
 		}
 	}
@@ -173,22 +199,35 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 				throw new DetailException(ChatConstant.E530_INVALID_USER_ID);
 			}
 
-			chatMessageRepository.markMessagesAsReadByConversationId(conversationId, userId);
+			// Verify conversation exists
+			Conversation conversation = conversationRepository.findById(conversationId)
+					.orElseThrow(() -> new DetailException(ChatConstant.E500_CONVERSATION_NOT_FOUND));
+
+			try {
+				// Mark all messages as read (marks messages NOT sent by user as read)
+				chatMessageRepository.markMessagesAsReadByConversationId(conversationId, userId);
+				log.debug("Messages marked as read in database for conversation {}", conversationId);
+			} catch (Exception e) {
+				log.error("Error executing markMessagesAsReadByConversationId for conversation {}", conversationId, e);
+				throw new DetailException(ChatConstant.E514_MARK_READ_ERROR);
+			}
 
 			// Reset unread count
-			StreamSupport.stream(conversationRepository.findAll().spliterator(), false)
-					.filter(c -> c.getId().equals(conversationId))
-					.findFirst()
-					.ifPresent(conversation -> {
-						conversation.resetUnreadCount();
-						conversationRepository.save(conversation);
-					});
+			try {
+				conversation.resetUnreadCount();
+				conversationRepository.save(conversation);
+				log.debug("Conversation unread count reset for conversation {}", conversationId);
+			} catch (Exception e) {
+				log.error("Error resetting unread count for conversation {}", conversationId, e);
+				// Don't throw, just log - this is not critical
+			}
 
 			// Notify via WebSocket
 			try {
 				webSocketChatService.notifyMessagesRead(conversationId, userId);
 			} catch (Exception e) {
-				log.error("Error notifying messages read via WebSocket", e);
+				log.error("Error notifying messages read via WebSocket for conversation {}", conversationId, e);
+				// Don't throw, just log - WebSocket is not critical
 			}
 
 			log.info("Messages marked as read for conversation {} by user {} - took: {}ms",

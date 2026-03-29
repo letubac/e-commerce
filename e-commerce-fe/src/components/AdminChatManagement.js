@@ -1,149 +1,250 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   MessageCircle, 
   Send, 
   Search, 
-  Filter,
-  MoreVertical,
-  Paperclip,
   Clock,
   CheckCircle,
   AlertCircle,
   User,
-  Zap,
   Archive,
-  Star
+  Star,
+  RefreshCw,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import adminApi from '../api/adminApi';
+import adminWebSocket from '../services/adminWebSocketService';
+
+// Backend enum values
+const STATUS_LABELS = {
+  OPEN: 'Mở',
+  ASSIGNED: 'Đang xử lý',
+  RESOLVED: 'Đã giải quyết',
+  CLOSED: 'Đã đóng',
+};
 
 function AdminChatManagement() {
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [quickReplies, setQuickReplies] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [typingUsers, setTypingUsers] = useState({});
   const messagesEndRef = useRef(null);
-
-  useEffect(() => {
-    loadConversations();
-    loadQuickReplies();
-    // Set up real-time updates
-    const interval = setInterval(loadConversations, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (selectedConversation) {
-      loadMessages(selectedConversation.id);
-      markAsRead(selectedConversation.id);
-    }
-  }, [selectedConversation]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const selectedIdRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     try {
       const params = {};
-      if (searchTerm) params.search = searchTerm;
       if (statusFilter !== 'all') params.status = statusFilter;
-      
       const data = await adminApi.getChatConversations(params);
       setConversations(data.content || data || []);
     } catch (error) {
       console.error('Error loading conversations:', error);
-      // Display error message from BE if available
-      if (error.message) {
-        alert(`Lỗi: ${error.message}`);
-      }
     }
-  };
+  }, [statusFilter]);
 
-  const loadMessages = async (conversationId) => {
+  const loadMessages = useCallback(async (conversationId) => {
     try {
       const data = await adminApi.getChatMessages(conversationId, {});
       setMessages(data.content || data || []);
     } catch (error) {
       console.error('Error loading messages:', error);
-      if (error.message) {
-        alert(`Lỗi: ${error.message}`);
-      }
     }
-  };
+  }, []);
 
-  const loadQuickReplies = async () => {
-    try {
-      const data = await adminApi.getChatQuickReplies();
-      setQuickReplies(data || []);
-    } catch (error) {
-      console.error('Error loading quick replies:', error);
+  // WebSocket lifecycle - khởi tạo kết nối
+  useEffect(() => {
+    // Kết nối WebSocket
+    adminWebSocket.connect();
+
+    // Đăng ký listeners
+    adminWebSocket.on('connect', () => {
+      console.log('✅ [AdminChat] WebSocket connected');
+      setWsConnected(true);
+    });
+
+    adminWebSocket.on('disconnect', () => {
+      console.log('❌ [AdminChat] WebSocket disconnected');
+      setWsConnected(false);
+    });
+
+    adminWebSocket.on('newMessage', (message) => {
+      console.log('📨 [AdminChat] New message received:', message);
+      
+      // Cập nhật messages nếu message này thuộc conversation được chọn
+      if (selectedIdRef.current === message.conversationId) {
+        setMessages(prev => {
+          // Tránh duplicate
+          const exists = prev.some(m => m.id === message.id);
+          return exists ? prev : [...prev, message];
+        });
+      }
+
+      // Cập nhật conversations list
+      setConversations(prev =>
+        prev.map(c =>
+          c.id === message.conversationId
+            ? { ...c, lastMessageAt: message.createdAt, unreadCount: 0 }
+            : c
+        )
+      );
+    });
+
+    adminWebSocket.on('messagesRead', ({ conversationId, userId }) => {
+      console.log('✓✓ [AdminChat] Messages read for conversation:', conversationId);
+      
+      // Cập nhật tatus read của các messages
+      setMessages(prev =>
+        prev.map(m =>
+          m.conversationId === conversationId ? { ...m, isRead: true } : m
+        )
+      );
+    });
+
+    adminWebSocket.on('typing', ({ conversationId, userName, isTyping }) => {
+      console.log('⌨️ [AdminChat] Typing:', userName, isTyping);
+      
+      // Chỉ hiển thị nếu đang xem conversation này
+      if (selectedIdRef.current === conversationId) {
+        setTypingUsers(prev => {
+          const updated = { ...prev };
+          if (isTyping) {
+            updated[userName] = true;
+          } else {
+            delete updated[userName];
+          }
+          return updated;
+        });
+      }
+    });
+
+    adminWebSocket.on('error', (error) => {
+      console.error('❌ [AdminChat] WebSocket error:', error);
+    });
+
+    // Initial load conversations
+    loadConversations();
+
+    // Cleanup
+    return () => {
+      adminWebSocket.disconnect();
+    };
+  }, [loadConversations]);
+
+  // Load messages when conversation changes
+  useEffect(() => {
+    if (!selectedConversation) return;
+    
+    selectedIdRef.current = selectedConversation.id;
+    loadMessages(selectedConversation.id);
+    
+    // Đánh dấu đã đọc
+    adminApi.markConversationAsRead(selectedConversation.id).catch(() => {});
+
+    // Send notification via WebSocket
+    if (wsConnected) {
+      adminWebSocket.sendRead(selectedConversation.id);
     }
-  };
+  }, [selectedConversation, loadMessages, wsConnected]);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const sendMessage = async (content = newMessage) => {
-    if (!content.trim() || !selectedConversation) return;
-
-    const messageData = {
-      conversationId: selectedConversation.id,
-      content: content.trim(),
-      messageType: 'text'
-    };
-
+    if (!content.trim() || !selectedConversation || sending) return;
+    setSending(true);
     try {
-      await adminApi.sendChatMessage(messageData);
+      await adminApi.sendChatMessage({
+        conversationId: selectedConversation.id,
+        content: content.trim(),
+        messageType: 'TEXT',
+      });
       setNewMessage('');
-      loadMessages(selectedConversation.id);
-      loadConversations(); // Update conversation list
+      await loadMessages(selectedConversation.id);
+      loadConversations();
+
+      // Gửi typing stopped notification
+      if (wsConnected) {
+        adminWebSocket.sendTyping(selectedConversation.id, false);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       alert(error.message || 'Không thể gửi tin nhắn. Vui lòng thử lại.');
+    } finally {
+      setSending(false);
     }
   };
 
-  const markAsRead = async (conversationId) => {
-    try {
-      await adminApi.markConversationAsRead(conversationId);
-    } catch (error) {
-      console.error('Error marking as read:', error);
+  // Xử lý input change - gửi typing indicator
+  const handleInputChange = (e) => {
+    setNewMessage(e.target.value);
+
+    // Gửi typing indicator
+    if (wsConnected && selectedConversation) {
+      adminWebSocket.sendTyping(selectedConversation.id, true);
+
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Gửi typing stopped sau 3 giây inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        if (wsConnected) {
+          adminWebSocket.sendTyping(selectedConversation.id, false);
+        }
+      }, 3000);
     }
   };
 
   const updateConversationStatus = async (conversationId, status) => {
     try {
       await adminApi.updateConversationStatus(conversationId, status);
-      loadConversations();
+      setConversations(prev =>
+        prev.map(c => c.id === conversationId ? { ...c, status } : c)
+      );
       if (selectedConversation?.id === conversationId) {
         setSelectedConversation(prev => ({ ...prev, status }));
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      if (error.message) {
-        alert(`Lỗi: ${error.message}`);
-      }
+      alert(error.message || 'Không thể cập nhật trạng thái.');
     }
   };
 
   const assignToMe = async (conversationId) => {
     try {
-      await adminApi.assignConversation(conversationId);
-      loadConversations();
+      const updated = await adminApi.assignConversation(conversationId);
+      setConversations(prev =>
+        prev.map(c => c.id === conversationId ? { ...c, ...updated } : c)
+      );
+      if (selectedConversation?.id === conversationId) {
+        setSelectedConversation(prev => ({ ...prev, ...updated }));
+      }
     } catch (error) {
       console.error('Error assigning conversation:', error);
-      if (error.message) {
-        alert(`Lỗi: ${error.message}`);
-      }
+      alert(error.message || 'Không thể nhận phụ trách.');
     }
   };
 
   const formatTime = (timestamp) => {
+    if (!timestamp) return '';
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now - date;
@@ -160,42 +261,39 @@ function AdminChatManagement() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'open': return 'bg-blue-100 text-blue-800';
-      case 'in_progress': return 'bg-yellow-100 text-yellow-800';
-      case 'resolved': return 'bg-green-100 text-green-800';
-      case 'closed': return 'bg-gray-100 text-gray-800';
+      case 'OPEN': return 'bg-blue-100 text-blue-800';
+      case 'ASSIGNED': return 'bg-yellow-100 text-yellow-800';
+      case 'RESOLVED': return 'bg-green-100 text-green-800';
+      case 'CLOSED': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'open': return <AlertCircle size={12} />;
-      case 'in_progress': return <Clock size={12} />;
-      case 'resolved': return <CheckCircle size={12} />;
-      case 'closed': return <Archive size={12} />;
+      case 'OPEN': return <AlertCircle size={12} />;
+      case 'ASSIGNED': return <Clock size={12} />;
+      case 'RESOLVED': return <CheckCircle size={12} />;
+      case 'CLOSED': return <Archive size={12} />;
       default: return <MessageCircle size={12} />;
     }
   };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'urgent': return 'text-red-600';
-      case 'high': return 'text-orange-600';
-      case 'normal': return 'text-gray-600';
-      case 'low': return 'text-green-600';
+      case 'URGENT': return 'text-red-600';
+      case 'HIGH': return 'text-orange-600';
+      case 'NORMAL': return 'text-gray-600';
+      case 'LOW': return 'text-green-600';
       default: return 'text-gray-600';
     }
   };
 
   const filteredConversations = conversations.filter(conv => {
-    const matchesSearch = !searchTerm || 
-      conv.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      conv.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      conv.last_message?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+    const matchesSearch = !searchTerm ||
+      conv.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      conv.subject?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || conv.status === statusFilter;
-    
     return matchesSearch && matchesStatus;
   });
 
@@ -205,19 +303,42 @@ function AdminChatManagement() {
       <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold">Chat quản lý</h2>
+            <div className="flex items-center space-x-2">
+              {wsConnected ? (
+                <div className="flex items-center space-x-1 text-green-600 text-xs">
+                  <Wifi size={14} />
+                  <span>Đã kết nối</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1 text-red-600 text-xs">
+                  <WifiOff size={14} />
+                  <span>Chưa kết nối</span>
+                </div>
+              )}
+            </div>
+          </div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-800">Chat Hỗ trợ</h2>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-600">{conversations.length} cuộc trò chuyện</span>
+              <button
+                onClick={loadConversations}
+                className="text-gray-400 hover:text-gray-600"
+                title="Làm mới"
+              >
+                <RefreshCw size={15} />
+              </button>
             </div>
           </div>
-          
+
           {/* Search */}
           <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
             <input
               type="text"
-              placeholder="Tìm kiếm cuộc trò chuyện..."
+              placeholder="Tìm kiếm tên khách hàng, chủ đề..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
@@ -231,10 +352,10 @@ function AdminChatManagement() {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
           >
             <option value="all">Tất cả trạng thái</option>
-            <option value="open">Mở</option>
-            <option value="in_progress">Đang xử lý</option>
-            <option value="resolved">Đã giải quyết</option>
-            <option value="closed">Đã đóng</option>
+            <option value="OPEN">Mở</option>
+            <option value="ASSIGNED">Đang xử lý</option>
+            <option value="RESOLVED">Đã giải quyết</option>
+            <option value="CLOSED">Đã đóng</option>
           </select>
         </div>
 
@@ -261,44 +382,38 @@ function AdminChatManagement() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-gray-900 truncate text-sm">
-                        {conversation.user_name || conversation.user_email}
+                        {conversation.userName || `Khách hàng #${conversation.userId}`}
                       </h4>
-                      <p className="text-xs text-gray-500">{conversation.user_email}</p>
+                      {conversation.subject && (
+                        <p className="text-xs text-gray-500 truncate">{conversation.subject}</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-1">
-                    {conversation.priority && conversation.priority !== 'normal' && (
+                    {conversation.priority && conversation.priority !== 'NORMAL' && (
                       <Star size={12} className={getPriorityColor(conversation.priority)} />
                     )}
-                    {conversation.unread_count > 0 && (
+                    {conversation.unreadCount > 0 && (
                       <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {conversation.unread_count}
+                        {conversation.unreadCount}
                       </span>
                     )}
                   </div>
                 </div>
-                
-                <div className="flex items-center justify-between mb-2">
+
+                <div className="flex items-center justify-between">
                   <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${getStatusColor(conversation.status)}`}>
                     {getStatusIcon(conversation.status)}
-                    {conversation.status === 'open' ? 'Mở' :
-                     conversation.status === 'in_progress' ? 'Đang xử lý' :
-                     conversation.status === 'resolved' ? 'Đã giải quyết' : 'Đã đóng'}
+                    {STATUS_LABELS[conversation.status] || conversation.status}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {formatTime(conversation.last_message_at || conversation.updated_at)}
+                    {formatTime(conversation.lastMessageAt || conversation.updatedAt)}
                   </span>
                 </div>
 
-                {conversation.last_message && (
-                  <p className="text-sm text-gray-600 truncate">
-                    {conversation.last_message}
-                  </p>
-                )}
-
-                {conversation.admin_name && (
+                {conversation.adminName && (
                   <p className="text-xs text-blue-600 mt-1">
-                    Được phụ trách bởi: {conversation.admin_name}
+                    Phụ trách: {conversation.adminName}
                   </p>
                 )}
               </div>
@@ -320,26 +435,16 @@ function AdminChatManagement() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">
-                      {selectedConversation.user_name || selectedConversation.user_email}
+                      {selectedConversation.userName || `Khách hàng #${selectedConversation.userId}`}
                     </h3>
-                    <p className="text-sm text-gray-500">{selectedConversation.user_email}</p>
+                    {selectedConversation.subject && (
+                      <p className="text-sm text-gray-500">{selectedConversation.subject}</p>
+                    )}
                   </div>
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  {/* Status dropdown */}
-                  <select
-                    value={selectedConversation.status}
-                    onChange={(e) => updateConversationStatus(selectedConversation.id, e.target.value)}
-                    className="text-sm border border-gray-300 rounded px-3 py-1"
-                  >
-                    <option value="open">Mở</option>
-                    <option value="in_progress">Đang xử lý</option>
-                    <option value="resolved">Đã giải quyết</option>
-                    <option value="closed">Đã đóng</option>
-                  </select>
 
-                  {!selectedConversation.admin_id && (
+                <div className="flex items-center space-x-2">
+                  {!selectedConversation.adminId && (
                     <button
                       onClick={() => assignToMe(selectedConversation.id)}
                       className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
@@ -347,97 +452,86 @@ function AdminChatManagement() {
                       Nhận xử lý
                     </button>
                   )}
+                  <select
+                    value={selectedConversation.status}
+                    onChange={(e) => updateConversationStatus(selectedConversation.id, e.target.value)}
+                    className="text-sm border border-gray-300 rounded px-3 py-1"
+                  >
+                    <option value="OPEN">Mở</option>
+                    <option value="ASSIGNED">Đang xử lý</option>
+                    <option value="RESOLVED">Đã giải quyết</option>
+                    <option value="CLOSED">Đã đóng</option>
+                  </select>
                 </div>
               </div>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender_type === 'admin' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    message.sender_type === 'admin'
-                      ? 'bg-red-600 text-white'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {message.message_type === 'file' ? (
-                      <div>
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Paperclip size={14} />
-                          <span className="text-xs">File đính kèm</span>
+              {messages.length === 0 ? (
+                <div className="text-center text-gray-400 mt-10">Chưa có tin nhắn</div>
+              ) : (
+                messages.map((message) => {
+                  const isAdmin = message.senderType === 'ADMIN';
+                  return (
+                    <div key={message.id} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        isAdmin ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                        <div className={`text-xs mt-1 flex items-center justify-between gap-2 ${isAdmin ? 'text-red-100' : 'text-gray-500'}`}>
+                          <span>
+                            {new Date(message.createdAt).toLocaleTimeString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                            {isAdmin && message.senderName && (
+                              <span className="ml-2">- {message.senderName}</span>
+                            )}
+                          </span>
+                          {isAdmin && (
+                            <span className={message.isRead ? 'text-blue-300' : 'text-gray-400'}>
+                              {message.isRead ? '✓✓' : '✓'}
+                            </span>
+                          )}
                         </div>
-                        <a 
-                          href={message.attachment_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="underline hover:no-underline"
-                        >
-                          {message.attachment_name}
-                        </a>
                       </div>
-                    ) : (
-                      <p className="whitespace-pre-wrap">{message.content}</p>
-                    )}
-                    <div className={`text-xs mt-1 ${
-                      message.sender_type === 'admin' ? 'text-red-100' : 'text-gray-500'
-                    }`}>
-                      {new Date(message.created_at).toLocaleTimeString('vi-VN', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                      {message.sender_type === 'admin' && (
-                        <span className="ml-2">- {message.sender?.full_name || 'Admin'}</span>
-                      )}
                     </div>
+                  );
+                })
+              )}
+
+              {/* Typing indicator */}
+              {Object.keys(typingUsers).length > 0 && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm italic">
+                    {Object.keys(typingUsers).join(', ')} đang nhập...
                   </div>
                 </div>
-              ))}
+              )}
+
               <div ref={messagesEndRef} />
             </div>
-
-            {/* Quick Replies */}
-            {quickReplies.length > 0 && (
-              <div className="bg-gray-50 border-t border-gray-200 p-3">
-                <div className="flex flex-wrap gap-2">
-                  <span className="text-xs text-gray-600 font-medium">Tin nhắn mẫu:</span>
-                  {quickReplies.slice(0, 4).map((reply) => (
-                    <button
-                      key={reply.id}
-                      onClick={() => sendMessage(reply.content)}
-                      className="px-3 py-1 bg-white border border-gray-300 rounded-full text-xs hover:bg-gray-100"
-                    >
-                      {reply.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Message Input */}
             <div className="bg-white border-t border-gray-200 p-4">
               <div className="flex items-end space-x-3">
-                <button className="text-gray-400 hover:text-gray-600 p-2">
-                  <Paperclip size={20} />
-                </button>
                 <textarea
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => {
+                  onChange={handleInputChange}
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       sendMessage();
                     }
                   }}
-                  placeholder="Nhập tin nhắn..."
-                  className="flex-1 border border-gray-300 rounded-lg px-4 py-2 resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="Nhập tin nhắn... (Enter để gửi, Shift+Enter xuống dòng)"
+                  className="flex-1 border border-gray-300 rounded-lg px-4 py-2 resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
                   rows="3"
                 />
                 <button
                   onClick={() => sendMessage()}
-                  disabled={!newMessage.trim()}
+                  disabled={!newMessage.trim() || sending}
                   className="bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send size={20} />

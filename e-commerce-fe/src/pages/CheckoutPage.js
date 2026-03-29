@@ -489,10 +489,11 @@ function CheckoutPage() {
                         src={
                           item.productImage
                             ? `${API_BASE_URL}/files${item.productImage}`
-                            : `https://via.placeholder.com/64x64/f0f0f0/666666?text=${encodeURIComponent(item.productName || 'Product')}`
+                            : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23f0f0f0'/%3E%3C/svg%3E"
                         }
                         alt={item.productName || 'Product'}
                         className="w-full h-full object-cover rounded-lg border border-gray-200"
+                        onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23f0f0f0'/%3E%3C/svg%3E"; }}
                       />
                     </div>
                     <div className="flex-1 min-w-0">

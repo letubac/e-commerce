@@ -73,15 +73,15 @@ public class CategoryController {
      */
     @GetMapping("/categories/{categoryId}/products")
     public ResponseEntity<ApiResponse<Page<ProductDTO>>> getCategoryProducts(
-            @PathVariable Long categoryId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false) Long brandId,
-            @RequestParam(required = false, defaultValue = "true") Boolean active) {
+            @PathVariable(name = "categoryId") Long categoryId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "desc") String sortDirection,
+            @RequestParam(name = "minPrice", required = false) Double minPrice,
+            @RequestParam(name = "maxPrice", required = false) Double maxPrice,
+            @RequestParam(name = "brandId", required = false) Long brandId,
+            @RequestParam(name = "active", required = false, defaultValue = "true") Boolean active) {
 
         try {
             // Validate category exists
@@ -146,7 +146,7 @@ public class CategoryController {
      */
     @PutMapping("/admin/categories/{id}")
     public ResponseEntity<ApiResponse<CategoryDTO>> updateCategory(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             @Valid @RequestBody CategoryDTO categoryDTO) {
         try {
             categoryDTO.setId(id);
@@ -172,7 +172,7 @@ public class CategoryController {
      * Delete category (Admin only)
      */
     @DeleteMapping("/admin/categories/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable(name = "id") Long id) {
         try {
             categoryService.deleteById(id);
             log.info("Đã xóa danh mục ID: {}", id);
@@ -191,7 +191,7 @@ public class CategoryController {
      * Get category by ID
      */
     @GetMapping("/admin/categories/{id}")
-    public ResponseEntity<ApiResponse<CategoryDTO>> getCategoryById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<CategoryDTO>> getCategoryById(@PathVariable(name = "id") Long id) {
         try {
             CategoryDTO category = categoryService.findById(id);
             return ResponseEntity.ok(ApiResponse.success(category, "Lấy thông tin danh mục thành công"));
@@ -209,7 +209,7 @@ public class CategoryController {
      * Toggle category active status (Admin only)
      */
     @PutMapping("/admin/categories/{id}/toggle-status")
-    public ResponseEntity<ApiResponse<CategoryDTO>> toggleCategoryStatus(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<CategoryDTO>> toggleCategoryStatus(@PathVariable(name = "id") Long id) {
         try {
             CategoryDTO updatedCategory = categoryService.toggleActiveStatus(id);
             String status = updatedCategory.isActive() ? "kích hoạt" : "vô hiệu hóa";

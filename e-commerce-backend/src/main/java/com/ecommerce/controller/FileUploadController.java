@@ -76,7 +76,7 @@ public class FileUploadController {
      * Serve static files (Public access for product images)
      */
     @GetMapping("/files/**")
-    public ResponseEntity<Resource> serveFile(@RequestParam(required = false) String download) {
+    public ResponseEntity<Resource> serveFile(@RequestParam(name = "download", required = false) String download) {
         try {
             // Get the full request path
             String requestPath = ((jakarta.servlet.http.HttpServletRequest) org.springframework.web.context.request.RequestContextHolder

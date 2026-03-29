@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import AdminHeader from '../../components/AdminHeader';
 import AdminFooter from '../../components/AdminFooter';
+import DashboardOverview from '../../components/DashboardOverview';
 import AdminChatManagement from '../../components/AdminChatManagement';
 import ProductManagement from '../../components/ProductManagement';
 import OrderManagement from '../../components/OrderManagement';
@@ -29,15 +30,6 @@ import FlashSaleManagement from '../../components/FlashSaleManagement';
 import adminApi from '../../api/adminApi';
 
 function AdminDashboard() {
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalProducts: 0,
-    totalOrders: 0,
-    totalRevenue: 0
-  });
-  const [recentOrders, setRecentOrders] = useState([]);
-  const [recentProducts, setRecentProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
   // Category Management State
@@ -52,48 +44,10 @@ function AdminDashboard() {
   });
 
   useEffect(() => {
-    if (activeTab === 'overview') {
-      fetchDashboardData();
-    } else if (activeTab === 'categories') {
+    if (activeTab === 'categories') {
       fetchCategories();
     }
   }, [activeTab]);
-
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    try {
-      const data = await adminApi.getDashboardOverview();
-      
-      setStats({
-        totalUsers: data.totalUsers || 0,
-        totalProducts: data.totalProducts || 0,
-        totalOrders: data.totalOrders || 0,
-        totalRevenue: data.totalRevenue || 0,
-        userGrowth: data.userGrowth || 0,
-        productGrowth: data.productGrowth || 0,
-        orderGrowth: data.orderGrowth || 0,
-        revenueGrowth: data.revenueGrowth || 0
-      });
-      
-      setRecentOrders(data.recentOrders || []);
-      setRecentProducts(data.recentProducts || []);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      // Set default values on error
-      setStats({
-        totalUsers: 0,
-        totalProducts: 0,
-        totalOrders: 0,
-        totalRevenue: 0,
-        userGrowth: 0,
-        productGrowth: 0,
-        orderGrowth: 0,
-        revenueGrowth: 0
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Category Management Functions
   const fetchCategories = async () => {
@@ -174,46 +128,6 @@ function AdminDashboard() {
     return categories.filter(cat => !cat.parentId || cat.parentId === null);
   };
 
-  const StatCard = ({ title, value, icon: Icon, color, trend }) => (
-    <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-          {trend && (
-            <div className="flex items-center mt-1">
-              <TrendingUp className="text-green-500" size={16} />
-              <span className="text-sm text-green-500 ml-1">{trend}%</span>
-            </div>
-          )}
-        </div>
-        <div className={`p-3 rounded-full ${color}`}>
-          <Icon className="text-white" size={24} />
-        </div>
-      </div>
-    </div>
-  );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-8"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {[...Array(4)].map((_, index) => (
-                <div key={index} className="bg-white rounded-lg shadow-sm p-6">
-                  <div className="h-4 bg-gray-300 rounded w-2/3 mb-2"></div>
-                  <div className="h-8 bg-gray-300 rounded w-1/2"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <AdminHeader />
@@ -260,119 +174,7 @@ function AdminDashboard() {
 
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <StatCard
-                title="Tổng người dùng"
-                value={stats.totalUsers?.toLocaleString('vi-VN') || '0'}
-                icon={Users}
-                color="bg-blue-500"
-                trend={stats.userGrowth}
-              />
-              <StatCard
-                title="Tổng sản phẩm"
-                value={stats.totalProducts?.toLocaleString('vi-VN') || '0'}
-                icon={Package}
-                color="bg-green-500"
-                trend={stats.productGrowth}
-              />
-              <StatCard
-                title="Tổng đơn hàng"
-                value={stats.totalOrders?.toLocaleString('vi-VN') || '0'}
-                icon={ShoppingCart}
-                color="bg-yellow-500"
-                trend={stats.orderGrowth}
-              />
-              <StatCard
-                title="Doanh thu"
-                value={`${stats.totalRevenue?.toLocaleString('vi-VN') || '0'}₫`}
-                icon={DollarSign}
-                color="bg-red-500"
-                trend={stats.revenueGrowth}
-              />
-            </div>
-
-            {/* Recent Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Recent Orders */}
-              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Đơn hàng gần đây</h3>
-                  <button className="text-red-600 hover:text-red-700 text-sm">
-                    Xem tất cả
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  {recentOrders.length > 0 ? recentOrders.slice(0, 5).map((order) => (
-                    <div key={order.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                      <div>
-                        <p className="font-medium text-gray-900">#{order.id}</p>
-                        <p className="text-sm text-gray-500">{order.customerName}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-gray-900">
-                          {order.total?.toLocaleString('vi-VN')}₫
-                        </p>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </div>
-                    </div>
-                  )) : (
-                    <p className="text-gray-500 text-center py-4">Chưa có đơn hàng nào</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Recent Products */}
-              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Sản phẩm mới</h3>
-                  <button className="text-red-600 hover:text-red-700 text-sm">
-                    Xem tất cả
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  {recentProducts.length > 0 ? recentProducts.slice(0, 5).map((product) => (
-                    <div key={product.id} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-b-0">
-                      <img
-                        src={product.image || '/images/placeholder-product.svg'}
-                        alt={product.name}
-                        className="w-12 h-12 object-cover rounded-lg border border-gray-200"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{product.name}</p>
-                        <p className="text-sm text-red-600 font-medium">
-                          {product.price?.toLocaleString('vi-VN')}₫
-                        </p>
-                      </div>
-                      <div className="flex gap-1">
-                        <button className="p-1 text-gray-400 hover:text-gray-600">
-                          <Eye size={16} />
-                        </button>
-                        <button className="p-1 text-gray-400 hover:text-blue-600">
-                          <Edit size={16} />
-                        </button>
-                        <button className="p-1 text-gray-400 hover:text-red-600">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  )) : (
-                    <p className="text-gray-500 text-center py-4">Chưa có sản phẩm nào</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </>
+          <DashboardOverview />
         )}
 
         {/* Orders Tab */}

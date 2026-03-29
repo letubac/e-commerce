@@ -1,8 +1,8 @@
 import toast from '../utils/toast';
 import { parseBusinessResponse } from '../utils/responseHandler';
 
-export const API_BASE_URL = 'http://localhost:8080/api/v1';
-export const IMAGE_BASE_URL = 'http://localhost:8080/api/v1/files';
+export const API_BASE_URL = 'http://localhost:8280/api/v1';
+export const IMAGE_BASE_URL = 'http://localhost:8280/api/v1/files';
 
 // Helper function to get full image URL
 export const getImageUrl = (imageUrl) => {
@@ -56,12 +56,14 @@ const api = {
         if (response.status === 401) {
           console.error('401 Unauthorized - Token expired or invalid');
           
-          // Clear auth data
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          
-          // Show toast notification
-          toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+          // Only clear auth data if this is NOT the login endpoint itself
+          // (login returns 401 for wrong credentials — don't wipe unrelated state)
+          if (!endpoint.includes('/auth/login')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            // Show toast notification
+            toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+          }
           
           throw new Error('Authentication required');
         }

@@ -39,16 +39,16 @@ public class ProductController {
      */
     @GetMapping("/products")
     public ResponseEntity<BusinessApiResponse> getProducts(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long brandId,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false, defaultValue = "true") Boolean active,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection) {
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "categoryId", required = false) Long categoryId,
+            @RequestParam(name = "brandId", required = false) Long brandId,
+            @RequestParam(name = "minPrice", required = false) Double minPrice,
+            @RequestParam(name = "maxPrice", required = false) Double maxPrice,
+            @RequestParam(name = "active", required = false, defaultValue = "true") Boolean active,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "desc") String sortDirection) {
 
         long start = System.currentTimeMillis();
         try {
@@ -76,7 +76,7 @@ public class ProductController {
      * Get product by ID
      */
     @GetMapping("/products/{id}")
-    public ResponseEntity<BusinessApiResponse> getProduct(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> getProduct(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             ProductDTO product = productService.getProductByIdOrThrow(id);
@@ -91,15 +91,15 @@ public class ProductController {
      */
     @GetMapping("/products/search")
     public ResponseEntity<BusinessApiResponse> searchProducts(
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long brandId,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice) {
+            @RequestParam(name = "keyword") String keyword,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "desc") String sortDirection,
+            @RequestParam(name = "categoryId", required = false) Long categoryId,
+            @RequestParam(name = "brandId", required = false) Long brandId,
+            @RequestParam(name = "minPrice", required = false) Double minPrice,
+            @RequestParam(name = "maxPrice", required = false) Double maxPrice) {
 
         long start = System.currentTimeMillis();
         try {
@@ -116,7 +116,7 @@ public class ProductController {
      * Get search suggestions
      */
     @GetMapping("/products/search/suggestions")
-    public ResponseEntity<BusinessApiResponse> getSearchSuggestions(@RequestParam String keyword) {
+    public ResponseEntity<BusinessApiResponse> getSearchSuggestions(@RequestParam(name = "keyword") String keyword) {
         long start = System.currentTimeMillis();
         try {
             List<String> suggestions = List.of();
@@ -134,14 +134,14 @@ public class ProductController {
     @GetMapping("/admin/products")
     // // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> getAllProductsAdmin(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long brandId,
-            @RequestParam(required = false) Boolean active) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "desc") String sortDirection,
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "categoryId", required = false) Long categoryId,
+            @RequestParam(name = "brandId", required = false) Long brandId,
+            @RequestParam(name = "active", required = false) Boolean active) {
 
         long start = System.currentTimeMillis();
         try {
@@ -186,7 +186,7 @@ public class ProductController {
     @PutMapping("/admin/products/{id}")
     // // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> updateProduct(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             @Valid @RequestBody ProductDTO productDTO) {
 
         long start = System.currentTimeMillis();
@@ -203,7 +203,7 @@ public class ProductController {
      */
     @DeleteMapping("/admin/products/{id}")
     // // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BusinessApiResponse> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> deleteProduct(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             productService.deleteProduct(id);
@@ -232,7 +232,7 @@ public class ProductController {
      */
     @PutMapping("/admin/products/{id}/toggle-status")
     // // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BusinessApiResponse> toggleProductStatus(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> toggleProductStatus(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             ProductDTO product = productService.getProductByIdOrThrow(id);
@@ -256,8 +256,8 @@ public class ProductController {
     @PutMapping("/admin/products/{id}/stock")
     // // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> updateProductStock(
-            @PathVariable Long id,
-            @RequestParam Integer quantity) {
+            @PathVariable(name = "id") Long id,
+            @RequestParam(name = "quantity") Integer quantity) {
 
         long start = System.currentTimeMillis();
         try {

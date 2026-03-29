@@ -21,7 +21,7 @@ This is a **React-based e-commerce frontend** using Create React App with the fo
 #### API Communication  
 - Centralized request handling in `api.js` with automatic token injection
 - Separate `adminApi.js` for admin-specific endpoints
-- Base URL: `http://localhost:8080/api/v1`
+- Base URL: `http://localhost:8280/api/v1`
 - Error handling with JSON error responses
 
 #### State Management

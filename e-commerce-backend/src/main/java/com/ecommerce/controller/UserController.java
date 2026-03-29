@@ -46,11 +46,11 @@ public class UserController {
     @GetMapping("/users")
     // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> getAllUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "desc") String sortDirection,
+            @RequestParam(name = "keyword", required = false) String keyword) {
 
         long start = System.currentTimeMillis();
         try {
@@ -75,7 +75,7 @@ public class UserController {
      */
     @GetMapping("/users/{id}")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BusinessApiResponse> getUserById(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> getUserById(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             UserDTO user = userService.getUserByIdOrThrow(id);
@@ -90,7 +90,7 @@ public class UserController {
      */
     @PutMapping("/users/{id}/lock")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BusinessApiResponse> lockUser(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> lockUser(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             userService.lockUser(id);
@@ -106,7 +106,7 @@ public class UserController {
      */
     @PutMapping("/users/{id}/unlock")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BusinessApiResponse> unlockUser(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> unlockUser(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             userService.unlockUser(id);

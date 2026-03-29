@@ -37,6 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		}
 
 		final String requestTokenHeader = request.getHeader("Authorization");
+		logger.debug("📨 Authorization header received: " + (requestTokenHeader != null ? "Yes" : "No"));
 
 		Long userId = null;
 		String jwtToken = null;
@@ -49,10 +50,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				// Validate token first
 				if (jwtTokenProvider.validateToken(jwtToken)) {
 					userId = jwtTokenProvider.getUserIdFromToken(jwtToken);
+					logger.debug("✅ JWT Token validated, userId extracted: " + userId);
+				} else {
+					logger.warn("❌ JWT Token validation failed");
 				}
 			} catch (Exception e) {
-				logger.warn("JWT Token extraction failed: " + e.getMessage());
+				logger.warn("⚠️ JWT Token extraction failed: " + e.getMessage());
 			}
+		} else {
+			logger.warn("⚠️ No valid Authorization header found or Bearer token missing");
 		}
 
 		// Once we get the userId, load user and set authentication
@@ -73,6 +79,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			} catch (Exception e) {
 				logger.warn("❌ JWT Authentication failed: " + e.getMessage());
 			}
+		} else {
+			if (userId == null) {
+				logger.warn("⚠️ Could not extract userId from JWT token");
+			} else if (SecurityContextHolder.getContext().getAuthentication() != null) {
+				logger.debug("⏭️ Authentication already exists in context, skipping");
+			}
 		}
 		chain.doFilter(request, response);
 	}
@@ -84,8 +96,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			"/api/v1/auth/refresh");
 
 	private boolean shouldNotFilter(String path) {
-		boolean skip = PUBLIC_ENDPOINTS.contains(path) 
-				|| path.startsWith("/api/public/") 
+		boolean skip = PUBLIC_ENDPOINTS.contains(path)
+				|| path.startsWith("/api/public/")
 				|| path.startsWith("/ws/")
 				|| path.startsWith("/actuator/");
 

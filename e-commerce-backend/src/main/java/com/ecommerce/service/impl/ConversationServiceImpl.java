@@ -129,10 +129,7 @@ public class ConversationServiceImpl implements ConversationService {
 				throw new DetailException(ChatConstant.E534_INVALID_CONVERSATION_ID);
 			}
 
-			List<Conversation> conversations = (List<Conversation>) conversationRepository.findAll();
-			Conversation conversation = conversations.stream()
-					.filter(c -> c.getId().equals(conversationId))
-					.findFirst()
+			Conversation conversation = conversationRepository.findById(conversationId)
 					.orElseThrow(() -> new DetailException(ChatConstant.E500_CONVERSATION_NOT_FOUND));
 
 			log.info("Fetched conversation {} - took: {}ms", conversationId, System.currentTimeMillis() - start);
@@ -234,7 +231,7 @@ public class ConversationServiceImpl implements ConversationService {
 		try {
 			log.debug("Fetching all conversations with pagination");
 
-			Page<Conversation> conversationsPage = conversationRepository.findAll(pageable);
+			Page<Conversation> conversationsPage = conversationRepository.findAllPaged(pageable);
 			log.info("Fetched {} conversations (page {}) - took: {}ms",
 					conversationsPage.getContent().size(), pageable.getPageNumber(),
 					System.currentTimeMillis() - start);
@@ -255,23 +252,19 @@ public class ConversationServiceImpl implements ConversationService {
 				throw new DetailException(ChatConstant.E535_INVALID_STATUS);
 			}
 
-			// Use findAll and filter by status
-			List<Conversation> allConversations = (List<Conversation>) conversationRepository.findAll();
-			List<Conversation> filteredConversations = allConversations.stream()
-					.filter(c -> status.equals(c.getStatus()))
-					.collect(Collectors.toList());
+			// Use findByStatusPaged for paginated status filtering
+			ConversationStatus statusEnum;
+			try {
+				statusEnum = ConversationStatus.valueOf(status.trim().toUpperCase());
+			} catch (IllegalArgumentException e) {
+				throw new DetailException(ChatConstant.E535_INVALID_STATUS);
+			}
+			Page<Conversation> conversationsPage = conversationRepository.findByStatusPaged(statusEnum, pageable);
 
-			// Manual pagination
-			int start2 = (int) pageable.getOffset();
-			int end = Math.min(start2 + pageable.getPageSize(), filteredConversations.size());
-			List<Conversation> pageContent = filteredConversations.subList(start2, end);
-
-			List<ConversationDTO> dtoContent = pageContent.stream().map(this::convertToDTO)
-					.collect(Collectors.toList());
-
-			log.info("Fetched {} conversations with status {} - took: {}ms", pageContent.size(), status,
+			log.info("Fetched {} conversations with status {} - took: {}ms", conversationsPage.getContent().size(),
+					status,
 					System.currentTimeMillis() - start);
-			return new org.springframework.data.domain.PageImpl<>(dtoContent, pageable, filteredConversations.size());
+			return conversationsPage.map(this::convertToDTO);
 		} catch (DetailException e) {
 			throw e;
 		} catch (Exception e) {
@@ -311,11 +304,8 @@ public class ConversationServiceImpl implements ConversationService {
 				throw new DetailException(ChatConstant.E536_INVALID_ADMIN_ID);
 			}
 
-			// Find conversation by filtering findAll results
-			List<Conversation> conversations = (List<Conversation>) conversationRepository.findAll();
-			Conversation conversation = conversations.stream()
-					.filter(c -> c.getId().equals(conversationId))
-					.findFirst()
+			// Find conversation by id
+			Conversation conversation = conversationRepository.findById(conversationId)
 					.orElseThrow(() -> new DetailException(ChatConstant.E500_CONVERSATION_NOT_FOUND));
 
 			// Verify admin exists
@@ -354,11 +344,8 @@ public class ConversationServiceImpl implements ConversationService {
 				throw new DetailException(ChatConstant.E535_INVALID_STATUS);
 			}
 
-			// Find conversation by filtering findAll results
-			List<Conversation> conversations = (List<Conversation>) conversationRepository.findAll();
-			Conversation conversation = conversations.stream()
-					.filter(c -> c.getId().equals(conversationId))
-					.findFirst()
+			// Find conversation by id
+			Conversation conversation = conversationRepository.findById(conversationId)
 					.orElseThrow(() -> new DetailException(ChatConstant.E500_CONVERSATION_NOT_FOUND));
 
 			conversation.setStatus(status.trim());
@@ -400,11 +387,9 @@ public class ConversationServiceImpl implements ConversationService {
 		try {
 			log.debug("Fetching unassigned conversations");
 
-			// Use findAll to get all conversations and filter
-			List<Conversation> allConversations = (List<Conversation>) conversationRepository.findAll();
-			List<Conversation> unassignedConversations = allConversations.stream()
-					.filter(c -> c.getAdminId() == null && "OPEN".equals(c.getStatus()))
-					.collect(Collectors.toList());
+			// Use findUnassignedConversations from repository
+			List<Conversation> unassignedConversations = conversationRepository.findUnassignedConversations(
+					org.springframework.data.domain.PageRequest.of(0, 1000));
 
 			log.info("Fetched {} unassigned conversations - took: {}ms", unassignedConversations.size(),
 					System.currentTimeMillis() - start);

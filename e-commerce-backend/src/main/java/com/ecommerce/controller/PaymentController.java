@@ -85,7 +85,8 @@ public class PaymentController {
          */
         @GetMapping("/status/{transactionId}")
         @PreAuthorize("isAuthenticated()")
-        public ResponseEntity<BusinessApiResponse> getPaymentStatus(@PathVariable String transactionId) {
+        public ResponseEntity<BusinessApiResponse> getPaymentStatus(
+                        @PathVariable(name = "transactionId") String transactionId) {
                 long start = System.currentTimeMillis();
                 try {
                         log.debug("API: Lấy trạng thái thanh toán: {}", transactionId);
@@ -102,8 +103,8 @@ public class PaymentController {
         @GetMapping("/history")
         @PreAuthorize("isAuthenticated()")
         public ResponseEntity<BusinessApiResponse> getPaymentHistory(
-                        @RequestParam(defaultValue = "0") int page,
-                        @RequestParam(defaultValue = "10") int size) {
+                        @RequestParam(name = "page", defaultValue = "0") int page,
+                        @RequestParam(name = "size", defaultValue = "10") int size) {
                 long start = System.currentTimeMillis();
                 try {
                         log.debug("API: Lấy lịch sử thanh toán - page: {}, size: {}", page, size);
@@ -151,7 +152,7 @@ public class PaymentController {
          */
         @GetMapping("/refund/{refundId}")
         @PreAuthorize("isAuthenticated()")
-        public ResponseEntity<BusinessApiResponse> getRefundStatus(@PathVariable String refundId) {
+        public ResponseEntity<BusinessApiResponse> getRefundStatus(@PathVariable(name = "refundId") String refundId) {
                 long start = System.currentTimeMillis();
                 try {
                         log.debug("API: Lấy trạng thái hoàn tiền: {}", refundId);

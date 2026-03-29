@@ -55,12 +55,12 @@ public class CouponController {
     @GetMapping("/admin/coupons")
     // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> getCoupons(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection,
-            @RequestParam(required = false) Boolean active,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "desc") String sortDirection,
+            @RequestParam(name = "active", required = false) Boolean active,
+            @RequestParam(name = "keyword", required = false) String keyword) {
 
         long start = System.currentTimeMillis();
         try {
@@ -104,7 +104,7 @@ public class CouponController {
     @PutMapping("/admin/coupons/{id}")
     // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> updateCoupon(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             @Valid @RequestBody CouponDTO couponDTO) {
         long start = System.currentTimeMillis();
         try {
@@ -123,7 +123,7 @@ public class CouponController {
      */
     @DeleteMapping("/admin/coupons/{id}")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BusinessApiResponse> deleteCoupon(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> deleteCoupon(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             couponService.deleteCoupon(id);
@@ -140,7 +140,7 @@ public class CouponController {
      */
     @GetMapping("/admin/coupons/{id}")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BusinessApiResponse> getCouponById(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> getCouponById(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             CouponDTO coupon = couponService.getCouponById(id);
@@ -176,7 +176,7 @@ public class CouponController {
      */
     @PutMapping("/admin/coupons/{id}/toggle-status")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BusinessApiResponse> toggleCouponStatus(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> toggleCouponStatus(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             CouponDTO updatedCoupon = couponService.toggleActiveStatus(id);
@@ -193,7 +193,7 @@ public class CouponController {
      */
     @GetMapping("/admin/coupons/{id}/statistics")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BusinessApiResponse> getCouponStatistics(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> getCouponStatistics(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             Map<String, Object> statistics = couponService.getCouponStatistics(id);
@@ -237,8 +237,8 @@ public class CouponController {
      */
     @GetMapping("/public/coupons")
     public ResponseEntity<BusinessApiResponse> getActiveCoupons(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "50") int size) {
         long start = System.currentTimeMillis();
         try {
             Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");

@@ -8,12 +8,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 import com.ecommerce.entity.Conversation;
 import com.ecommerce.entity.ConversationStatus;
 import com.ecommerce.repository.base.DbRepository;
 
 @Repository
 public interface ConversationRepository extends DbRepository<Conversation, Long> {
+
+    // Maps to: conversationRepository_findById.sql
+    Optional<Conversation> findById(@Param("id") Long id);
+
+    // Maps to: conversationRepository_findAllPaged.sql
+    Page<Conversation> findAllPaged(Pageable pageable);
 
     // Maps to: conversationRepository_findByUserId.sql
     List<Conversation> findByUserId(@Param("userId") Long userId);

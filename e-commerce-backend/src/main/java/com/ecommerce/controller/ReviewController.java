@@ -49,12 +49,12 @@ public class ReviewController {
      */
     @GetMapping("/products/{productId}/reviews")
     public ResponseEntity<BusinessApiResponse> getProductReviews(
-            @PathVariable Long productId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection,
-            @RequestParam(required = false) Integer rating) {
+            @PathVariable(name = "productId") Long productId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "desc") String sortDirection,
+            @RequestParam(name = "rating", required = false) Integer rating) {
 
         long start = System.currentTimeMillis();
         try {
@@ -76,7 +76,7 @@ public class ReviewController {
     @PostMapping("/products/{productId}/reviews")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BusinessApiResponse> createReview(
-            @PathVariable Long productId,
+            @PathVariable(name = "productId") Long productId,
             @Valid @RequestBody ReviewDTO reviewDTO,
             Authentication authentication) {
 
@@ -98,7 +98,7 @@ public class ReviewController {
     @PutMapping("/reviews/{reviewId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BusinessApiResponse> updateReview(
-            @PathVariable Long reviewId,
+            @PathVariable(name = "reviewId") Long reviewId,
             @Valid @RequestBody ReviewDTO reviewDTO,
             Authentication authentication) {
 
@@ -120,7 +120,7 @@ public class ReviewController {
     @DeleteMapping("/reviews/{reviewId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BusinessApiResponse> deleteReview(
-            @PathVariable Long reviewId,
+            @PathVariable(name = "reviewId") Long reviewId,
             Authentication authentication) {
 
         long start = System.currentTimeMillis();
@@ -139,10 +139,10 @@ public class ReviewController {
     @GetMapping("/users/my-reviews")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BusinessApiResponse> getMyReviews(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "desc") String sortDirection,
             Authentication authentication) {
 
         long start = System.currentTimeMillis();
@@ -162,7 +162,8 @@ public class ReviewController {
      * Get product rating summary
      */
     @GetMapping("/products/{productId}/reviews/summary")
-    public ResponseEntity<BusinessApiResponse> getProductReviewSummary(@PathVariable Long productId) {
+    public ResponseEntity<BusinessApiResponse> getProductReviewSummary(
+            @PathVariable(name = "productId") Long productId) {
         long start = System.currentTimeMillis();
         try {
             Object summary = reviewService.getProductReviewSummary(productId);
@@ -178,7 +179,7 @@ public class ReviewController {
     @GetMapping("/products/{productId}/reviews/can-review")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BusinessApiResponse> canReviewProduct(
-            @PathVariable Long productId,
+            @PathVariable(name = "productId") Long productId,
             Authentication authentication) {
 
         long start = System.currentTimeMillis();
@@ -199,13 +200,13 @@ public class ReviewController {
     @GetMapping("/admin/reviews")
     // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> getAllReviews(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection,
-            @RequestParam(required = false) Integer rating,
-            @RequestParam(required = false) Boolean reported,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "desc") String sortDirection,
+            @RequestParam(name = "rating", required = false) Integer rating,
+            @RequestParam(name = "reported", required = false) Boolean reported,
+            @RequestParam(name = "keyword", required = false) String keyword) {
 
         long start = System.currentTimeMillis();
         try {
@@ -226,7 +227,7 @@ public class ReviewController {
      */
     @DeleteMapping("/admin/reviews/{reviewId}")
     // @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BusinessApiResponse> adminDeleteReview(@PathVariable Long reviewId) {
+    public ResponseEntity<BusinessApiResponse> adminDeleteReview(@PathVariable(name = "reviewId") Long reviewId) {
         long start = System.currentTimeMillis();
         try {
             reviewService.adminDeleteReview(reviewId);

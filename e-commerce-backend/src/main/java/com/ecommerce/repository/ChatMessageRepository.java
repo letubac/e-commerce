@@ -39,4 +39,17 @@ public interface ChatMessageRepository extends DbRepository<ChatMessage, Long> {
         // Maps to: chatMessageRepository_findLatestMessageByConversationId.sql
         List<ChatMessage> findLatestMessageByConversationId(@Param("conversationId") Long conversationId,
                         Pageable pageable);
+
+        // Maps to: chatMessageRepository_insertChatMessage.sql
+        ChatMessage insertChatMessage(
+                        @Param("conversationId") Long conversationId,
+                        @Param("senderId") Long senderId,
+                        @Param("senderType") String senderType,
+                        @Param("content") String content,
+                        @Param("messageType") String messageType,
+                        @Param("attachmentUrl") String attachmentUrl,
+                        @Param("attachmentName") String attachmentName,
+                        @Param("isRead") Boolean isRead,
+                        @Param("createdAt") java.util.Date createdAt,
+                        @Param("updatedAt") java.util.Date updatedAt);
 }

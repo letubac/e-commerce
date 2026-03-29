@@ -64,8 +64,9 @@ export const AuthProvider = ({ children }) => {
               setUser(parsedUser);
               console.log('✅ Using cached user data:', parsedUser);
               
-              // Start monitoring (it will show modal if token expires soon)
-              startTokenMonitoring();
+              // Do NOT start token monitoring here — the token is expired/invalid.
+              // The user will need to re-login; DO NOT call startTokenMonitoring()
+              // with a missing/expired token as that causes immediate logout loops.
               setLoading(false);
               return;
             } catch (parseError) {

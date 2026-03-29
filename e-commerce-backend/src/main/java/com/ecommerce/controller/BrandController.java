@@ -76,15 +76,15 @@ public class BrandController {
      */
     @GetMapping("/brands/{brandId}/products")
     public ResponseEntity<BusinessApiResponse> getBrandProducts(
-            @PathVariable Long brandId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false, defaultValue = "true") Boolean active,
+            @PathVariable(name = "brandId") Long brandId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "desc") String sortDirection,
+            @RequestParam(name = "minPrice", required = false) Double minPrice,
+            @RequestParam(name = "maxPrice", required = false) Double maxPrice,
+            @RequestParam(name = "categoryId", required = false) Long categoryId,
+            @RequestParam(name = "active", required = false, defaultValue = "true") Boolean active,
             Locale locale) {
 
         long start = System.currentTimeMillis();
@@ -145,7 +145,7 @@ public class BrandController {
      */
     @PutMapping("/admin/brands/{id}")
     public ResponseEntity<BusinessApiResponse> updateBrand(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             @Valid @RequestBody BrandDTO brandDTO,
             Locale locale) {
         long start = System.currentTimeMillis();
@@ -165,7 +165,7 @@ public class BrandController {
      */
     @DeleteMapping("/admin/brands/{id}")
     public ResponseEntity<BusinessApiResponse> deleteBrand(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             Locale locale) {
         long start = System.currentTimeMillis();
         try {
@@ -183,7 +183,7 @@ public class BrandController {
      */
     @GetMapping("/admin/brands/{id}")
     public ResponseEntity<BusinessApiResponse> getBrandById(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             Locale locale) {
         long start = System.currentTimeMillis();
         try {
@@ -200,7 +200,7 @@ public class BrandController {
      */
     @PutMapping("/admin/brands/{id}/toggle-status")
     public ResponseEntity<BusinessApiResponse> toggleBrandStatus(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             Locale locale) {
         long start = System.currentTimeMillis();
         try {
@@ -219,7 +219,7 @@ public class BrandController {
      */
     @GetMapping("/admin/brands/{id}/statistics")
     public ResponseEntity<BusinessApiResponse> getBrandStatistics(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             Locale locale) {
         long start = System.currentTimeMillis();
         try {

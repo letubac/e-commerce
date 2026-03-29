@@ -70,7 +70,7 @@ public class OrderController {
 
     @GetMapping("/{orderId}")
     public ResponseEntity<BusinessApiResponse> getOrder(
-            @PathVariable Long orderId,
+            @PathVariable(name = "orderId") Long orderId,
             Authentication authentication) {
         long start = System.currentTimeMillis();
         try {
@@ -84,7 +84,7 @@ public class OrderController {
 
     @PutMapping("/{orderId}/cancel")
     public ResponseEntity<BusinessApiResponse> cancelOrder(
-            @PathVariable Long orderId,
+            @PathVariable(name = "orderId") Long orderId,
             Authentication authentication) {
         long start = System.currentTimeMillis();
         try {
@@ -110,7 +110,7 @@ public class OrderController {
 
     @GetMapping("/admin/{id}")
     public ResponseEntity<BusinessApiResponse> getOrderById(
-            @PathVariable Long id) {
+            @PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             OrderDTO order = orderService.getOrderById(id);
@@ -122,7 +122,7 @@ public class OrderController {
 
     @GetMapping("/admin/status/{status}")
     public ResponseEntity<BusinessApiResponse> getOrdersByStatus(
-            @PathVariable String status,
+            @PathVariable(name = "status") String status,
             Pageable pageable) {
         long start = System.currentTimeMillis();
         try {
@@ -135,8 +135,8 @@ public class OrderController {
 
     @PutMapping("/admin/{orderId}/status")
     public ResponseEntity<BusinessApiResponse> updateOrderStatus(
-            @PathVariable Long orderId,
-            @RequestParam String status) {
+            @PathVariable(name = "orderId") Long orderId,
+            @RequestParam(name = "status") String status) {
         long start = System.currentTimeMillis();
         try {
             OrderDTO order = orderService.updateOrderStatus(orderId, status);
@@ -148,7 +148,7 @@ public class OrderController {
 
     @PutMapping("/admin/{orderId}/tracking")
     public ResponseEntity<BusinessApiResponse> updateTrackingNumber(
-            @PathVariable Long orderId,
+            @PathVariable(name = "orderId") Long orderId,
             @RequestBody Map<String, String> request) {
         long start = System.currentTimeMillis();
         try {

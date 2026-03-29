@@ -71,8 +71,8 @@ public class CartController {
 
     @PutMapping("/items/{itemId}")
     public ResponseEntity<BusinessApiResponse> updateCartItem(
-            @PathVariable Long itemId,
-            @RequestParam Integer quantity,
+            @PathVariable(name = "itemId") Long itemId,
+            @RequestParam(name = "quantity") Integer quantity,
             Authentication authentication) {
         long start = System.currentTimeMillis();
         try {
@@ -90,7 +90,7 @@ public class CartController {
 
     @DeleteMapping("/items/{itemId}")
     public ResponseEntity<BusinessApiResponse> removeCartItem(
-            @PathVariable Long itemId,
+            @PathVariable(name = "itemId") Long itemId,
             Authentication authentication) {
         long start = System.currentTimeMillis();
         try {

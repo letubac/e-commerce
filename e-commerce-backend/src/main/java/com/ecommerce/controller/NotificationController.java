@@ -67,8 +67,8 @@ public class NotificationController {
     @GetMapping("/notifications")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BusinessApiResponse> getNotifications(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size) {
         long start = System.currentTimeMillis();
         try {
             Long userId = getCurrentUserId();
@@ -117,7 +117,7 @@ public class NotificationController {
      */
     @GetMapping("/notifications/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<BusinessApiResponse> getNotificationById(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> getNotificationById(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             NotificationDTO notification = notificationService.getNotificationById(id);
@@ -132,7 +132,7 @@ public class NotificationController {
      */
     @PutMapping("/notifications/{id}/read")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<BusinessApiResponse> markAsRead(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> markAsRead(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             NotificationDTO notification = notificationService.markAsRead(id);
@@ -163,7 +163,7 @@ public class NotificationController {
      */
     @DeleteMapping("/notifications/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<BusinessApiResponse> deleteNotification(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> deleteNotification(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             notificationService.deleteNotification(id);
@@ -210,9 +210,9 @@ public class NotificationController {
     @GetMapping("/notifications/type/{type}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BusinessApiResponse> getNotificationsByType(
-            @PathVariable String type,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @PathVariable(name = "type") String type,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size) {
         long start = System.currentTimeMillis();
         try {
             Long userId = getCurrentUserId();
@@ -230,9 +230,9 @@ public class NotificationController {
     @GetMapping("/notifications/search")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BusinessApiResponse> searchNotifications(
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(name = "keyword") String keyword,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size) {
         long start = System.currentTimeMillis();
         try {
             Long userId = getCurrentUserId();
@@ -250,7 +250,7 @@ public class NotificationController {
     @GetMapping("/notifications/recent")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BusinessApiResponse> getRecentNotifications(
-            @RequestParam(defaultValue = "7") int days) {
+            @RequestParam(name = "days", defaultValue = "7") int days) {
         long start = System.currentTimeMillis();
         try {
             Long userId = getCurrentUserId();
@@ -334,7 +334,7 @@ public class NotificationController {
     @DeleteMapping("/admin/notifications/cleanup")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> deleteOldNotifications(
-            @RequestParam(defaultValue = "30") int daysOld) {
+            @RequestParam(name = "daysOld", defaultValue = "30") int daysOld) {
         long start = System.currentTimeMillis();
         try {
             int count = notificationService.deleteOldNotifications(daysOld);

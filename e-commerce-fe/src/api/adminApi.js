@@ -108,20 +108,20 @@ const adminApi = {
   deleteBrand: (id) => adminApi.request(`/admin/brands/${id}`, { method: 'DELETE' }),
 
   // Chat Management APIs
-  getChatConversations: (params) => adminApi.request(`/chat/conversations?${new URLSearchParams(params)}`),
+  getChatConversations: (params) => adminApi.request(`/chat/admin/conversations?${new URLSearchParams(params)}`),
   getChatMessages: (conversationId, params) => 
-    adminApi.request(`/chat/conversations/${conversationId}/messages?${new URLSearchParams(params)}`),
+    adminApi.request(`/chat/admin/conversations/${conversationId}/messages?${new URLSearchParams(params)}`),
   sendChatMessage: (data) =>
-    adminApi.request('/chat/messages', { method: 'POST', body: JSON.stringify(data) }),
+    adminApi.request('/chat/admin/messages', { method: 'POST', body: JSON.stringify(data) }),
   markConversationAsRead: (conversationId) =>
-    adminApi.request(`/chat/conversations/${conversationId}/read`, { method: 'POST' }),
+    adminApi.request(`/chat/admin/conversations/${conversationId}/read`, { method: 'POST' }),
   updateConversationStatus: (conversationId, status) =>
-    adminApi.request(`/chat/conversations/${conversationId}/status`, { 
+    adminApi.request(`/chat/admin/conversations/${conversationId}/status`, { 
       method: 'PUT', 
       body: JSON.stringify({ status }) 
     }),
   assignConversation: (conversationId) =>
-    adminApi.request(`/chat/conversations/${conversationId}/assign`, { method: 'POST' }),
+    adminApi.request(`/chat/admin/conversations/${conversationId}/assign`, { method: 'POST' }),
   getChatQuickReplies: () => adminApi.request('/chat/quick-replies'),
   createChatQuickReply: (data) =>
     adminApi.request('/chat/quick-replies', { method: 'POST', body: JSON.stringify(data) }),

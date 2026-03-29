@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { API_BASE_URL } from '../api/api';
 import api from '../api/api';
 
+const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='150' y='156' text-anchor='middle' fill='%23999' font-family='sans-serif' font-size='14'%3ENo Image%3C/text%3E%3C/svg%3E";
+
 function RelatedProducts({ categoryId, currentProductId }) {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
@@ -104,12 +106,13 @@ function RelatedProducts({ categoryId, currentProductId }) {
                       src={
                         product.imageUrl
                           ? `${API_BASE_URL}/files${product.imageUrl}`
-                          : `https://via.placeholder.com/300x300/f0f0f0/666666?text=${encodeURIComponent(product.name || 'Product')}`
+                          : PLACEHOLDER_IMG
                       }
                       alt={product.name}
                       className="absolute inset-0 w-full h-full object-cover"
                       onError={(e) => {
-                        e.target.src = `https://via.placeholder.com/300x300/f0f0f0/666666?text=${encodeURIComponent(product.name || 'Product')}`;
+                        e.target.onerror = null;
+                        e.target.src = PLACEHOLDER_IMG;
                       }}
                     />
                     {product.discount > 0 && (

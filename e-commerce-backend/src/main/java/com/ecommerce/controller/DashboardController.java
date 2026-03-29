@@ -57,7 +57,7 @@ public class DashboardController {
     @GetMapping("/sales")
     // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> getSalesStatistics(
-            @RequestParam(defaultValue = "7") int days) {
+            @RequestParam(name = "days", defaultValue = "7") int days) {
 
         long start = System.currentTimeMillis();
         try {
@@ -123,7 +123,7 @@ public class DashboardController {
     @GetMapping("/activities")
     // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> getRecentActivities(
-            @RequestParam(defaultValue = "20") int limit) {
+            @RequestParam(name = "limit", defaultValue = "20") int limit) {
 
         long start = System.currentTimeMillis();
         try {

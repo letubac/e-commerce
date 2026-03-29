@@ -72,8 +72,8 @@ public class FlashSaleController {
      */
     @GetMapping("/flash-sale/{flashSaleId}/products/{productId}")
     public ResponseEntity<BusinessApiResponse> getFlashSaleProduct(
-            @PathVariable Long flashSaleId,
-            @PathVariable Long productId) {
+            @PathVariable(name = "flashSaleId") Long flashSaleId,
+            @PathVariable(name = "productId") Long productId) {
         long start = System.currentTimeMillis();
         try {
             FlashSaleProductDTO product = flashSaleService.getFlashSaleProduct(flashSaleId, productId);
@@ -90,10 +90,10 @@ public class FlashSaleController {
      */
     @GetMapping("/admin/flash-sales")
     public ResponseEntity<BusinessApiResponse> getAllFlashSales(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "desc") String sortDirection) {
         long start = System.currentTimeMillis();
         try {
             Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
@@ -109,7 +109,7 @@ public class FlashSaleController {
      * Get Flash Sale by ID (Admin)
      */
     @GetMapping("/admin/flash-sales/{id}")
-    public ResponseEntity<BusinessApiResponse> getFlashSaleById(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> getFlashSaleById(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             FlashSaleDTO flashSale = flashSaleService.getFlashSaleById(id);
@@ -138,7 +138,7 @@ public class FlashSaleController {
      */
     @PutMapping("/admin/flash-sales/{id}")
     public ResponseEntity<BusinessApiResponse> updateFlashSale(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             @Valid @RequestBody FlashSaleDTO flashSaleDTO) {
         long start = System.currentTimeMillis();
         try {
@@ -154,7 +154,7 @@ public class FlashSaleController {
      * Delete Flash Sale (Admin)
      */
     @DeleteMapping("/admin/flash-sales/{id}")
-    public ResponseEntity<BusinessApiResponse> deleteFlashSale(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> deleteFlashSale(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             flashSaleService.deleteFlashSale(id);
@@ -168,7 +168,7 @@ public class FlashSaleController {
      * Activate Flash Sale (Admin)
      */
     @PutMapping("/admin/flash-sales/{id}/activate")
-    public ResponseEntity<BusinessApiResponse> activateFlashSale(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> activateFlashSale(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             FlashSaleDTO activated = flashSaleService.activateFlashSale(id);
@@ -182,7 +182,7 @@ public class FlashSaleController {
      * Deactivate Flash Sale (Admin)
      */
     @PutMapping("/admin/flash-sales/{id}/deactivate")
-    public ResponseEntity<BusinessApiResponse> deactivateFlashSale(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> deactivateFlashSale(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             FlashSaleDTO deactivated = flashSaleService.deactivateFlashSale(id);
@@ -199,11 +199,11 @@ public class FlashSaleController {
      */
     @GetMapping("/admin/flash-sales/{flashSaleId}/products")
     public ResponseEntity<BusinessApiResponse> getFlashSaleProducts(
-            @PathVariable Long flashSaleId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "displayOrder") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDirection) {
+            @PathVariable(name = "flashSaleId") Long flashSaleId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sortBy", defaultValue = "displayOrder") String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "asc") String sortDirection) {
         long start = System.currentTimeMillis();
         try {
             Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
@@ -220,7 +220,7 @@ public class FlashSaleController {
      */
     @PostMapping("/admin/flash-sales/{flashSaleId}/products")
     public ResponseEntity<BusinessApiResponse> addProductToFlashSale(
-            @PathVariable Long flashSaleId,
+            @PathVariable(name = "flashSaleId") Long flashSaleId,
             @Valid @RequestBody FlashSaleProductDTO productDTO) {
         long start = System.currentTimeMillis();
         try {
@@ -236,8 +236,8 @@ public class FlashSaleController {
      */
     @PutMapping("/admin/flash-sales/{flashSaleId}/products/{productId}")
     public ResponseEntity<BusinessApiResponse> updateFlashSaleProduct(
-            @PathVariable Long flashSaleId,
-            @PathVariable Long productId,
+            @PathVariable(name = "flashSaleId") Long flashSaleId,
+            @PathVariable(name = "productId") Long productId,
             @Valid @RequestBody FlashSaleProductDTO productDTO) {
         long start = System.currentTimeMillis();
         try {
@@ -255,8 +255,8 @@ public class FlashSaleController {
      */
     @DeleteMapping("/admin/flash-sales/{flashSaleId}/products/{productId}")
     public ResponseEntity<BusinessApiResponse> removeProductFromFlashSale(
-            @PathVariable Long flashSaleId,
-            @PathVariable Long productId) {
+            @PathVariable(name = "flashSaleId") Long flashSaleId,
+            @PathVariable(name = "productId") Long productId) {
         long start = System.currentTimeMillis();
         try {
             flashSaleService.removeProductFromFlashSale(flashSaleId, productId);
@@ -272,7 +272,7 @@ public class FlashSaleController {
      * Get Flash Sale statistics (Admin)
      */
     @GetMapping("/admin/flash-sales/{id}/statistics")
-    public ResponseEntity<BusinessApiResponse> getFlashSaleStatistics(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> getFlashSaleStatistics(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             Long totalSales = flashSaleService.getTotalSalesForFlashSale(id);

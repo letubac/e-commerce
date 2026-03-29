@@ -25,7 +25,7 @@ class NotificationWebSocketService {
       return;
     }
 
-    const socketUrl = `${process.env.REACT_APP_WS_URL || 'http://localhost:8080'}/ws/notifications`;
+    const socketUrl = `${process.env.REACT_APP_WS_URL || 'http://localhost:8280'}/ws/notifications`;
     
     this.client = new Client({
       webSocketFactory: () => new SockJS(socketUrl),

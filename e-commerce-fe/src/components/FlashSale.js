@@ -3,6 +3,8 @@ import { ChevronLeft, ChevronRight, ShoppingCart, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api, { API_BASE_URL } from '../api/api';
 
+const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f0f0f0'/%3E%3Ctext x='150' y='106' text-anchor='middle' fill='%23999' font-family='sans-serif' font-size='14'%3ENo Image%3C/text%3E%3C/svg%3E";
+
 export default function FlashSale() {
   const navigate = useNavigate();
   const [flashSaleProducts, setFlashSaleProducts] = useState([]);
@@ -153,13 +155,14 @@ export default function FlashSale() {
                         ? (product.productImageUrl.startsWith('http') 
                           ? product.productImageUrl 
                           : `${API_BASE_URL}/files${product.productImageUrl}`)
-                        : `https://via.placeholder.com/300x200/f0f0f0/666666?text=${encodeURIComponent(product.productName || product.name || 'Product')}`
+                        : PLACEHOLDER_IMG
                     }
                     alt={product.productName || product.name}
                     className="w-full h-48 object-cover cursor-pointer"
                     onClick={() => navigate(`/product/${product.productId || product.id}`)}
                     onError={(e) => {
-                      e.target.src = `https://via.placeholder.com/300x200/f0f0f0/666666?text=${encodeURIComponent(product.productName || product.name || 'Product')}`;
+                      e.target.onerror = null;
+                      e.target.src = PLACEHOLDER_IMG;
                     }}
                   />
                   <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-sm font-bold">

@@ -10,7 +10,7 @@ A comprehensive Spring Boot REST API backend for e-commerce platform with Postgr
 - ✅ **JWT Authentication** and Spring Security
 - ✅ **WebSocket** for real-time chat
 - ✅ **Apache Kafka** for message queue
-- ✅ **Flyway Database Migration**
+- ✅ **Mirage Sql**
 - ✅ **Internationalization** (vi/en)
 - ✅ **Modular Architecture** (monolithic with modules)
 - ✅ **REST API** with comprehensive endpoints

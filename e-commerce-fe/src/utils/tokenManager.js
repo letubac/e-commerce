@@ -71,6 +71,9 @@ class TokenManager {
       clearInterval(this.checkInterval);
     }
 
+    // Reset warning state for new session
+    this.warningShown = false;
+
     // Check every 30 seconds
     this.checkInterval = setInterval(() => {
       const token = localStorage.getItem('token');
@@ -89,11 +92,9 @@ class TokenManager {
       }
     }, 30000); // Check every 30 seconds
 
-    // Also check immediately
-    const token = localStorage.getItem('token');
-    if (token && this.isTokenExpired(token)) {
-      if (onExpired) onExpired();
-    }
+    // Do NOT do an immediate synchronous check here — it causes race conditions
+    // right after login where startMonitoring is called just after localStorage.setItem.
+    // The 30-second interval above handles expiry detection safely.
   }
 
   // Stop monitoring

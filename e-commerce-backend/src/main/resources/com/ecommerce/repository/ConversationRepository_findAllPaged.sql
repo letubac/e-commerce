@@ -10,5 +10,4 @@ SELECT
     c.created_at,
     c.updated_at
 FROM conversations c
-WHERE c.status = /*status*/''
 ORDER BY c.updated_at DESC

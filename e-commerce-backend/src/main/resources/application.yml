@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8280
   servlet:
     context-path: /
     session:
@@ -63,7 +63,7 @@ spring:
   
   # Security Configuration
   security:
-    sessions: redis
+    sessions: servlet  # Use servlet session instead of Redis for development
   
   # Internationalization
   messages:
@@ -108,6 +108,23 @@ logging:
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   file:
     name: logs/ecommerce-backend.log
+
+# Management - Actuator & Health Checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+  health:
+    redis:
+      enabled: false  # Disable Redis health check since Redis is not required
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
 
 # Custom Application Properties
 app:
