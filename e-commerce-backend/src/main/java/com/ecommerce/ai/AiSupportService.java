@@ -61,7 +61,7 @@ public class AiSupportService {
     private SupportAssistant assistant;
 
     private static final String PLACEHOLDER_API_KEY = "sk-placeholder";
-     */
+     
     interface SupportAssistant {
         String chat(@MemoryId Long conversationId, @UserMessage String userMessage);
     }
