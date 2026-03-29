@@ -706,7 +706,7 @@ function ChatWidget() {
                       <div className="flex justify-start">
                         <div className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2">
                           <span>🤖</span>
-                          <span className="italic">AI Assistant đang trả lời...</span>
+                          <span className="italic">AI đang trả lời...</span>
                           <span className="flex gap-1">
                             <span className="animate-bounce" style={{ animationDelay: '0ms' }}>●</span>
                             <span className="animate-bounce" style={{ animationDelay: '150ms' }}>●</span>
