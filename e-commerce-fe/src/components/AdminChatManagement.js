@@ -325,7 +325,7 @@ function AdminChatManagement() {
     <div className="flex h-full bg-gray-50">
       {/* Human Handoff Alert Banner */}
       {handoffAlert && (
-        <div className="fixed top-4 right-4 z-50 bg-yellow-50 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 max-w-sm">
+        <div role="alert" aria-live="assertive" className="fixed top-4 right-4 z-50 bg-yellow-50 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 max-w-sm">
           <span className="text-xl">🤝</span>
           <div className="flex-1">
             <p className="font-semibold text-sm">Khách hàng cần hỗ trợ!</p>

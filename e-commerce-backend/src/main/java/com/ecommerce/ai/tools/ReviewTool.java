@@ -40,7 +40,7 @@ public class ReviewTool {
             if (reviews != null && reviews.hasContent()) {
                 sb.append("Đánh giá gần đây:\n");
                 for (ReviewDTO r : reviews.getContent()) {
-                    String stars = "⭐".repeat(r.getRating() != null ? r.getRating() : 0);
+                    String stars = "⭐".repeat(Math.max(0, r.getRating() != null ? r.getRating() : 0));
                     String comment = r.getComment() != null && r.getComment().length() > 80
                             ? r.getComment().substring(0, 80) + "..." : r.getComment();
                     sb.append(String.format("- %s %s: %s\n",

@@ -135,7 +135,7 @@ public class AiSupportService {
                             id -> MessageWindowChatMemory.withMaxMessages(memoryMaxMessages)))
                     .build();
 
-            log.info("✅ AI Support Agent initialized successfully with model: {} and {} tools", model, 8);
+            log.info("✅ AI Support Agent initialized successfully with model: {}", model);
         } catch (Exception e) {
             log.error("❌ Failed to initialize AI Support Agent: {}", e.getMessage());
             aiEnabled = false;

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -35,7 +36,9 @@ public class FlashSaleTool {
                     return String.format("Hiện không có Flash Sale nào đang diễn ra. "
                             + "Chương trình sắp tới: \"%s\" bắt đầu lúc %s.",
                             next.getName(),
-                            next.getStartTime() != null ? next.getStartTime().toString() : "chưa xác định");
+                            next.getStartTime() != null
+                                    ? new SimpleDateFormat("dd/MM/yyyy HH:mm").format(next.getStartTime())
+                                    : "chưa xác định");
                 }
                 return "Hiện không có chương trình Flash Sale nào đang diễn ra hoặc sắp diễn ra.";
             }
