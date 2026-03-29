@@ -2,12 +2,14 @@ package com.ecommerce.service.impl;
 
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ecommerce.ai.AiSupportService;
 import com.ecommerce.constant.ChatConstant;
 import com.ecommerce.dto.ChatMessageDTO;
 import com.ecommerce.dto.request.SendMessageRequest;
@@ -33,6 +35,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 	private final ConversationRepository conversationRepository;
 	private final UserRepository userRepository;
 	private final com.ecommerce.websocket.WebSocketChatService webSocketChatService;
+	private final AiSupportService aiSupportService;
 
 	@Override
 	public ChatMessageDTO sendMessage(Long senderId, SendMessageRequest request) throws DetailException {
@@ -125,6 +128,15 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 				log.info("✅ Message broadcasted via WebSocket");
 			} catch (Exception e) {
 				log.error("⚠️ Error broadcasting message via WebSocket", e);
+			}
+
+			// Trigger async AI auto-reply when user sends a message and conversation
+			// has no assigned admin (status == OPEN)
+			if (ChatConstant.SENDER_TYPE_USER.equals(senderType) && aiSupportService.isEnabled()
+					&& ChatConstant.STATUS_OPEN.equals(conversation.getStatus())) {
+				final Long convId = request.getConversationId();
+				final String userText = request.getContent().trim();
+				CompletableFuture.runAsync(() -> sendAiReply(convId, userText));
 			}
 
 			return messageDTO;
@@ -279,8 +291,10 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 		dto.setCreatedAt(message.getCreatedAt());
 		dto.setUpdatedAt(message.getUpdatedAt());
 
-		// Set sender name if not provided
-		if (senderName == null && message.getSenderId() != null) {
+		// AI messages have no real senderId
+		if (ChatConstant.SENDER_TYPE_AI.equals(message.getSenderType())) {
+			dto.setSenderName("AI Assistant");
+		} else if (senderName == null && message.getSenderId() != null) {
 			User sender = userRepository.findById(message.getSenderId()).orElse(null);
 			dto.setSenderName(sender != null ? sender.getUsername() : "Unknown");
 		} else {
@@ -288,5 +302,42 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 		}
 
 		return dto;
+	}
+
+	/**
+	 * Sends an AI-generated reply to the conversation asynchronously.
+	 * Runs outside the main transaction to avoid blocking the user request.
+	 */
+	private void sendAiReply(Long conversationId, String userMessage) {
+		try {
+			log.info("AI generating reply for conversation {}", conversationId);
+			String aiResponse = aiSupportService.respond(conversationId, userMessage);
+			if (aiResponse == null || aiResponse.isBlank()) {
+				return;
+			}
+
+			// Save AI message directly via repository (new transaction)
+			Date now = new Date();
+			ChatMessage aiMessage = chatMessageRepository.insertChatMessage(
+					conversationId,
+					null,        // AI has no senderId
+					ChatConstant.SENDER_TYPE_AI,
+					aiResponse.trim(),
+					"TEXT",
+					null,
+					null,
+					false,
+					now,
+					now);
+
+			log.info("✅ AI message saved with ID: {}", aiMessage.getId());
+
+			// Broadcast AI message via WebSocket
+			ChatMessageDTO aiDTO = convertToDTO(aiMessage, "AI Assistant");
+			webSocketChatService.broadcastMessage(conversationId, aiDTO);
+			log.info("✅ AI message broadcasted for conversation {}", conversationId);
+		} catch (Exception e) {
+			log.error("❌ Error sending AI reply for conversation {}: {}", conversationId, e.getMessage(), e);
+		}
 	}
 }
