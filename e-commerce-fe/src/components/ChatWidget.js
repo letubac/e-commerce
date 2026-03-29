@@ -515,6 +515,13 @@ function ChatWidget() {
     }
   };
 
+  const getMessageBubbleClass = (senderType) => {
+    const type = senderType?.toUpperCase();
+    if (type === 'USER') return 'bg-red-600 text-white';
+    if (type === 'AI') return 'bg-blue-50 text-blue-900 border border-blue-200';
+    return 'bg-gray-100 text-gray-800';
+  };
+
   // Render read receipt indicator
   const renderReadReceipt = (message) => {
     if (message.senderType !== 'USER') return null;
@@ -636,11 +643,13 @@ function ChatWidget() {
                             </div>
                           )}
                           <div className={`flex ${message.senderType?.toUpperCase() === 'USER' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
-                              message.senderType?.toUpperCase() === 'USER'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
+                            <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${getMessageBubbleClass(message.senderType)}`}>
+                              {message.senderType?.toUpperCase() === 'AI' && (
+                                <div className="text-xs font-semibold text-blue-500 mb-1 flex items-center gap-1">
+                                  <span>🤖</span>
+                                  <span>AI Assistant</span>
+                                </div>
+                              )}
                               {message.messageType === 'file' ? (
                                 <div>
                                   <div className="flex items-center space-x-2 mb-1">

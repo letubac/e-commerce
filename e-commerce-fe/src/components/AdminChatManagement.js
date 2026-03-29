@@ -473,11 +473,20 @@ function AdminChatManagement() {
               ) : (
                 messages.map((message) => {
                   const isAdmin = message.senderType === 'ADMIN';
+                  const isAi = message.senderType === 'AI';
                   return (
                     <div key={message.id} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        isAdmin ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-800'
+                        isAdmin ? 'bg-red-600 text-white'
+                          : isAi ? 'bg-blue-50 text-blue-900 border border-blue-200'
+                          : 'bg-gray-100 text-gray-800'
                       }`}>
+                        {isAi && (
+                          <div className="text-xs font-semibold text-blue-500 mb-1 flex items-center gap-1">
+                            <span>🤖</span>
+                            <span>AI Assistant</span>
+                          </div>
+                        )}
                         <p className="whitespace-pre-wrap">{message.content}</p>
                         <div className={`text-xs mt-1 flex items-center justify-between gap-2 ${isAdmin ? 'text-red-100' : 'text-gray-500'}`}>
                           <span>

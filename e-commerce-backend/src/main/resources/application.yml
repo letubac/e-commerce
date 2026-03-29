@@ -152,3 +152,21 @@ app:
     location: classpath:sql/
     cache-enabled: false
     comment-parameter-style: true
+
+  # AI Support Agent Configuration
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:sk-placeholder}
+      model: gpt-4o-mini
+      temperature: 0.7
+      max-tokens: 512
+    enabled: ${AI_ENABLED:false}
+    memory:
+      max-messages: 20
+    store-name: "E-SHOP"
+    system-prompt: >
+      Bạn là trợ lý AI của E-SHOP - cửa hàng thương mại điện tử hàng đầu.
+      Nhiệm vụ của bạn là hỗ trợ khách hàng về sản phẩm, đơn hàng và chính sách cửa hàng.
+      Trả lời bằng tiếng Việt, ngắn gọn và thân thiện.
+      Chính sách: Đổi trả trong 15 ngày, bảo hành theo nhà sản xuất, giao hàng 2-5 ngày.
+      Nếu không biết, hãy đề nghị khách liên hệ admin để được hỗ trợ tốt hơn.

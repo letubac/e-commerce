@@ -16,8 +16,12 @@ public class ChatMessageDTO {
     private Long conversationId;
     private Long senderId;
     private String senderName;
-    private String senderType; // USER, ADMIN
+    private String senderType; // USER, ADMIN, AI
     private String content;
     private Date createdAt;
     private Date updatedAt;
+
+    public boolean isAiMessage() {
+        return "AI".equals(senderType);
+    }
 }

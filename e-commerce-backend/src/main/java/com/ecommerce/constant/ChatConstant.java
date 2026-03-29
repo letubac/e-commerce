@@ -80,6 +80,14 @@ public class ChatConstant {
     // Other operations (S525-S529)
     public static final String S525_UNREAD_COUNT_RETRIEVED = "S525_UNREAD_COUNT_RETRIEVED";
 
+    // Sender types
+    public static final String SENDER_TYPE_USER = "USER";
+    public static final String SENDER_TYPE_ADMIN = "ADMIN";
+    public static final String SENDER_TYPE_AI = "AI";
+
+    // Conversation statuses
+    public static final String STATUS_OPEN = "OPEN";
+
     // Private constructor to prevent instantiation
     private ChatConstant() {
         throw new IllegalStateException("Constant class cannot be instantiated");
