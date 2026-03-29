@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api, { API_BASE_URL } from '../api/api';
 import toast from '../utils/toast';
+import CountdownTimer from './CountdownTimer';
 
 const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f0f0f0'/%3E%3Ctext x='150' y='106' text-anchor='middle' fill='%23999' font-family='sans-serif' font-size='14'%3ENo Image%3C/text%3E%3C/svg%3E";
 
@@ -36,7 +37,6 @@ export default function FlashSale() {
     return Math.min(100, Math.round(((stockSold || 0) / stockQuantity) * 100));
   };
 
-  const pad = (n) => String(n).padStart(2, '0');
 
   const fetchFlashSaleData = useCallback(async () => {
     try {
@@ -145,20 +145,15 @@ export default function FlashSale() {
           </div>
 
           {/* Countdown */}
-          <div className="flex items-center gap-2">
-            <span className="text-white text-sm opacity-90">
-              {activeFlashSale ? 'Kết thúc sau' : 'Bắt đầu sau'}
-            </span>
-            <div className="flex items-center gap-1">
-              {[pad(timeLeft.hours), pad(timeLeft.minutes), pad(timeLeft.seconds)].map((val, i) => (
-                <React.Fragment key={i}>
-                  <div className="bg-gray-900 text-white text-base font-bold px-2 py-0.5 rounded min-w-[32px] text-center leading-6">
-                    {val}
-                  </div>
-                  {i < 2 && <span className="text-white font-bold text-base">:</span>}
-                </React.Fragment>
-              ))}
-            </div>
+          <div className="text-white">
+            <CountdownTimer
+              hours={timeLeft.hours}
+              minutes={timeLeft.minutes}
+              seconds={timeLeft.seconds}
+              label={activeFlashSale ? 'Kết thúc sau' : 'Bắt đầu sau'}
+              labelClassName="text-white text-sm opacity-90"
+              boxClassName="bg-gray-900 text-white text-base font-bold px-2 py-0.5 rounded min-w-[32px] text-center leading-6"
+            />
           </div>
         </div>
 

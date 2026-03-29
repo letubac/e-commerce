@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api, { API_BASE_URL } from '../api/api';
 import toast from '../utils/toast';
 import { Zap, Clock, ShoppingCart, Flame, Tag, Filter } from 'lucide-react';
+import CountdownTimer from '../components/CountdownTimer';
 
 const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f0f0f0'/%3E%3Ctext x='150' y='106' text-anchor='middle' fill='%23999' font-family='sans-serif' font-size='14'%3ENo Image%3C/text%3E%3C/svg%3E";
 
@@ -26,7 +27,6 @@ function FlashSalePage() {
 
   const isUpcoming = (session) => new Date() < new Date(session.startTime);
 
-  const pad = (n) => String(n).padStart(2, '0');
 
   const calcDiscount = (originalPrice, flashPrice) => {
     if (!originalPrice || !flashPrice || originalPrice <= flashPrice) return 0;
@@ -189,23 +189,13 @@ function FlashSalePage() {
                   <Clock className="w-3.5 h-3.5" />
                   {selectedIsActive ? 'Kết thúc sau' : 'Bắt đầu sau'}
                 </span>
-                <div className="flex items-center gap-1">
-                  {[
-                    { val: pad(timeLeft.hours), label: 'Giờ' },
-                    { val: pad(timeLeft.minutes), label: 'Phút' },
-                    { val: pad(timeLeft.seconds), label: 'Giây' },
-                  ].map((item, i) => (
-                    <React.Fragment key={i}>
-                      <div className="text-center">
-                        <div className="bg-white text-red-600 font-bold text-2xl px-3 py-1 rounded-lg min-w-[52px] text-center">
-                          {item.val}
-                        </div>
-                        <div className="text-xs text-white/70 mt-0.5">{item.label}</div>
-                      </div>
-                      {i < 2 && <span className="text-white font-bold text-2xl pb-4">:</span>}
-                    </React.Fragment>
-                  ))}
-                </div>
+                <CountdownTimer
+                  hours={timeLeft.hours}
+                  minutes={timeLeft.minutes}
+                  seconds={timeLeft.seconds}
+                  boxClassName="bg-white text-red-600 font-bold text-2xl px-3 py-1 rounded-lg min-w-[52px] text-center"
+                  labelClassName="hidden"
+                />
               </div>
             )}
           </div>
