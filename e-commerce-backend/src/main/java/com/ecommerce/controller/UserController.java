@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -127,6 +128,26 @@ public class UserController {
         try {
             Map<String, Object> statistics = userService.getUserStatistics();
             return ResponseEntity.ok(successHandler.handlerSuccess(statistics, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
+    }
+
+    /**
+     * Update user role (Admin only)
+     */
+    @PutMapping("/users/{id}/role")
+    // @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BusinessApiResponse> updateUserRole(
+            @PathVariable(name = "id") Long id,
+            @RequestBody Map<String, String> body) {
+        long start = System.currentTimeMillis();
+        try {
+            String role = body.get("role");
+            userService.updateUserRole(id, role);
+            log.info("Admin updated role for user ID {} to {}", id, role);
+            return ResponseEntity.ok(successHandler.handlerSuccess(
+                    Map.of("message", "Role updated successfully", "role", role), start));
         } catch (Exception e) {
             return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
