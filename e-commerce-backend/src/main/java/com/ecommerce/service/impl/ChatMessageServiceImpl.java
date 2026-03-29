@@ -21,6 +21,7 @@ import com.ecommerce.repository.ChatMessageRepository;
 import com.ecommerce.repository.ConversationRepository;
 import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.ChatMessageService;
+import com.ecommerce.service.ConversationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 	private final UserRepository userRepository;
 	private final com.ecommerce.websocket.WebSocketChatService webSocketChatService;
 	private final AiSupportService aiSupportService;
+	private final ConversationService conversationService;
 
 	@Override
 	public ChatMessageDTO sendMessage(Long senderId, SendMessageRequest request) throws DetailException {
@@ -137,7 +139,9 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 					&& ChatConstant.STATUS_OPEN.equals(conversation.getStatus())) {
 				final Long convId = request.getConversationId();
 				final String userText = request.getContent().trim();
-				CompletableFuture.runAsync(() -> sendAiReply(convId, userText));
+				final Long userId = senderId;
+				final String username = sender.getUsername();
+				CompletableFuture.runAsync(() -> sendAiReply(convId, userText, userId, username));
 			}
 
 			return messageDTO;
@@ -308,15 +312,24 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 	/**
 	 * Sends an AI-generated reply to the conversation asynchronously.
 	 * Runs outside the main transaction to avoid blocking the user request.
+	 * Includes user context injection and smart handoff detection.
 	 */
-	private void sendAiReply(Long conversationId, String userMessage) {
+	private void sendAiReply(Long conversationId, String userMessage, Long userId, String username) {
 		try {
-			log.info("AI generating reply for conversation {}", conversationId);
+			log.info("AI generating reply for conversation {} (user: {})", conversationId, username);
+
+			// Smart handoff: if user wants to speak with a human, disable AI and notify admin
+			if (aiSupportService.isHumanHandoffRequested(userMessage)) {
+				log.info("🤝 Human handoff requested by user {} in conversation {}", username, conversationId);
+				handleHumanHandoff(conversationId);
+				return;
+			}
 
 			// Broadcast AI typing indicator before calling AI model
 			webSocketChatService.notifyAiTyping(conversationId, true);
 
-			String aiResponse = aiSupportService.respond(conversationId, userMessage);
+			// Use context-aware respond() so AI tools can access userId directly
+			String aiResponse = aiSupportService.respond(conversationId, userMessage, userId, username);
 
 			// Stop AI typing indicator
 			webSocketChatService.notifyAiTyping(conversationId, false);
@@ -346,6 +359,42 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 			} catch (Exception ignored) {
 			}
 			log.error("❌ Error sending AI reply for conversation {}: {}", conversationId, e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * Performs smart admin handoff:
+	 * 1. Disables AI for this conversation.
+	 * 2. Saves a handoff message from AI.
+	 * 3. Notifies admin via WebSocket.
+	 */
+	private void handleHumanHandoff(Long conversationId) {
+		try {
+			// Disable AI for this conversation
+			conversationService.toggleAiForConversation(conversationId, false);
+			log.info("✅ AI disabled for conversation {} (human handoff)", conversationId);
+
+			// Save handoff notification message
+			String handoffMsg = "Tôi đã hiểu bạn muốn được hỗ trợ bởi nhân viên. "
+					+ "AI sẽ tạm dừng trong cuộc trò chuyện này. "
+					+ "Vui lòng chờ, nhân viên hỗ trợ sẽ tiếp quản sớm nhất!";
+			Date now = new Date();
+			ChatMessage handoffMessage = chatMessageRepository.insertAiMessage(
+					conversationId,
+					handoffMsg,
+					now,
+					now);
+
+			// Broadcast handoff message to user
+			ChatMessageDTO handoffDTO = convertToDTO(handoffMessage, "AI Assistant");
+			webSocketChatService.broadcastMessage(conversationId, handoffDTO);
+
+			// Notify all admins that this conversation needs human attention
+			webSocketChatService.notifyHumanHandoffRequested(conversationId);
+
+			log.info("✅ Human handoff completed for conversation {}", conversationId);
+		} catch (Exception e) {
+			log.error("❌ Error during human handoff for conversation {}: {}", conversationId, e.getMessage(), e);
 		}
 	}
 }

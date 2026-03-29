@@ -100,6 +100,19 @@ public class WebSocketChatService {
         sendToConversation(conversationId, wsMessage);
     }
 
+    /**
+     * Notify all admin sessions that a conversation needs human attention (smart handoff).
+     */
+    public void notifyHumanHandoffRequested(Long conversationId) {
+        log.info("🤝 Notifying admins: human handoff requested for conversation {}", conversationId);
+
+        Map<String, Object> wsMessage = Map.of(
+                "type", "HUMAN_HANDOFF_REQUESTED",
+                "conversationId", conversationId);
+
+        sendToAllAdmins(wsMessage);
+    }
+
     public void notifyMessagesRead(Long conversationId, Long userId) {
         log.debug("Messages read by user {} in conversation {}", userId, conversationId);
 
