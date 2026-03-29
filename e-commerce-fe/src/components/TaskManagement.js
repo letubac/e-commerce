@@ -4,7 +4,7 @@ import {
   Clock, AlertCircle, XCircle, ArrowUpCircle
 } from 'lucide-react';
 import adminApi from '../api/adminApi';
-import { toast } from '../utils/toast';
+import toast from '../utils/toast';
 
 const STATUSES = ['ALL', 'TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED'];
 const PRIORITIES = ['ALL', 'LOW', 'MEDIUM', 'HIGH', 'URGENT'];
@@ -55,7 +55,7 @@ function TaskManagement() {
       if (filterStatus !== 'ALL') params.status = filterStatus;
       if (filterPriority !== 'ALL') params.priority = filterPriority;
       const data = await adminApi.getTasks(params);
-      setTasks(Array.isArray(data) ? data : (data?.content || data?.tasks || []));
+      setTasks(Array.isArray(data) ? data : []);
     } catch (err) {
       toast.error(err.message || 'Không thể tải danh sách task');
     } finally {

@@ -29,7 +29,7 @@ public class DashboardAnalyticsTool {
             return objectMapper.writeValueAsString(data);
         } catch (Exception e) {
             log.error("DashboardAnalyticsTool - getDashboardOverview error: {}", e.getMessage());
-            return "{\"error\": \"Unable to fetch dashboard overview\"}";
+            return String.format("{\"error\": \"Unable to fetch dashboard overview: %s\"}", e.getMessage());
         }
     }
 
@@ -40,7 +40,7 @@ public class DashboardAnalyticsTool {
             return objectMapper.writeValueAsString(data);
         } catch (Exception e) {
             log.error("DashboardAnalyticsTool - getSalesStats error: {}", e.getMessage());
-            return "{\"error\": \"Unable to fetch sales statistics\"}";
+            return String.format("{\"error\": \"Unable to fetch sales statistics: %s\"}", e.getMessage());
         }
     }
 
@@ -51,7 +51,7 @@ public class DashboardAnalyticsTool {
             return objectMapper.writeValueAsString(data);
         } catch (Exception e) {
             log.error("DashboardAnalyticsTool - getUserStats error: {}", e.getMessage());
-            return "{\"error\": \"Unable to fetch user statistics\"}";
+            return String.format("{\"error\": \"Unable to fetch user statistics: %s\"}", e.getMessage());
         }
     }
 
@@ -62,7 +62,7 @@ public class DashboardAnalyticsTool {
             return objectMapper.writeValueAsString(data);
         } catch (Exception e) {
             log.error("DashboardAnalyticsTool - getProductStats error: {}", e.getMessage());
-            return "{\"error\": \"Unable to fetch product statistics\"}";
+            return String.format("{\"error\": \"Unable to fetch product statistics: %s\"}", e.getMessage());
         }
     }
 
@@ -73,7 +73,7 @@ public class DashboardAnalyticsTool {
             return objectMapper.writeValueAsString(data);
         } catch (Exception e) {
             log.error("DashboardAnalyticsTool - getOrderStats error: {}", e.getMessage());
-            return "{\"error\": \"Unable to fetch order statistics\"}";
+            return String.format("{\"error\": \"Unable to fetch order statistics: %s\"}", e.getMessage());
         }
     }
 
@@ -84,7 +84,7 @@ public class DashboardAnalyticsTool {
             return objectMapper.writeValueAsString(data);
         } catch (Exception e) {
             log.error("DashboardAnalyticsTool - getTaskStats error: {}", e.getMessage());
-            return "{\"error\": \"Unable to fetch task statistics\"}";
+            return String.format("{\"error\": \"Unable to fetch task statistics: %s\"}", e.getMessage());
         }
     }
 }

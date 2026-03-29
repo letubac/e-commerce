@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Bot, Send, Loader2, MessageSquare, Sparkles, BarChart3 } from 'lucide-react';
 import adminApi from '../api/adminApi';
-import { toast } from '../utils/toast';
+import toast from '../utils/toast';
 
 const SUGGESTED_QUESTIONS = [
   'Tổng quan doanh số hôm nay',
@@ -61,7 +61,7 @@ function AdminAnalyticsChat() {
       const data = await adminApi.chatAnalytics(messageText, sessionId.current);
       const aiMsg = {
         role: 'ai',
-        content: data?.message || data?.response || data || 'Không có phản hồi',
+        content: data?.reply || 'Không có phản hồi',
         id: Date.now() + 1,
       };
       setMessages(prev => [...prev, aiMsg]);
