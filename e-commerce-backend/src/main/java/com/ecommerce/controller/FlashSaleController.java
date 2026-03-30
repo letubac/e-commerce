@@ -68,6 +68,62 @@ public class FlashSaleController {
     }
 
     /**
+     * Get upcoming Flash Sales (Public)
+     */
+    @GetMapping("/flash-sale/upcoming")
+    public ResponseEntity<BusinessApiResponse> getUpcomingFlashSales() {
+        long start = System.currentTimeMillis();
+        try {
+            List<FlashSaleDTO> upcomingFlashSales = flashSaleService.getUpcomingFlashSales();
+            return ResponseEntity.ok(successHandler.handlerSuccess(upcomingFlashSales, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
+    }
+
+    /**
+     * Get all Flash Sale sessions (current + upcoming) for schedule display (Public)
+     */
+    @GetMapping("/flash-sale/schedule")
+    public ResponseEntity<BusinessApiResponse> getFlashSaleSchedule() {
+        long start = System.currentTimeMillis();
+        try {
+            List<FlashSaleDTO> allSales = flashSaleService.getActiveFlashSales();
+            return ResponseEntity.ok(successHandler.handlerSuccess(allSales, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
+    }
+
+    /**
+     * Get specific Flash Sale by ID (Public)
+     */
+    @GetMapping("/flash-sale/{id}")
+    public ResponseEntity<BusinessApiResponse> getPublicFlashSaleById(@PathVariable(name = "id") Long id) {
+        long start = System.currentTimeMillis();
+        try {
+            FlashSaleDTO flashSale = flashSaleService.getFlashSaleById(id);
+            return ResponseEntity.ok(successHandler.handlerSuccess(flashSale, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
+    }
+
+    /**
+     * Get products of a Flash Sale by ID (Public)
+     */
+    @GetMapping("/flash-sale/{id}/products")
+    public ResponseEntity<BusinessApiResponse> getPublicProductsByFlashSaleId(@PathVariable(name = "id") Long id) {
+        long start = System.currentTimeMillis();
+        try {
+            List<FlashSaleProductDTO> products = flashSaleService.getFlashSaleProducts(id);
+            return ResponseEntity.ok(successHandler.handlerSuccess(products, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
+    }
+
+    /**
      * Get specific Flash Sale product (Public)
      */
     @GetMapping("/flash-sale/{flashSaleId}/products/{productId}")

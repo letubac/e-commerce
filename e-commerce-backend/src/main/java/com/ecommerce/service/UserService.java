@@ -67,4 +67,6 @@ public interface UserService {
     Optional<User> findUserByUsername(String username) throws DetailException;
 
     void updateLastLogin(Long userId) throws DetailException;
+
+    void updateUserRole(Long id, String role) throws DetailException;
 }

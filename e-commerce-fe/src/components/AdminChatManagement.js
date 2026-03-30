@@ -34,6 +34,7 @@ function AdminChatManagement() {
   const [sending, setSending] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [typingUsers, setTypingUsers] = useState({});
+  const [handoffAlert, setHandoffAlert] = useState(null); // { conversationId }
   const messagesEndRef = useRef(null);
   const selectedIdRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -130,6 +131,13 @@ function AdminChatManagement() {
 
     adminWebSocket.on('error', (error) => {
       console.error('❌ [AdminChat] WebSocket error:', error);
+    });
+
+    adminWebSocket.on('humanHandoffRequested', ({ conversationId }) => {
+      console.log('🤝 [AdminChat] Human handoff requested for conversation:', conversationId);
+      setHandoffAlert({ conversationId });
+      // Reload conversations to reflect AI disabled state
+      loadConversations();
     });
 
     // Initial load conversations
@@ -243,6 +251,22 @@ function AdminChatManagement() {
     }
   };
 
+  const toggleAi = async (conversationId, currentAiEnabled) => {
+    try {
+      const newAiEnabled = !currentAiEnabled;
+      const updated = await adminApi.toggleConversationAi(conversationId, newAiEnabled);
+      setConversations(prev =>
+        prev.map(c => c.id === conversationId ? { ...c, ...updated } : c)
+      );
+      if (selectedConversation?.id === conversationId) {
+        setSelectedConversation(prev => ({ ...prev, ...updated }));
+      }
+    } catch (error) {
+      console.error('Error toggling AI:', error);
+      alert(error.message || 'Không thể thay đổi cài đặt AI.');
+    }
+  };
+
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -299,6 +323,22 @@ function AdminChatManagement() {
 
   return (
     <div className="flex h-full bg-gray-50">
+      {/* Human Handoff Alert Banner */}
+      {handoffAlert && (
+        <div role="alert" aria-live="assertive" className="fixed top-4 right-4 z-50 bg-yellow-50 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 max-w-sm">
+          <span className="text-xl">🤝</span>
+          <div className="flex-1">
+            <p className="font-semibold text-sm">Khách hàng cần hỗ trợ!</p>
+            <p className="text-xs">Cuộc hội thoại #{handoffAlert.conversationId} đang chờ nhân viên xử lý.</p>
+          </div>
+          <button
+            onClick={() => setHandoffAlert(null)}
+            className="text-yellow-600 hover:text-yellow-800 font-bold text-lg leading-none"
+          >
+            ×
+          </button>
+        </div>
+      )}
       {/* Conversations List */}
       <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
         {/* Header */}
@@ -452,6 +492,18 @@ function AdminChatManagement() {
                       Nhận xử lý
                     </button>
                   )}
+                  <button
+                    onClick={() => toggleAi(selectedConversation.id, selectedConversation.aiEnabled !== false)}
+                    className={`px-3 py-1 text-sm rounded flex items-center gap-1 ${
+                      selectedConversation.aiEnabled !== false
+                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                    title={selectedConversation.aiEnabled !== false ? 'Tắt AI tự trả lời' : 'Bật AI tự trả lời'}
+                  >
+                    <span>🤖</span>
+                    <span>{selectedConversation.aiEnabled !== false ? 'AI: Bật' : 'AI: Tắt'}</span>
+                  </button>
                   <select
                     value={selectedConversation.status}
                     onChange={(e) => updateConversationStatus(selectedConversation.id, e.target.value)}

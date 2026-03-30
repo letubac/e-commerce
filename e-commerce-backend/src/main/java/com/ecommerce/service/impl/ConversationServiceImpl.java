@@ -553,6 +553,7 @@ public class ConversationServiceImpl implements ConversationService {
 		dto.setStatus(conversation.getStatus());
 		dto.setPriority(conversation.getPriority());
 		dto.setUnreadCount(conversation.getUnreadCount());
+		dto.setAiEnabled(conversation.isAiEnabled());
 		dto.setLastMessageAt(conversation.getLastMessageAt());
 		dto.setCreatedAt(conversation.getCreatedAt());
 		dto.setUpdatedAt(conversation.getUpdatedAt());
@@ -570,6 +571,27 @@ public class ConversationServiceImpl implements ConversationService {
 		}
 
 		return dto;
+	}
+
+	@Override
+	public ConversationDTO toggleAiForConversation(Long conversationId, boolean aiEnabled) throws DetailException {
+		try {
+			Conversation conversation = conversationRepository.findById(conversationId)
+					.orElseThrow(() -> new DetailException(ChatConstant.E500_CONVERSATION_NOT_FOUND));
+			if (aiEnabled) {
+				conversation.enableAi();
+			} else {
+				conversation.disableAi();
+			}
+			conversation.setUpdatedAt(new Date());
+			conversationRepository.save(conversation);
+			return convertToDTO(conversation);
+		} catch (DetailException e) {
+			throw e;
+		} catch (Exception e) {
+			log.error("Error toggling AI for conversation {}: {}", conversationId, e.getMessage(), e);
+			throw new DetailException(ChatConstant.E545_CHAT_OPERATION_FAILED);
+		}
 	}
 
 	// Override method that accepts ConversationStatus enum (but we'll use String)

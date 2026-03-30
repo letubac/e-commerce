@@ -52,4 +52,11 @@ public interface ChatMessageRepository extends DbRepository<ChatMessage, Long> {
                         @Param("isRead") Boolean isRead,
                         @Param("createdAt") java.util.Date createdAt,
                         @Param("updatedAt") java.util.Date updatedAt);
+
+        // Maps to: chatMessageRepository_insertAiMessage.sql
+        ChatMessage insertAiMessage(
+                        @Param("conversationId") Long conversationId,
+                        @Param("content") String content,
+                        @Param("createdAt") java.util.Date createdAt,
+                        @Param("updatedAt") java.util.Date updatedAt);
 }

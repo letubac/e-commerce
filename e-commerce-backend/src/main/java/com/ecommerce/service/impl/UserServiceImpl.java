@@ -500,4 +500,20 @@ public class UserServiceImpl implements UserService {
             throw new DetailException(UserConstant.USER_STATISTICS_FAILED);
         }
     }
+
+    @Override
+    public void updateUserRole(Long id, String role) throws DetailException {
+        try {
+            if (!userRepository.existsById(id)) {
+                throw new DetailException(UserConstant.USER_NOT_FOUND);
+            }
+            userRepository.updateRole(id, role, new Date());
+            log.info("Updated role for user {} to {}", id, role);
+        } catch (DetailException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error updating role for user {}: {}", id, e.getMessage(), e);
+            throw new DetailException(UserConstant.USER_UPDATE_FAILED);
+        }
+    }
 }

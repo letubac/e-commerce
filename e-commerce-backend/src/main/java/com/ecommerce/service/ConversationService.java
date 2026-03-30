@@ -46,4 +46,6 @@ public interface ConversationService {
     boolean isUserOwnerOfConversation(String username, Long conversationId) throws DetailException;
 
     boolean canUserAccessConversation(Long userId, Long conversationId, boolean isAdmin) throws DetailException;
+
+    ConversationDTO toggleAiForConversation(Long conversationId, boolean aiEnabled) throws DetailException;
 }

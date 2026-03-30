@@ -26,6 +26,7 @@ import java.util.Map;
 public class AiAgentController {
 
     private final AiSupportService aiSupportService;
+    private final AdminAnalyticsAiService adminAnalyticsAiService;
     private final ErrorHandler errorHandler;
     private final SuccessHandler successHandler;
 
@@ -102,5 +103,56 @@ public class AiAgentController {
         aiSupportService.clearMemory(conversationId);
         return ResponseEntity.ok(successHandler.handlerSuccess(
                 Map.of("message", "AI memory đã được xóa cho conversation " + conversationId), start));
+    }
+
+    /**
+     * Ask the analytics AI a question about business data (Admin only).
+     */
+    @PostMapping("/analytics")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BusinessApiResponse> analyzeData(
+            @RequestBody Map<String, Object> body,
+            Authentication authentication) {
+        long start = System.currentTimeMillis();
+        try {
+            String question = (String) body.get("question");
+            if (question == null || question.isBlank()) {
+                return ResponseEntity.ok(errorHandler.handlerException(
+                        new IllegalArgumentException("question must not be blank"), start));
+            }
+
+            String adminId = authentication.getName();
+
+            if (!adminAnalyticsAiService.isEnabled()) {
+                Map<String, Object> resp = Map.of(
+                        "reply", "Analytics AI is not enabled. Configure OPENAI_API_KEY and set app.ai.enabled=true.",
+                        "aiEnabled", false);
+                return ResponseEntity.ok(successHandler.handlerSuccess(resp, start));
+            }
+
+            String reply = adminAnalyticsAiService.analyzeData(adminId, question);
+            Map<String, Object> resp = Map.of(
+                    "reply", reply != null ? reply : "No response from analytics AI.",
+                    "aiEnabled", true);
+            return ResponseEntity.ok(successHandler.handlerSuccess(resp, start));
+        } catch (Exception e) {
+            log.error("Error in analytics AI endpoint", e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
+    }
+
+    /**
+     * Get the status of the analytics AI agent (Admin only).
+     */
+    @GetMapping("/analytics/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BusinessApiResponse> getAnalyticsStatus() {
+        long start = System.currentTimeMillis();
+        Map<String, Object> status = Map.of(
+                "aiEnabled", adminAnalyticsAiService.isEnabled(),
+                "message", adminAnalyticsAiService.isEnabled()
+                        ? "Analytics AI Agent is active."
+                        : "Analytics AI Agent is not enabled.");
+        return ResponseEntity.ok(successHandler.handlerSuccess(status, start));
     }
 }

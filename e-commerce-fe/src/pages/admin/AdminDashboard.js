@@ -16,7 +16,10 @@ import {
   FolderTree,
   FileText,
   MessageCircle,
-  Zap
+  Zap,
+  CheckSquare,
+  Bot,
+  Calendar
 } from 'lucide-react';
 import AdminHeader from '../../components/AdminHeader';
 import AdminFooter from '../../components/AdminFooter';
@@ -27,6 +30,9 @@ import OrderManagement from '../../components/OrderManagement';
 import UserManagement from '../../components/UserManagement';
 import CouponManagement from '../../components/CouponManagement';
 import FlashSaleManagement from '../../components/FlashSaleManagement';
+import TaskManagement from '../../components/TaskManagement';
+import AdminAnalyticsChat from '../../components/AdminAnalyticsChat';
+import CronJobStatus from '../../components/CronJobStatus';
 import adminApi from '../../api/adminApi';
 
 function AdminDashboard() {
@@ -154,7 +160,10 @@ function AdminDashboard() {
               { key: 'reports', label: 'Báo cáo', icon: BarChart3 },
               { key: 'brands', label: 'Thương hiệu', icon: Tags },
               { key: 'categories', label: 'Danh mục', icon: FolderTree },
-              { key: 'logs', label: 'Log', icon: FileText }
+              { key: 'logs', label: 'Log', icon: FileText },
+              { key: 'tasks', label: 'Quản lý Task', icon: CheckSquare },
+              { key: 'analytics-ai', label: 'AI Analytics', icon: Bot },
+              { key: 'cron-jobs', label: 'Cron Jobs', icon: Calendar }
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -637,6 +646,16 @@ function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* Tasks Tab */}
+        {activeTab === 'tasks' && <TaskManagement />}
+
+        {/* AI Analytics Tab */}
+        {activeTab === 'analytics-ai' && <AdminAnalyticsChat />}
+
+        {/* Cron Jobs Tab */}
+        {activeTab === 'cron-jobs' && <CronJobStatus />}
+
         </div>
       </div>
       

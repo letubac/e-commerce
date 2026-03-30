@@ -1,0 +1,18 @@
+-- AI Support Agent - Phase 3 Schema Notes
+-- No new database columns are required for Phase 3.
+-- Phase 3 features (FlashSaleTool, BrandTool, User Context Injection, Smart Handoff)
+-- are purely application-level enhancements that use existing tables.
+--
+-- Summary of AI Schema across phases:
+--
+-- Phase 1 (database-ai-schema.sql):
+--   - chat_messages.sender_type CHECK extended to allow 'AI'
+--   - chat_messages.sender_id made nullable (AI has no user)
+--   - chat_messages.is_ai_response BOOLEAN DEFAULT FALSE
+--
+-- Phase 2 (database-ai-phase2-schema.sql):
+--   - conversations.ai_enabled BOOLEAN DEFAULT TRUE
+--
+-- Phase 3 (this file):
+--   No schema changes required.
+--   Smart handoff uses conversations.ai_enabled (set to FALSE on handoff).

@@ -110,4 +110,10 @@ public interface UserRepository extends DbRepository<User, Long> {
         // Maps to: userRepository_hardDelete.sql
         @Modifying
         Integer hardDelete(@Param("id") Long id);
+
+        // Maps to: userRepository_updateRole.sql
+        @Modifying
+        Integer updateRole(@Param("id") Long id,
+                        @Param("role") String role,
+                        @Param("updatedAt") Date updatedAt);
 }

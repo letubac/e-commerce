@@ -122,6 +122,11 @@ const adminApi = {
     }),
   assignConversation: (conversationId) =>
     adminApi.request(`/chat/admin/conversations/${conversationId}/assign`, { method: 'POST' }),
+  toggleConversationAi: (conversationId, aiEnabled) =>
+    adminApi.request(`/chat/admin/conversations/${conversationId}/ai-toggle`, {
+      method: 'PUT',
+      body: JSON.stringify({ aiEnabled })
+    }),
   getChatQuickReplies: () => adminApi.request('/chat/quick-replies'),
   createChatQuickReply: (data) =>
     adminApi.request('/chat/quick-replies', { method: 'POST', body: JSON.stringify(data) }),
@@ -182,6 +187,29 @@ const adminApi = {
   removeFlashSaleProduct: (flashSaleId, productId) =>
     adminApi.request(`/admin/flash-sales/${flashSaleId}/products/${productId}`, { method: 'DELETE' }),
   getFlashSaleStatistics: (id) => adminApi.request(`/admin/flash-sales/${id}/statistics`),
+
+  // Task Management APIs
+  getTasks: (params = {}) => {
+    const queryParams = new URLSearchParams(params);
+    return adminApi.request(`/admin/tasks?${queryParams}`);
+  },
+  getTaskById: (id) => adminApi.request(`/admin/tasks/${id}`),
+  createTask: (data) => adminApi.request('/admin/tasks', { method: 'POST', body: JSON.stringify(data) }),
+  updateTask: (id, data) => adminApi.request(`/admin/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteTask: (id) => adminApi.request(`/admin/tasks/${id}`, { method: 'DELETE' }),
+  updateTaskStatus: (id, status) => adminApi.request(`/admin/tasks/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  getTaskStatistics: () => adminApi.request('/admin/tasks/statistics'),
+  getMyTasks: () => adminApi.request('/admin/tasks/my'),
+
+  // Cron Job APIs
+  getCronJobs: () => adminApi.request('/admin/cron-jobs'),
+
+  // Analytics AI APIs
+  chatAnalytics: (question, sessionId) => adminApi.request('/ai/analytics', { method: 'POST', body: JSON.stringify({ question, sessionId }) }),
+  getAnalyticsAiStatus: () => adminApi.request('/ai/analytics/status'),
+
+  // Role Management API
+  updateUserRole: (id, role) => adminApi.request(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
 
 };
 

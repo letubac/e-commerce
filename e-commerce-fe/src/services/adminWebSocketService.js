@@ -23,6 +23,7 @@ class AdminWebSocketService {
       onMessagesRead: null,
       onTyping: null,
       onNewConversation: null,
+      onHumanHandoffRequested: null,
       onError: null
     };
   }
@@ -176,6 +177,13 @@ class AdminWebSocketService {
 
       case 'PONG':
         // Keep-alive response
+        break;
+
+      case 'HUMAN_HANDOFF_REQUESTED':
+        // A user requested to speak with a human agent
+        if (this.listeners.onHumanHandoffRequested) {
+          this.listeners.onHumanHandoffRequested({ conversationId: data.conversationId });
+        }
         break;
 
       default:

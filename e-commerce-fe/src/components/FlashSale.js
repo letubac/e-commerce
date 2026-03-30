@@ -1,265 +1,297 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, ShoppingCart, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api, { API_BASE_URL } from '../api/api';
+import toast from '../utils/toast';
+import CountdownTimer from './CountdownTimer';
 
 const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f0f0f0'/%3E%3Ctext x='150' y='106' text-anchor='middle' fill='%23999' font-family='sans-serif' font-size='14'%3ENo Image%3C/text%3E%3C/svg%3E";
 
 export default function FlashSale() {
   const navigate = useNavigate();
-  const [flashSaleProducts, setFlashSaleProducts] = useState([]);
+  const { user } = useAuth();
   const [activeFlashSale, setActiveFlashSale] = useState(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  });
+  const [flashSaleProducts, setFlashSaleProducts] = useState([]);
+  const [upcomingSales, setUpcomingSales] = useState([]);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const [loading, setLoading] = useState(true);
+  const [scrollIndex, setScrollIndex] = useState(0);
+
+  const ITEMS_VISIBLE = 5;
+
+  const getProductImageUrl = (imageUrl) => {
+    if (!imageUrl) return PLACEHOLDER_IMG;
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `${API_BASE_URL}/files${imageUrl}`;
+  };
+
+  const calcDiscount = (originalPrice, flashPrice) => {
+    if (!originalPrice || !flashPrice || originalPrice <= flashPrice) return 0;
+    return Math.round((1 - flashPrice / originalPrice) * 100);
+  };
+
+  const calcSoldPercent = (stockSold, stockQuantity) => {
+    if (!stockQuantity) return 0;
+    return Math.min(100, Math.round(((stockSold || 0) / stockQuantity) * 100));
+  };
+
 
   const fetchFlashSaleData = useCallback(async () => {
     try {
       setLoading(true);
-      // Fetch active Flash Sale
-      const flashSaleData = await api.request('/flash-sale/active');
-      if (flashSaleData) {
-        setActiveFlashSale(flashSaleData);
-        
-        // Fetch Flash Sale products
-        const productsData = await api.request('/flash-sale/products');
-        const products = Array.isArray(productsData) ? productsData : [];
-        setFlashSaleProducts(products);
+      const [activeData, upcomingData] = await Promise.all([
+        api.request('/flash-sale/active').catch(() => null),
+        api.request('/flash-sale/upcoming').catch(() => []),
+      ]);
+
+      const upcoming = Array.isArray(upcomingData) ? upcomingData : [];
+      setUpcomingSales(upcoming);
+
+      if (activeData) {
+        setActiveFlashSale(activeData);
+        setSelectedSession(activeData);
+        const productsData = await api.request('/flash-sale/products').catch(() => []);
+        setFlashSaleProducts(Array.isArray(productsData) ? productsData : []);
+      } else {
+        setActiveFlashSale(null);
+        setFlashSaleProducts([]);
+        if (upcoming.length > 0) {
+          setSelectedSession(upcoming[0]);
+        }
       }
     } catch (error) {
-      console.error('Error fetching flash sale data:', error);
-      setFlashSaleProducts([]);
-      setActiveFlashSale(null);
+      console.error('Error fetching flash sale:', error);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Update countdown timer based on active Flash Sale
-  useEffect(() => {
-    if (!activeFlashSale) return;
-
-    const updateTimer = () => {
-      const now = new Date().getTime();
-      const endTime = new Date(activeFlashSale.endTime).getTime();
-      const distance = endTime - now;
-
-      if (distance > 0) {
-        setTimeLeft({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000)
-        });
-      } else {
-        // Flash sale ended, refresh data
-        fetchFlashSaleData();
-      }
-    };
-
-    updateTimer();
-    const timer = setInterval(updateTimer, 1000);
-    return () => clearInterval(timer);
-  }, [activeFlashSale, fetchFlashSaleData]);
-
-  // Fetch flash sale data on component mount
   useEffect(() => {
     fetchFlashSaleData();
   }, [fetchFlashSaleData]);
 
-  const itemsPerSlide = 4;
-  const totalSlides = Math.ceil(flashSaleProducts.length / itemsPerSlide);
+  // Countdown timer
+  useEffect(() => {
+    if (!selectedSession) return;
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % totalSlides);
+    const updateTimer = () => {
+      const now = Date.now();
+      const targetTime = activeFlashSale
+        ? new Date(activeFlashSale.endTime).getTime()
+        : new Date(selectedSession.startTime).getTime();
+      const distance = targetTime - now;
+
+      if (distance <= 0) {
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+        fetchFlashSaleData();
+        return;
+      }
+      setTimeLeft({
+        hours: Math.floor(distance / (1000 * 60 * 60)),
+        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((distance % (1000 * 60)) / 1000),
+      });
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [selectedSession, activeFlashSale, fetchFlashSaleData]);
+
+  const handleAddToCart = async (product, e) => {
+    e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    try {
+      await api.addToCart({ productId: product.productId, quantity: 1 });
+      toast.success('Đã thêm vào giỏ hàng!');
+    } catch (error) {
+      toast.error(error.message || 'Không thể thêm vào giỏ hàng');
+    }
   };
 
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
-  };
-
-  const currentProducts = flashSaleProducts.slice(
-    currentSlide * itemsPerSlide,
-    (currentSlide + 1) * itemsPerSlide
-  );
+  const visibleProducts = flashSaleProducts.slice(scrollIndex, scrollIndex + ITEMS_VISIBLE);
+  const canScrollLeft = scrollIndex > 0;
+  const canScrollRight = scrollIndex + ITEMS_VISIBLE < flashSaleProducts.length;
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white py-8 mb-8">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-          </div>
+      <div className="bg-white rounded-lg overflow-hidden shadow-sm mb-4">
+        <div className="bg-gradient-to-r from-red-600 to-red-500 h-14 animate-pulse" />
+        <div className="p-3 flex gap-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex-shrink-0 bg-gray-100 rounded-lg animate-pulse h-64" style={{ width: '175px' }} />
+          ))}
         </div>
       </div>
     );
   }
 
-  if (!activeFlashSale || flashSaleProducts.length === 0) {
-    return null;
-  }
+  if (!activeFlashSale && upcomingSales.length === 0) return null;
 
   return (
-    <div className="bg-gradient-to-r from-red-600 to-red-700 text-white py-8 mb-8">
-      <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <Zap className="h-8 w-8 text-yellow-400" />
-            <div>
-              <h2 className="text-3xl font-bold">Flash Sale</h2>
-              {activeFlashSale?.name && (
-                <p className="text-sm text-white/80 mt-1">{activeFlashSale.name}</p>
-              )}
-            </div>
+    <div className="bg-white rounded-lg overflow-hidden shadow-sm mb-4">
+      {/* Red gradient header */}
+      <div className="bg-gradient-to-r from-red-600 to-red-500 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          {/* Title */}
+          <div className="flex items-center gap-1.5">
+            <Zap className="w-6 h-6 text-yellow-300 fill-yellow-300" />
+            <span className="text-white font-bold text-xl uppercase tracking-wide">Flash Sale</span>
           </div>
-          
-          {/* Countdown Timer */}
-          <div className="flex items-center space-x-4">
-            <span className="text-lg font-medium">Kết thúc sau:</span>
-            <div className="flex space-x-2">
-              {[
-                { label: 'Ngày', value: timeLeft.days },
-                { label: 'Giờ', value: timeLeft.hours },
-                { label: 'Phút', value: timeLeft.minutes },
-                { label: 'Giây', value: timeLeft.seconds }
-              ].map((unit, index) => (
-                <div key={index} className="text-center">
-                  <div className="bg-white text-red-600 px-3 py-2 rounded-lg font-bold text-lg min-w-[50px]">
-                    {unit.value.toString().padStart(2, '0')}
-                  </div>
-                  <div className="text-xs mt-1">{unit.label}</div>
-                </div>
-              ))}
-            </div>
+
+          {/* Countdown */}
+          <div className="text-white">
+            <CountdownTimer
+              hours={timeLeft.hours}
+              minutes={timeLeft.minutes}
+              seconds={timeLeft.seconds}
+              label={activeFlashSale ? 'Kết thúc sau' : 'Bắt đầu sau'}
+              labelClassName="text-white text-sm opacity-90"
+              boxClassName="bg-gray-900 text-white text-base font-bold px-2 py-0.5 rounded min-w-[32px] text-center leading-6"
+            />
           </div>
         </div>
 
-        {/* Products Grid */}
-        <div className="relative">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {currentProducts.map((product) => (
-              <div
-                key={product.id}
-                className="bg-white rounded-lg shadow-lg overflow-hidden transform transition-transform hover:scale-105"
-              >
-                <div className="relative">
-                  <img
-                    src={
-                      product.productImageUrl 
-                        ? (product.productImageUrl.startsWith('http') 
-                          ? product.productImageUrl 
-                          : `${API_BASE_URL}/files${product.productImageUrl}`)
-                        : PLACEHOLDER_IMG
-                    }
-                    alt={product.productName || product.name}
-                    className="w-full h-48 object-cover cursor-pointer"
-                    onClick={() => navigate(`/product/${product.productId || product.id}`)}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = PLACEHOLDER_IMG;
-                    }}
-                  />
-                  <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-sm font-bold">
-                    -{product.discountPercentage 
-                      ? Math.round(product.discountPercentage)
-                      : (product.originalPrice && product.flashPrice 
-                        ? Math.round(((product.originalPrice - product.flashPrice) / product.originalPrice) * 100)
-                        : 0)}%
-                  </div>
-                  {product.remainingStock !== undefined && product.remainingStock <= 10 && (
-                    <div className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold">
-                      Còn {product.remainingStock}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="p-4 text-gray-900">
-                  <h3 
-                    className="font-semibold text-sm mb-2 line-clamp-2 cursor-pointer hover:text-red-600"
-                    onClick={() => navigate(`/product/${product.productId || product.id}`)}
-                  >
-                    {product.productName || product.name}
-                  </h3>
-                  
-                  <div className="flex items-center space-x-2 mb-3">
-                    <span className="text-lg font-bold text-red-600">
-                      {(product.flashPrice || product.salePrice || product.effectivePrice || product.price || 0).toLocaleString('vi-VN')}đ
-                    </span>
-                    {(product.originalPrice || product.price) && product.flashPrice && product.originalPrice > product.flashPrice && (
-                      <span className="text-sm text-gray-500 line-through ml-2">
-                        {product.originalPrice.toLocaleString('vi-VN')}đ
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Stock Progress Bar */}
-                  {product.stockLimit && (
-                    <div className="mb-3">
-                      <div className="flex justify-between text-xs text-gray-600 mb-1">
-                        <span>Đã bán {product.stockSold || 0}</span>
-                        <span>{product.stockLimit} sản phẩm</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-red-500 h-2 rounded-full transition-all" 
-                          style={{ width: `${Math.min(((product.stockSold || 0) / product.stockLimit) * 100, 100)}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-
+        <div className="flex items-center gap-3">
+          {/* Session tabs */}
+          {upcomingSales.length > 0 && (
+            <div className="flex gap-1.5">
+              {upcomingSales.slice(0, 3).map((session) => {
+                const t = new Date(session.startTime);
+                const label = `${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
+                const isSelected = selectedSession?.id === session.id;
+                return (
                   <button
-                    onClick={() => console.log('Add to cart:', product)}
-                    disabled={product.soldOut || !product.canPurchase}
-                    className={`w-full py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 ${
-                      product.soldOut || !product.canPurchase
-                        ? 'bg-gray-400 cursor-not-allowed text-gray-700'
-                        : 'bg-red-600 hover:bg-red-700 text-white'
-                    }`}
+                    key={session.id}
+                    onClick={() => setSelectedSession(session)}
+                    className={`text-xs px-2 py-1 rounded font-medium transition ${isSelected ? 'bg-white text-red-600 font-bold' : 'bg-red-700 bg-opacity-60 text-white hover:bg-red-800'}`}
                   >
-                    <ShoppingCart className="h-4 w-4" />
-                    <span>{product.soldOut ? 'Đã hết hàng' : 'Thêm vào giỏ'}</span>
+                    {label}
                   </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Navigation Arrows */}
-          {totalSlides > 1 && (
-            <>
-              <button
-                onClick={prevSlide}
-                className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-4 bg-white text-red-600 p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <button
-                onClick={nextSlide}
-                className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-4 bg-white text-red-600 p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
-            </>
+                );
+              })}
+            </div>
           )}
-        </div>
 
-        {/* View All Button */}
-        <div className="text-center mt-6">
           <button
             onClick={() => navigate('/flash-sale')}
-            className="bg-white text-red-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+            className="text-white text-sm flex items-center gap-0.5 hover:underline"
           >
-            Xem tất cả Flash Sale
+            Xem tất cả
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      {/* Products */}
+      {activeFlashSale && flashSaleProducts.length > 0 ? (
+        <div className="relative px-6 py-3">
+          {/* Left arrow */}
+          {canScrollLeft && (
+            <button
+              onClick={() => setScrollIndex(i => i - 1)}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full w-9 h-9 flex items-center justify-center hover:bg-gray-50 transition border border-gray-200"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-700" />
+            </button>
+          )}
+
+          <div className="flex gap-2">
+            {visibleProducts.map((product) => {
+              const discount = product.discountPercentage
+                ? Math.round(product.discountPercentage)
+                : calcDiscount(product.originalPrice, product.flashPrice);
+              const soldPct = calcSoldPercent(product.stockSold, product.stockQuantity);
+              const isSoldOut = (product.stockQuantity || 0) - (product.stockSold || 0) <= 0;
+              const imgUrl = getProductImageUrl(product.productImageUrl);
+
+              return (
+                <div
+                  key={product.id || product.productId}
+                  className="flex-1 min-w-0 bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition cursor-pointer"
+                  style={{ minWidth: '160px', maxWidth: '200px' }}
+                  onClick={() => navigate(`/products/${product.productId}`)}
+                >
+                  {/* Image + discount badge + progress bar */}
+                  <div className="relative">
+                    <img
+                      src={imgUrl}
+                      alt={product.productName || product.name}
+                      className="w-full object-cover"
+                      style={{ height: '180px' }}
+                      onError={e => { e.target.src = PLACEHOLDER_IMG; }}
+                    />
+                    {discount > 0 && (
+                      <div className="absolute top-1.5 left-1.5 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded">
+                        -{discount}%
+                      </div>
+                    )}
+                    {/* Progress bar at bottom of image */}
+                    <div className="absolute bottom-0 left-0 right-0 px-2 pb-1.5 pt-1 bg-gradient-to-t from-black/30 to-transparent">
+                      <div className="bg-white/40 rounded-full h-1.5">
+                        <div className="bg-red-500 h-1.5 rounded-full transition-all" style={{ width: `${soldPct}%` }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-2 pt-1.5 pb-2">
+                    <p className="text-xs text-gray-500 mb-1">Đã bán {product.stockSold || 0}</p>
+                    <p className="text-red-600 font-bold text-sm leading-tight">
+                      {(product.flashPrice || 0).toLocaleString('vi-VN')}đ
+                    </p>
+                    <p className="text-gray-400 text-xs line-through mb-2">
+                      {(product.originalPrice || 0).toLocaleString('vi-VN')}đ
+                    </p>
+                    <button
+                      disabled={isSoldOut}
+                      onClick={e => handleAddToCart(product, e)}
+                      className={`w-full py-1.5 rounded text-xs font-semibold transition ${
+                        isSoldOut
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-red-600 text-white hover:bg-red-700'
+                      }`}
+                    >
+                      {isSoldOut ? 'Hết hàng' : 'Mua ngay'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Right arrow */}
+          {canScrollRight && (
+            <button
+              onClick={() => setScrollIndex(i => i + 1)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full w-9 h-9 flex items-center justify-center hover:bg-gray-50 transition border border-gray-200"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-700" />
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="py-10 text-center">
+          <Zap className="w-10 h-10 text-red-300 mx-auto mb-2" />
+          {!activeFlashSale ? (
+            <>
+              <p className="text-gray-500 font-medium">Flash Sale sắp bắt đầu!</p>
+              {selectedSession?.startTime && (
+                <p className="text-sm text-gray-400 mt-1">
+                  Bắt đầu lúc{' '}
+                  {new Date(selectedSession.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-gray-400">Không có sản phẩm Flash Sale</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

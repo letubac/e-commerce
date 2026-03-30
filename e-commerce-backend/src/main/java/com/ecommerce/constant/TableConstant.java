@@ -41,5 +41,6 @@ public class TableConstant {
     public static final String USERS = "users";
     public static final String WISHLISTS = "wishlists";
     public static final String NEW_ARRIVALS = "new_arrivals";
+    public static final String TASKS = "tasks";
 
 }
