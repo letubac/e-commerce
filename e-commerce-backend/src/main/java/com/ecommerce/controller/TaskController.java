@@ -55,7 +55,7 @@ public class TaskController {
         }
     }
 
-    @GetMapping("/")
+    @GetMapping("/list")
     public ResponseEntity<BusinessApiResponse> getAllTasks(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Long assignedTo,
@@ -89,7 +89,7 @@ public class TaskController {
         }
     }
 
-    @PostMapping("/")
+    @PostMapping("/create")
     public ResponseEntity<BusinessApiResponse> createTask(
             @RequestBody TaskDTO dto,
             Authentication authentication) {

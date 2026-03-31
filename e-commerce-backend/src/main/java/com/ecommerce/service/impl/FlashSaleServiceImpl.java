@@ -60,7 +60,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 	public FlashSaleDTO updateFlashSale(FlashSaleDTO flashSaleDTO) {
 		log.debug("Updating flash sale with id: {}", flashSaleDTO.getId());
 
-		List<FlashSale> allFlashSales = (List<FlashSale>) flashSaleRepository.findAll();
+		List<FlashSale> allFlashSales = flashSaleRepository.findAllFlashSales();
 		FlashSale flashSale = allFlashSales.stream().filter(fs -> fs.getId().equals(flashSaleDTO.getId())).findFirst()
 				.orElseThrow(
 						() -> new ResourceNotFoundException("Flash sale not found with id: " + flashSaleDTO.getId()));
@@ -84,7 +84,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 	public void deleteFlashSale(Long flashSaleId) {
 		log.debug("Deleting flash sale with id: {}", flashSaleId);
 
-		List<FlashSale> flashSales = (List<FlashSale>) flashSaleRepository.findAll();
+		List<FlashSale> flashSales = flashSaleRepository.findAllFlashSales();
 		FlashSale flashSale = flashSales.stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
 				.orElseThrow(() -> new ResourceNotFoundException("Flash sale not found with id: " + flashSaleId));
 
@@ -101,7 +101,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 	public FlashSaleDTO getFlashSaleById(Long flashSaleId) {
 		log.debug("Fetching flash sale with id: {}", flashSaleId);
 
-		List<FlashSale> flashSales = (List<FlashSale>) flashSaleRepository.findAll();
+		List<FlashSale> flashSales = flashSaleRepository.findAllFlashSales();
 		FlashSale flashSale = flashSales.stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
 				.orElseThrow(() -> new ResourceNotFoundException("Flash sale not found with id: " + flashSaleId));
 
@@ -112,8 +112,12 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 	public Page<FlashSaleDTO> getAllFlashSales(Pageable pageable) {
 		log.debug("Fetching all flash sales with pagination");
 
-		Page<FlashSale> flashSalesPage = flashSaleRepository.findAll(pageable);
-		return flashSalesPage.map(this::convertToDTO);
+		List<FlashSale> allFlashSales = flashSaleRepository.findAllFlashSales();
+		List<FlashSaleDTO> dtos = allFlashSales.stream().map(this::convertToDTO).collect(Collectors.toList());
+
+		int start = (int) pageable.getOffset();
+		int end = Math.min(start + pageable.getPageSize(), dtos.size());
+		return new PageImpl<>(dtos.subList(start, end), pageable, dtos.size());
 	}
 
 	@Override
@@ -145,7 +149,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 		log.debug("Adding product {} to flash sale {}", productDTO.getProductId(), flashSaleId);
 
 		// Validate flash sale exists
-		List<FlashSale> allFlashSales = (List<FlashSale>) flashSaleRepository.findAll();
+		List<FlashSale> allFlashSales = flashSaleRepository.findAllFlashSales();
 		allFlashSales.stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
 				.orElseThrow(() -> new ResourceNotFoundException("Flash sale not found with id: " + flashSaleId));
 
@@ -290,7 +294,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 			}
 
 			// Check flash sale is active
-			List<FlashSale> allFlashSales = (List<FlashSale>) flashSaleRepository.findAll();
+			List<FlashSale> allFlashSales = flashSaleRepository.findAllFlashSales();
 			FlashSale flashSale = allFlashSales.stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
 					.orElse(null);
 
@@ -329,34 +333,26 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 	public FlashSaleDTO activateFlashSale(Long flashSaleId) {
 		log.debug("Activating flash sale: {}", flashSaleId);
 
-		List<FlashSale> allFlashSales = (List<FlashSale>) flashSaleRepository.findAll();
-		FlashSale flashSale = allFlashSales.stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
+		flashSaleRepository.findAllFlashSales().stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
 				.orElseThrow(() -> new ResourceNotFoundException("Flash sale not found with id: " + flashSaleId));
 
-		flashSale.setActive(true);
-		flashSale.setUpdatedAt(new Date());
-
-		FlashSale updatedFlashSale = flashSaleRepository.save(flashSale);
+		flashSaleRepository.updateStatus(flashSaleId, true);
 		log.info("Flash sale activated: {}", flashSaleId);
 
-		return convertToDTO(updatedFlashSale);
+		return getFlashSaleById(flashSaleId);
 	}
 
 	@Override
 	public FlashSaleDTO deactivateFlashSale(Long flashSaleId) {
 		log.debug("Deactivating flash sale: {}", flashSaleId);
 
-		List<FlashSale> allFlashSales = (List<FlashSale>) flashSaleRepository.findAll();
-		FlashSale flashSale = allFlashSales.stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
+		flashSaleRepository.findAllFlashSales().stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
 				.orElseThrow(() -> new ResourceNotFoundException("Flash sale not found with id: " + flashSaleId));
 
-		flashSale.setActive(false);
-		flashSale.setUpdatedAt(new Date());
-
-		FlashSale updatedFlashSale = flashSaleRepository.save(flashSale);
+		flashSaleRepository.updateStatus(flashSaleId, false);
 		log.info("Flash sale deactivated: {}", flashSaleId);
 
-		return convertToDTO(updatedFlashSale);
+		return getFlashSaleById(flashSaleId);
 	}
 
 	@Override
@@ -441,7 +437,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 		}
 
 		// Set flash sale information
-		List<FlashSale> allFlashSales = (List<FlashSale>) flashSaleRepository.findAll();
+		List<FlashSale> allFlashSales = flashSaleRepository.findAllFlashSales();
 		FlashSale flashSale = allFlashSales.stream().filter(fs -> fs.getId().equals(flashSaleProduct.getFlashSaleId()))
 				.findFirst().orElse(null);
 		if (flashSale != null) {

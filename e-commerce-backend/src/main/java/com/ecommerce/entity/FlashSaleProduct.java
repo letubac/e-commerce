@@ -21,7 +21,7 @@ import com.ecommerce.constant.TableConstant;
 public class FlashSaleProduct {
     @Id
     @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ
-    + TableConstant.FLASH_SALE_PRODUCTS)
+            + TableConstant.FLASH_SALE_PRODUCTS)
     @Column(name = "id")
     private Long id;
 
@@ -46,7 +46,7 @@ public class FlashSaleProduct {
     @Column(name = "max_per_customer")
     private Integer maxPerCustomer;
 
-    @Column(name = "display_order")
+    @Column(name = "sort_order")
     private Integer displayOrder;
 
     @Column(name = "is_active")

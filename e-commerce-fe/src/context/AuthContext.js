@@ -29,15 +29,14 @@ export const AuthProvider = ({ children }) => {
       
       console.log('checkAuth - isExpired:', isExpired);
       
-      // TEMPORARY: Comment out auto-logout on page load to debug
-      // if (isExpired) {
-      //   console.log('Token expired on page load, clearing auth');
-      //   localStorage.removeItem('token');
-      //   localStorage.removeItem('user');
-      //   setUser(null);
-      //   setLoading(false);
-      //   return;
-      // }
+      if (isExpired) {
+        console.log('Token expired on page load, clearing auth');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        setLoading(false);
+        return;
+      }
 
       try {
         // Try to get fresh user data from API

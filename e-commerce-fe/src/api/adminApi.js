@@ -19,6 +19,13 @@ const adminApi = {
     const responseData = await response.json();
 
     if (!response.ok) {
+      if (response.status === 401) {
+        // Token expired or invalid - clear auth and redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      }
       // Extract error message from BusinessApiResponse structure
       const errorMessage = responseData.description || responseData.message || 'Request failed';
       throw new Error(errorMessage);
@@ -191,10 +198,10 @@ const adminApi = {
   // Task Management APIs
   getTasks: (params = {}) => {
     const queryParams = new URLSearchParams(params);
-    return adminApi.request(`/admin/tasks?${queryParams}`);
+    return adminApi.request(`/admin/tasks/list?${queryParams}`);
   },
   getTaskById: (id) => adminApi.request(`/admin/tasks/${id}`),
-  createTask: (data) => adminApi.request('/admin/tasks', { method: 'POST', body: JSON.stringify(data) }),
+  createTask: (data) => adminApi.request('/admin/tasks/create', { method: 'POST', body: JSON.stringify(data) }),
   updateTask: (id, data) => adminApi.request(`/admin/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteTask: (id) => adminApi.request(`/admin/tasks/${id}`, { method: 'DELETE' }),
   updateTaskStatus: (id, status) => adminApi.request(`/admin/tasks/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),

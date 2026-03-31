@@ -30,7 +30,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public List<TaskDTO> getAllTasks() throws DetailException {
         try {
-            return taskRepository.findAll().stream()
+            return taskRepository.findAllTasks().stream()
                     .map(this::mapToDTO)
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -57,7 +57,7 @@ public class TaskServiceImpl implements TaskService {
     public TaskDTO createTask(TaskDTO dto, Long createdBy) throws DetailException {
         try {
             Date now = new Date();
-            Long taskId = taskRepository.save(
+            Long taskId = taskRepository.saveData(
                     dto.getTitle(),
                     dto.getDescription(),
                     dto.getStatus() != null ? dto.getStatus() : "TODO",
@@ -193,7 +193,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public Map<String, Object> getTaskStatistics() throws DetailException {
         try {
-            List<Task> all = taskRepository.findAll();
+            List<Task> all = taskRepository.findAllTasks();
             Map<String, Object> stats = new HashMap<>();
             stats.put("total", all.size());
             stats.put("todo", all.stream().filter(t -> "TODO".equals(t.getStatus())).count());
