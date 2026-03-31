@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 /**
- * REST Controller cho AI Support Agent.
+ * REST Controller cho AI Agent Team (Phase 5).
  * <p>
- * Endpoint trực tiếp để kiểm thử AI agent mà không qua chat WebSocket.
+ * Exposes endpoints for Support, Analytics, Inventory, Sales, Marketing, and Orchestrator agents.
  * </p>
  */
 @Slf4j
@@ -27,6 +27,10 @@ public class AiAgentController {
 
     private final AiSupportService aiSupportService;
     private final AdminAnalyticsAiService adminAnalyticsAiService;
+    private final InventoryAgentService inventoryAgentService;
+    private final SalesAgentService salesAgentService;
+    private final MarketingAgentService marketingAgentService;
+    private final OrchestratorAgentService orchestratorAgentService;
     private final ErrorHandler errorHandler;
     private final SuccessHandler successHandler;
 
@@ -154,5 +158,135 @@ public class AiAgentController {
                         ? "Analytics AI Agent is active."
                         : "Analytics AI Agent is not enabled.");
         return ResponseEntity.ok(successHandler.handlerSuccess(status, start));
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Phase 5: Specialized agent endpoints
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * 📦 Inventory Agent - stock monitoring, low-stock alerts, restock suggestions (Admin only).
+     */
+    @PostMapping("/agents/inventory")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BusinessApiResponse> inventoryAgent(
+            @RequestBody Map<String, Object> body,
+            Authentication authentication) {
+        return handleAgentRequest(body, authentication.getName(), "inventory",
+                inventoryAgentService.isEnabled(),
+                (adminId, q) -> inventoryAgentService.chat(adminId, q));
+    }
+
+    /**
+     * 🛒 Sales Agent - revenue trends, top products, order analytics (Admin only).
+     */
+    @PostMapping("/agents/sales")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BusinessApiResponse> salesAgent(
+            @RequestBody Map<String, Object> body,
+            Authentication authentication) {
+        return handleAgentRequest(body, authentication.getName(), "sales",
+                salesAgentService.isEnabled(),
+                (adminId, q) -> salesAgentService.chat(adminId, q));
+    }
+
+    /**
+     * 🎯 Marketing Agent - flash sales, coupons, campaign insights (Admin only).
+     */
+    @PostMapping("/agents/marketing")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BusinessApiResponse> marketingAgent(
+            @RequestBody Map<String, Object> body,
+            Authentication authentication) {
+        return handleAgentRequest(body, authentication.getName(), "marketing",
+                marketingAgentService.isEnabled(),
+                (adminId, q) -> marketingAgentService.chat(adminId, q));
+    }
+
+    /**
+     * 🧠 Orchestrator Agent - routes to the most appropriate specialized agent (Admin only).
+     */
+    @PostMapping("/agents/orchestrator")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BusinessApiResponse> orchestratorAgent(
+            @RequestBody Map<String, Object> body,
+            Authentication authentication) {
+        long start = System.currentTimeMillis();
+        try {
+            String question = extractQuestion(body);
+            if (question == null) {
+                return ResponseEntity.ok(errorHandler.handlerException(
+                        new IllegalArgumentException("question must not be blank"), start));
+            }
+            String reply = orchestratorAgentService.orchestrate(authentication.getName(), question);
+            return ResponseEntity.ok(successHandler.handlerSuccess(Map.of(
+                    "reply", reply != null ? reply : "No response from orchestrator.",
+                    "aiEnabled", orchestratorAgentService.isEnabled()), start));
+        } catch (Exception e) {
+            log.error("Error in orchestrator agent endpoint", e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
+    }
+
+    /**
+     * Get the status of all AI agents (Admin only).
+     */
+    @GetMapping("/agents/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BusinessApiResponse> getAllAgentsStatus() {
+        long start = System.currentTimeMillis();
+        Map<String, Object> status = Map.of(
+                "support", Map.of("enabled", aiSupportService.isEnabled(), "name", "🔧 Support Agent"),
+                "analytics", Map.of("enabled", adminAnalyticsAiService.isEnabled(), "name", "📊 Analytics Agent"),
+                "inventory", Map.of("enabled", inventoryAgentService.isEnabled(), "name", "📦 Inventory Agent"),
+                "sales", Map.of("enabled", salesAgentService.isEnabled(), "name", "🛒 Sales Agent"),
+                "marketing", Map.of("enabled", marketingAgentService.isEnabled(), "name", "🎯 Marketing Agent"),
+                "orchestrator", Map.of("enabled", orchestratorAgentService.isEnabled(), "name", "🧠 Orchestrator Agent"));
+        return ResponseEntity.ok(successHandler.handlerSuccess(status, start));
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────────
+
+    @FunctionalInterface
+    private interface AgentCaller {
+        String call(String adminId, String question);
+    }
+
+    private ResponseEntity<BusinessApiResponse> handleAgentRequest(
+            Map<String, Object> body,
+            String adminId,
+            String agentName,
+            boolean enabled,
+            AgentCaller caller) {
+        long start = System.currentTimeMillis();
+        try {
+            String question = extractQuestion(body);
+            if (question == null) {
+                return ResponseEntity.ok(errorHandler.handlerException(
+                        new IllegalArgumentException("question must not be blank"), start));
+            }
+            if (!enabled) {
+                return ResponseEntity.ok(successHandler.handlerSuccess(Map.of(
+                        "reply", String.format("%s AI Agent is not enabled. Configure OPENAI_API_KEY and set app.ai.enabled=true.", agentName),
+                        "aiEnabled", false), start));
+            }
+            String reply = caller.call(adminId, question);
+            return ResponseEntity.ok(successHandler.handlerSuccess(Map.of(
+                    "reply", reply != null ? reply : "No response from AI agent.",
+                    "aiEnabled", true), start));
+        } catch (Exception e) {
+            log.error("Error in {} agent endpoint", agentName, e);
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
+    }
+
+    private String extractQuestion(Map<String, Object> body) {
+        String question = (String) body.get("question");
+        if (question == null) {
+            question = (String) body.get("message");
+        }
+        return (question != null && !question.isBlank()) ? question : null;
     }
 }
