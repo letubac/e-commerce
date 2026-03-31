@@ -215,6 +215,13 @@ const adminApi = {
   chatAnalytics: (question, sessionId) => adminApi.request('/ai/analytics', { method: 'POST', body: JSON.stringify({ question, sessionId }) }),
   getAnalyticsAiStatus: () => adminApi.request('/ai/analytics/status'),
 
+  // AI Agent Team APIs (Phase 5)
+  getAllAgentsStatus: () => adminApi.request('/ai/agents/status'),
+  chatInventoryAgent: (question, sessionId) => adminApi.request('/ai/agents/inventory', { method: 'POST', body: JSON.stringify({ question, sessionId }) }),
+  chatSalesAgent: (question, sessionId) => adminApi.request('/ai/agents/sales', { method: 'POST', body: JSON.stringify({ question, sessionId }) }),
+  chatMarketingAgent: (question, sessionId) => adminApi.request('/ai/agents/marketing', { method: 'POST', body: JSON.stringify({ question, sessionId }) }),
+  chatOrchestratorAgent: (question, sessionId) => adminApi.request('/ai/agents/orchestrator', { method: 'POST', body: JSON.stringify({ question, sessionId }) }),
+
   // Role Management API
   updateUserRole: (id, role) => adminApi.request(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
 

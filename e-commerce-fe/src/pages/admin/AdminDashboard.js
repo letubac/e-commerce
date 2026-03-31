@@ -31,7 +31,7 @@ import UserManagement from '../../components/UserManagement';
 import CouponManagement from '../../components/CouponManagement';
 import FlashSaleManagement from '../../components/FlashSaleManagement';
 import TaskManagement from '../../components/TaskManagement';
-import AdminAnalyticsChat from '../../components/AdminAnalyticsChat';
+import AiAgentsDashboard from '../../components/AiAgentsDashboard';
 import CronJobStatus from '../../components/CronJobStatus';
 import adminApi from '../../api/adminApi';
 
@@ -162,7 +162,7 @@ function AdminDashboard() {
               { key: 'categories', label: 'Danh mục', icon: FolderTree },
               { key: 'logs', label: 'Log', icon: FileText },
               { key: 'tasks', label: 'Quản lý Task', icon: CheckSquare },
-              { key: 'analytics-ai', label: 'AI Analytics', icon: Bot },
+              { key: 'analytics-ai', label: 'AI Agents', icon: Bot },
               { key: 'cron-jobs', label: 'Cron Jobs', icon: Calendar }
             ].map(({ key, label, icon: Icon }) => (
               <button
@@ -650,8 +650,8 @@ function AdminDashboard() {
         {/* Tasks Tab */}
         {activeTab === 'tasks' && <TaskManagement />}
 
-        {/* AI Analytics Tab */}
-        {activeTab === 'analytics-ai' && <AdminAnalyticsChat />}
+        {/* AI Agents Tab */}
+        {activeTab === 'analytics-ai' && <AiAgentsDashboard />}
 
         {/* Cron Jobs Tab */}
         {activeTab === 'cron-jobs' && <CronJobStatus />}
