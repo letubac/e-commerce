@@ -32,7 +32,7 @@ src/
 │   │   └── ECommerceApplication.java
 │   └── resources/
 │       ├── application.yml  # Application configuration
-│       ├── db/migration/   # Flyway SQL migrations
+│       ├── db/migration/   # SQL migrations
 │       └── messages/       # i18n message files
 └── test/                   # Test classes
 ```
