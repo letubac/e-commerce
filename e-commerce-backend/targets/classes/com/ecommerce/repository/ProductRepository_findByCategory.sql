@@ -1,0 +1,1 @@
+SELECT * FROM products WHERE category_id = /*categoryId*/ AND is_active = true

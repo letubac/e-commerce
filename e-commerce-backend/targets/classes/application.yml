@@ -1,0 +1,203 @@
+server:
+  port: 8280
+  servlet:
+    context-path: /
+    session:
+      timeout: 15m # Giảm từ 30m xuống 15m
+      cookie:
+        name: ECOMMERCE_SESSION
+        http-only: true
+        secure: false
+        same-site: lax
+        max-age: 900 # 15 minutes
+
+spring:
+  application:
+    name: ecommerce-backend
+  
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://db.jgfatquykgtgwherpvvd.supabase.co:5432/postgres?sslmode=require
+    username: postgres
+    password: "Abcdef150899!"
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 20000 # 20 seconds
+      idle-timeout: 300000 # 5 minutes
+      max-lifetime: 1200000 # 20 minutes
+      validation-timeout: 5000 # 5 seconds
+  
+  # Redis Configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          max-idle: 8
+          min-idle: 0
+    jpa:
+      repositories:
+        enabled: false
+  
+  # Kafka Configuration - DISABLED
+  kafka:
+    enabled: false
+    bootstrap-servers: localhost:9092  # Keep property but disabled
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: ecommerce-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+  
+  # Security Configuration
+  security:
+    sessions: servlet  # Use servlet session instead of Redis for development
+  
+  # Internationalization
+  messages:
+    basename: messages/messages
+    encoding: UTF-8
+    cache-duration: 3600
+  
+  # JPA Configuration  
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+  
+  # SQL file configuration  
+  sql:
+    init:
+      mode: never
+  
+  # File Upload
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# Logging Configuration
+logging:
+  level:
+    com.ecommerce: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.kafka: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/ecommerce-backend.log
+
+# Management - Actuator & Health Checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+  health:
+    redis:
+      enabled: false  # Disable Redis health check since Redis is not required
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+
+# Custom Application Properties
+app:
+  jwt:
+    secret: myVerySecureSecretKeyForJWTTokenGenerationThatIsLongEnoughToMeetRequirements
+    expiration: 3600000 # 1 hour (60 minutes)
+    refresh-expiration: 604800000 # 7 days
+    remember-me-expiration: 2592000000 # 30 days
+  cors:
+    allowed-origins: "http://localhost:3000,http://localhost:3001"
+    allowed-methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+    allowed-headers: "*"
+    allow-credentials: true
+    max-age: 3600
+  session:
+    timeout: 1800000 # 30 minutes
+    max-inactive-interval: 3600000 # 1 hour
+  file:
+    upload-dir: "uploads/"
+  cache:
+    ttl: 3600 # 1 hour in seconds
+  
+  # Custom SQL files configuration
+  sql:
+    location: classpath:sql/
+    cache-enabled: false
+    comment-parameter-style: true
+
+  # AI Support Agent Configuration
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:sk-placeholder}
+      model: gpt-4o-mini
+      temperature: 0.7
+      max-tokens: 512
+    enabled: ${AI_ENABLED:false}
+    memory:
+      max-messages: 20
+    store-name: "E-SHOP"
+    system-prompt: >
+      Bạn là trợ lý AI của E-SHOP - cửa hàng thương mại điện tử hàng đầu.
+      Nhiệm vụ của bạn là hỗ trợ khách hàng về sản phẩm, đơn hàng và chính sách cửa hàng.
+      Bạn có thể: tìm sản phẩm, xem chi tiết đơn hàng, xem giỏ hàng, kiểm tra mã giảm giá, xem danh mục sản phẩm,
+      đọc đánh giá sản phẩm, xem flash sale đang diễn ra, tìm sản phẩm theo thương hiệu.
+      Khi tin nhắn bắt đầu bằng [UserCtx userId=X username=Y], hãy sử dụng userId và username đó
+      để tra cứu thông tin cá nhân (đơn hàng, giỏ hàng) mà không cần hỏi khách.
+      Trả lời bằng tiếng Việt, ngắn gọn và thân thiện.
+      Chính sách: Đổi trả trong 15 ngày, bảo hành theo nhà sản xuất, giao hàng 2-5 ngày.
+      Nếu không biết hoặc khách muốn nói chuyện với người thật, hãy đề nghị kết nối với nhân viên hỗ trợ.
+    analytics-system-prompt: >
+      You are an analytics AI assistant for the E-SHOP admin dashboard.
+      Your role is to help administrators understand business data, trends, and performance metrics.
+      You can retrieve: dashboard overview, sales statistics, user registration stats, product performance,
+      order statistics by status, and task management statistics.
+      Provide concise, actionable insights. Format numbers clearly. Identify trends and anomalies.
+      Respond in English unless the admin writes in another language.
+    inventory-system-prompt: >
+      You are an Inventory Management AI agent for E-SHOP.
+      Your role is to monitor stock levels, identify low-stock and out-of-stock products,
+      and suggest restocking strategies. Always check current stock data before answering.
+      Prioritize urgent low-stock alerts. Provide clear, actionable restocking recommendations.
+      Format product lists in a readable way. Respond in the same language as the admin.
+    sales-system-prompt: >
+      You are a Sales Advisor AI agent for E-SHOP.
+      Your role is to analyze sales trends, identify top-performing and underperforming products,
+      and provide actionable growth recommendations. Retrieve sales data before answering.
+      Highlight key revenue metrics, compare periods when relevant, and suggest strategies
+      to improve conversion rates and average order value.
+      Respond in the same language as the admin.
+    marketing-system-prompt: >
+      You are a Marketing AI agent for E-SHOP.
+      Your role is to analyze flash sale performance, evaluate coupon effectiveness,
+      and suggest marketing campaigns and promotions. Always retrieve current campaign data first.
+      Recommend promotions based on inventory levels, seasonal trends, and business goals.
+      Help maximize revenue through targeted discounts and customer engagement strategies.
+      Respond in the same language as the admin.

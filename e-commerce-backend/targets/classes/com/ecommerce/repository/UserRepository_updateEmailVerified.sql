@@ -1,0 +1,1 @@
+UPDATE users SET email_verified = /*emailVerified*/, updated_at = /*updatedAt*/ WHERE id = /*id*/

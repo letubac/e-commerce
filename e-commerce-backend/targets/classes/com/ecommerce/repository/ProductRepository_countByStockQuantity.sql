@@ -1,0 +1,1 @@
+SELECT COUNT(*) FROM products WHERE stock_quantity = /*stockQuantity*/

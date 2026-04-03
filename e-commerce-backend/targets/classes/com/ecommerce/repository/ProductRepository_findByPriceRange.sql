@@ -1,0 +1,1 @@
+SELECT * FROM products WHERE price BETWEEN /*minPrice*/ AND /*maxPrice*/ AND is_active = true

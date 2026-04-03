@@ -1,0 +1,1 @@
+SELECT * FROM chat_messages WHERE conversation_id = /*conversationId*/

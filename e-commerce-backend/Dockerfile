@@ -1,10 +1,13 @@
-# Stage 1: Build
-FROM maven:3.8.5-openjdk-17 AS build
-COPY . .
-RUN mvn -B -DskipTests clean package
+# Sử dụng JRE bản nhẹ nhất để tiết kiệm RAM
+FROM eclipse-temurin:17-jre-jammy
 
-# Stage 2: Run
-FROM openjdk:17-jdk-slim
-COPY --from=build /target/*.jar app.jar
+WORKDIR /app
+
+# Copy file jar đã build sẵn từ máy bạn vào image
+# Lưu ý: Thay tên file .jar đúng với tên trong thư mục target của bạn
+COPY target/*.jar app.jar
+
 EXPOSE 8080
-ENTRYPOINT ["java", "-Xmx300m", "-jar", "app.jar"]
+
+# Chạy ứng dụng với cấu hình tối ưu RAM thấp
+ENTRYPOINT ["java", "-Xms128m", "-Xmx300m", "-jar", "app.jar"]

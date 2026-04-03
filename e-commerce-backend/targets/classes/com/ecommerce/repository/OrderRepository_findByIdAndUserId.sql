@@ -1,0 +1,2 @@
+SELECT * FROM orders 
+WHERE user_id = /*userId*/ AND id = /*orderId*/

@@ -1,0 +1,1 @@
+SELECT * FROM brands WHERE id = /*id*/

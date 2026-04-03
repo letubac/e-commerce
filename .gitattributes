@@ -1,0 +1,1 @@
+e-commerce-backend/targets/e-commerce-backend-1.0.0.jar filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,1 @@
+SELECT COUNT(*) FROM users WHERE created_at > /*date*/

@@ -1,0 +1,1 @@
+SELECT COUNT(*) FROM products WHERE is_active = true

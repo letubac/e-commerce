@@ -1,0 +1,1 @@
+SELECT COUNT(*) FROM brands b WHERE b.is_active = true
