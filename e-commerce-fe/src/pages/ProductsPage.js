@@ -41,8 +41,6 @@ function ProductsPage() {
   const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedBrand, setSelectedBrand] = useState(null);
-
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
@@ -93,27 +91,6 @@ function ProductsPage() {
         ...prev, 
         categoryId: null,
         category: ''
-      }));
-    }
-    setCurrentPage(0);
-  };
-
-  const handleBrandSelect = (brand) => {
-    setSelectedBrand(brand);
-    if (brand) {
-      // Send brandId to backend instead of brand name
-      setFilters(prev => ({ 
-        ...prev, 
-        brandId: brand.id,
-        brand: '',
-        category: '',
-        categoryId: null
-      }));
-    } else {
-      setFilters(prev => ({ 
-        ...prev, 
-        brandId: null,
-        brand: ''
       }));
     }
     setCurrentPage(0);

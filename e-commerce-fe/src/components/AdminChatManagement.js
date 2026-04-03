@@ -39,10 +39,6 @@ function AdminChatManagement() {
   const selectedIdRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   const loadConversations = useCallback(async () => {
     try {
       const params = {};

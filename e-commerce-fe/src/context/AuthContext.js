@@ -178,9 +178,6 @@ export const AuthProvider = ({ children }) => {
     // Stop token monitoring
     tokenManager.stopMonitoring();
     
-    // Check current path to determine where to redirect
-    const isOnAdminPage = window.location.pathname.startsWith('/admin');
-    
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);

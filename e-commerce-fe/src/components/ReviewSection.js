@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, MessageCircle, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Star, MessageCircle, Trash2 } from 'lucide-react';
 import api from '../api/api';
 import toast from '../utils/toast';
 import './ReviewSection.css';

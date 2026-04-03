@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Eye } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { API_BASE_URL } from '../api/api';
-import toast from '../utils/toast';
 
 const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='150' y='156' text-anchor='middle' fill='%23999' font-family='sans-serif' font-size='14'%3ENo Image%3C/text%3E%3C/svg%3E";
 

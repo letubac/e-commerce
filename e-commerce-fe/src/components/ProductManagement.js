@@ -4,15 +4,12 @@ import {
   Search, 
   Edit, 
   Trash2, 
-  Eye, 
   Filter,
-  MoreVertical,
   Package,
   DollarSign,
   TrendingUp,
   AlertTriangle
 } from 'lucide-react';
-import adminApi from '../api/adminApi';
 import api, { getImageUrl } from '../api/api';
 import AddProductModal from '../components/AddProductModal';
 

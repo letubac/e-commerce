@@ -11,7 +11,7 @@ function FlashSaleManagement() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingFlashSale, setEditingFlashSale] = useState(null);
   const [selectedFlashSale, setSelectedFlashSale] = useState(null);
-  const [flashSaleProducts, setFlashSaleProducts] = useState([]);
+
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,17 +54,6 @@ function FlashSaleManagement() {
       setFlashSales([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchFlashSaleProducts = async (flashSaleId) => {
-    try {
-      const data = await adminApi.getFlashSaleProducts(flashSaleId);
-      const products = Array.isArray(data) ? data : (data?.content || []);
-      setFlashSaleProducts(products);
-    } catch (error) {
-      console.error('Error fetching flash sale products:', error);
-      toast.error('Lỗi khi tải sản phẩm Flash Sale');
     }
   };
 
@@ -502,7 +491,6 @@ function FlashSaleManagement() {
           onClose={() => {
             setShowProductModal(false);
             setSelectedFlashSale(null);
-            setFlashSaleProducts([]);
           }}
           onUpdate={fetchFlashSales}
         />

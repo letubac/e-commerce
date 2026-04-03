@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   CheckSquare, Plus, Edit, Trash2, Filter, Grid3X3, List,
-  Clock, AlertCircle, XCircle, ArrowUpCircle
+  Clock, AlertCircle, XCircle
 } from 'lucide-react';
 import adminApi from '../api/adminApi';
 import toast from '../utils/toast';

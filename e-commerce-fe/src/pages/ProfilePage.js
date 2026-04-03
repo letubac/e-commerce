@@ -10,11 +10,7 @@ import {
   Lock, 
   Camera,
   Save,
-  ArrowLeft,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { X, Upload, Plus, Minus, AlertCircle } from 'lucide-react';
-import adminApi from '../api/adminApi';
 import api, { getImageUrl } from '../api/api';
 
 function AddProductModal({ isOpen, onClose, onSuccess, editProduct = null }) {

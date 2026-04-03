@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Clock, CheckCircle, XCircle, Eye, Filter, Calendar, Truck, ShoppingBag, AlertCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Package, Clock, CheckCircle, XCircle, Calendar, Truck, ShoppingBag } from 'lucide-react';
 import api, { getImageUrl } from '../api/api';
 import toast from '../utils/toast';
 
 const OrdersPage = () => {
-  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, pending, confirmed, shipping, delivered, cancelled

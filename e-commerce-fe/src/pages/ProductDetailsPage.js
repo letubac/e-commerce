@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Heart, Star, Minus, Plus, Package, Shield, Truck, Share2 } from 'lucide-react';
+import { ShoppingCart, Heart, Star, Minus, Plus, Package, Shield, Truck } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import ReviewSection from '../components/ReviewSection';
 import RelatedProducts from '../components/RelatedProducts';
