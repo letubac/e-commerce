@@ -1,13 +1,8 @@
-# Sử dụng JRE bản nhẹ nhất để tiết kiệm RAM
 FROM eclipse-temurin:17-jre-jammy
-
 WORKDIR /app
-
-# Copy file jar đã build sẵn từ máy bạn vào image
-# Lưu ý: Thay tên file .jar đúng với tên trong thư mục targets của bạn
-COPY targets/*.jar app.jar
-
+# Đảm bảo đường dẫn là targets/
+COPY targets/*.jar app.jar 
 EXPOSE 8080
-
-# Chạy ứng dụng với cấu hình tối ưu RAM thấp
-ENTRYPOINT ["java", "-Xms128m", "-Xmx300m", "-jar", "app.jar"]
+# Với file 173MB, hãy tăng RAM tối đa cho Java lên một chút (ví dụ 400MB) 
+# nhưng phải nằm trong giới hạn của Railway (thường là 512MB)
+ENTRYPOINT ["java", "-Xms128m", "-Xmx400m", "-jar", "app.jar"]
