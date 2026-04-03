@@ -19,10 +19,10 @@ spring:
   datasource:
     url: jdbc:postgresql://db.jgfatquykgtgwherpvvd.supabase.co:5432/postgres?sslmode=require
     username: postgres
-    password: Abcdef150899!
+    password: "Abcdef150899!"
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 20
+      maximum-pool-size: 10
       minimum-idle: 5
       connection-timeout: 20000 # 20 seconds
       idle-timeout: 300000 # 5 minutes
