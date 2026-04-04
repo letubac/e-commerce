@@ -3,6 +3,7 @@ package com.ecommerce.config;
 import com.ecommerce.websocket.ChatWebSocketHandler;
 import com.ecommerce.websocket.WebSocketAuthInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.*;
@@ -18,12 +19,15 @@ public class WebSocketConfig implements WebSocketConfigurer, WebSocketMessageBro
     @Autowired
     private WebSocketAuthInterceptor webSocketAuthInterceptor;
 
+    @Value("${app.cors.allowed-origins:http://localhost:3000}")
+    private String allowedOrigins;
+
     // Standard WebSocket for Chat
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(chatWebSocketHandler, "/ws/chat")
                 .addInterceptors(webSocketAuthInterceptor)
-                .setAllowedOrigins("http://localhost:3000", "http://localhost:3001")
+                .setAllowedOrigins(allowedOrigins.split(","))
                 .withSockJS();
     }
 
