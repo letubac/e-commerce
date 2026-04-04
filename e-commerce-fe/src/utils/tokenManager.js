@@ -112,4 +112,5 @@ class TokenManager {
   }
 }
 
-export default new TokenManager();
+const tokenManagerInstance = new TokenManager();
+export default tokenManagerInstance;

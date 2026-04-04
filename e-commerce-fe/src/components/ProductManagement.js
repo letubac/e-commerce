@@ -40,6 +40,7 @@ function ProductManagement() {
     loadProducts();
     loadFilters();
     loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchTerm, selectedCategory, selectedBrand, sortBy, sortOrder]);
 
   const loadProducts = async () => {

@@ -101,9 +101,11 @@ export const withApiErrorHandling = async (apiCall, successMessage = null, error
   }
 };
 
-export default {
+const responseHandler = {
   parseBusinessResponse,
   parseBusinessResponseWithToast,
   handleApiError,
   withApiErrorHandling
 };
+
+export default responseHandler;

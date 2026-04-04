@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, CreditCard, Truck, Shield, CheckCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
@@ -33,7 +33,7 @@ function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState('cod'); // cod, vnpay, momo
   const [shippingMethod, setShippingMethod] = useState('standard');
 
-  const safeCartItems = cartItems || [];
+  const safeCartItems = useMemo(() => cartItems || [], [cartItems]);
   const totalPrice = getTotalPrice() || 0;
   const shippingFee = shippingMethod === 'express' ? 50000 : 0;
   const finalTotal = totalPrice + shippingFee;
