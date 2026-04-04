@@ -44,9 +44,9 @@ class AdminWebSocketService {
     }
 
     try {
-      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      // Connect to backend WebSocket at localhost:8280, not frontend
-      const wsUrl = `${wsProtocol}//localhost:8280/ws/chat?token=${token}`;
+      // Connect to backend WebSocket - URL derived from REACT_APP_WS_URL env variable
+      const backendBase = process.env.REACT_APP_WS_URL || 'http://localhost:8280';
+      const wsUrl = backendBase.replace(/^http/, 'ws') + `/ws/chat?token=${token}`;
 
       console.log('[AdminWebSocket] Connecting to:', wsUrl);
 
