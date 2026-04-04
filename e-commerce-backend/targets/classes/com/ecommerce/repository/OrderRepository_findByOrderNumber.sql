@@ -1,1 +1,0 @@
-SELECT * FROM orders WHERE order_number = /*orderNumber*/

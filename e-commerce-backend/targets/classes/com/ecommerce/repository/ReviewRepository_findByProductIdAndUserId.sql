@@ -1,1 +1,0 @@
-SELECT * FROM reviews WHERE product_id = /*productId*/ AND user_id = /*userId*/

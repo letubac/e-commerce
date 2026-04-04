@@ -1,1 +1,0 @@
-SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM reviews WHERE product_id = /*productId*/ AND user_id = /*userId*/

@@ -1,1 +1,0 @@
-SELECT * FROM coupons WHERE is_active = /*isActive*/

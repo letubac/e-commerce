@@ -1,1 +1,0 @@
-SELECT COUNT(*) FROM reviews WHERE created_at > /*date*/

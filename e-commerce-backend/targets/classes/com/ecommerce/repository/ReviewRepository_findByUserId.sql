@@ -1,1 +1,0 @@
-SELECT * FROM reviews WHERE user_id = /*userId*/

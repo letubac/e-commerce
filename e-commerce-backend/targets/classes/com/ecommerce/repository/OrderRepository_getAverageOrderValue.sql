@@ -1,2 +1,0 @@
-SELECT COALESCE(AVG(total), 0) FROM orders 
-WHERE status = 'DELIVERED'

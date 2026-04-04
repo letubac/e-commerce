@@ -1,1 +1,0 @@
-SELECT SUM(price * stock_quantity) FROM products WHERE is_active = true

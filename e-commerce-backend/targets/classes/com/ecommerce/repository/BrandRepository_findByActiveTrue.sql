@@ -1,1 +1,0 @@
-SELECT * FROM brands WHERE is_active = true

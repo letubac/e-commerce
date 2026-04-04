@@ -1,1 +1,0 @@
-SELECT * FROM categories WHERE is_active = true

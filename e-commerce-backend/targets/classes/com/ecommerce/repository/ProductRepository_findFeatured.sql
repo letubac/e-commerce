@@ -1,1 +1,0 @@
-SELECT * FROM products WHERE featured = true AND is_active = true

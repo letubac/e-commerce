@@ -1,2 +1,0 @@
-SELECT COUNT(*) FROM orders 
-WHERE status = /*status*/

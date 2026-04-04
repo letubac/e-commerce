@@ -1,1 +1,0 @@
-SELECT * FROM products WHERE LOWER(name) LIKE LOWER('%' || /*name*/ || '%') AND is_active = true

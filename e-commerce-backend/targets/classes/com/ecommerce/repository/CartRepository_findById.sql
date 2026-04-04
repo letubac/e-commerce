@@ -1,1 +1,0 @@
-SELECT * FROM carts WHERE id = /*id*/

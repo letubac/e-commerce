@@ -1,1 +1,0 @@
-UPDATE users SET is_active = /*isActive*/, updated_at = /*updatedAt*/ WHERE id = /*id*/

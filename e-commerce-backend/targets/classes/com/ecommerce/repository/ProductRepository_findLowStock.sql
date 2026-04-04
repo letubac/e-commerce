@@ -1,1 +1,0 @@
-SELECT * FROM products WHERE stock_quantity <= /*threshold*/ AND is_active = true

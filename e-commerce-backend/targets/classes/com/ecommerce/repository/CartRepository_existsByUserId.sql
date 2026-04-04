@@ -1,1 +1,0 @@
-SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM carts WHERE user_id = /*userId*/

@@ -1,1 +1,0 @@
-SELECT COUNT(*) FROM users WHERE is_active = true AND created_at >= /*date*/

@@ -1,1 +1,0 @@
-SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM cart_items WHERE cart_id = /*cartId*/ AND product_id = /*productId*/

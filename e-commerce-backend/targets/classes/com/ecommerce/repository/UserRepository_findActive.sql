@@ -1,1 +1,0 @@
-SELECT * FROM users WHERE is_active = true;
