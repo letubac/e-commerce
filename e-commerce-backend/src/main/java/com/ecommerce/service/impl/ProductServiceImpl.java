@@ -1,6 +1,7 @@
 package com.ecommerce.service.impl;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -244,7 +245,16 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public List<ProductDTO> getActiveProducts() throws DetailException {
 		try {
-			return productRepository.findActive().stream().map(productMapper::toDTO).collect(Collectors.toList());
+			List<ProductDTO> products =  productRepository.findActive().stream().map(productMapper::toDTO).collect(Collectors.toList());
+			if (products.isEmpty()) {
+				return new ArrayList<>();
+			}
+			products.forEach(product -> {
+				// Lazy load images if needed
+				product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+						.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+			});
+			return products;
 		} catch (Exception e) {
 			log.error("Lỗi khi lấy danh sách sản phẩm active", e);
 			throw new DetailException(ProductConstant.E854_PRODUCT_FETCH_FAILED);
@@ -254,7 +264,16 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public List<ProductDTO> getFeaturedProducts() throws DetailException {
 		try {
-			return productRepository.findFeatured().stream().map(productMapper::toDTO).collect(Collectors.toList());
+			List<ProductDTO> products =  productRepository.findFeatured().stream().map(productMapper::toDTO).collect(Collectors.toList());
+			if (products.isEmpty()) {
+				return new ArrayList<>();
+			}
+			products.forEach(product -> {
+				// Lazy load images if needed
+				product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+						.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+			});
+			return products;
 		} catch (Exception e) {
 			log.error("Lỗi khi lấy danh sách sản phẩm featured", e);
 			throw new DetailException(ProductConstant.E854_PRODUCT_FETCH_FAILED);
