@@ -46,7 +46,10 @@ public class FileUploadController {
         Map<String, String> response = new HashMap<>();
         response.put("fileName", file.getOriginalFilename());
         response.put("filePath", filePath);
-        response.put("fileUrl", "/api/v1/files" + filePath);
+        // When using Supabase Storage, filePath is already a full https:// CDN URL.
+        // For local storage it's a relative path like /images/products/xxx.jpg.
+        String fileUrl = filePath.startsWith("http") ? filePath : "/api/v1/files" + filePath;
+        response.put("fileUrl", fileUrl);
         response.put("fileSize", String.valueOf(file.getSize()));
         response.put("contentType", file.getContentType());
 

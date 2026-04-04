@@ -148,6 +148,12 @@ app:
     max-inactive-interval: 3600000 # 1 hour
   file:
     upload-dir: "uploads/"
+  storage:
+    provider: ${STORAGE_PROVIDER:local}   # set to "supabase" on Railway
+    supabase:
+      url: ${SUPABASE_URL:}
+      bucket: ${SUPABASE_BUCKET:images}
+      service-key: ${SUPABASE_SERVICE_KEY:}
   cache:
     ttl: 3600 # 1 hour in seconds
   

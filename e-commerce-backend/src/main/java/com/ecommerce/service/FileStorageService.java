@@ -1,5 +1,7 @@
 package com.ecommerce.service;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -13,7 +15,14 @@ import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class FileStorageService {
+
+    @Value("${app.storage.provider:local}")
+    private String storageProvider;
+
+    @Autowired(required = false)
+    private SupabaseStorageService supabaseStorageService;
 
     private final Path fileStorageLocation;
 
@@ -30,9 +39,21 @@ public class FileStorageService {
     }
 
     /**
-     * Store file and return the file path
+     * Store file and return the file URL.
+     * - If provider=supabase: uploads to Supabase Storage, returns full https://...
+     * CDN URL
+     * - Otherwise: saves to local disk, returns relative
+     * /images/{category}/{filename} path
      */
     public String storeFile(MultipartFile file, String category) {
+        if ("supabase".equalsIgnoreCase(storageProvider) && supabaseStorageService != null) {
+            log.debug("Uploading file to Supabase Storage, category={}", category);
+            return supabaseStorageService.uploadFile(file, category);
+        }
+        return storeFileLocally(file, category);
+    }
+
+    private String storeFileLocally(MultipartFile file, String category) {
         // Normalize file name
         String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
 
@@ -74,9 +95,18 @@ public class FileStorageService {
     }
 
     /**
-     * Delete file
+     * Delete file — supports both Supabase URLs (https://...) and local relative
+     * paths (/images/...)
      */
     public void deleteFile(String filePath) {
+        if (filePath == null)
+            return;
+        if (filePath.startsWith("https://") || filePath.startsWith("http://")) {
+            if (supabaseStorageService != null) {
+                supabaseStorageService.deleteFile(filePath);
+            }
+            return;
+        }
         try {
             Path file = this.fileStorageLocation.resolve(filePath.substring(1)).normalize();
             Files.deleteIfExists(file);
