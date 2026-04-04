@@ -1,15 +1,27 @@
-FROM maven:3.9.9-eclipse-temurin-17 AS build
+# Stage 1: Build
+FROM maven:3.9.2-eclipse-temurin-17 AS build
+
 WORKDIR /app
 
-COPY . .
+# Copy pom.xml first (helps caching)
+COPY pom.xml .
 
-WORKDIR /app/e-commerce-backend
+# Download dependencies
+RUN mvn dependency:go-offline
+
+# Copy source code
+COPY src ./src
+
+# Build the project
 RUN mvn clean package -DskipTests
 
+# Stage 2: Runtime
 FROM eclipse-temurin:17-jre-jammy
+
 WORKDIR /app
 
-COPY --from=build /app/e-commerce-backend/target/*.jar app.jar
+# Copy jar từ stage build
+COPY --from=build /app/target/*.jar app.jar
 
-EXPOSE 8080
+# Run the application
 ENTRYPOINT ["java","-jar","app.jar"]
