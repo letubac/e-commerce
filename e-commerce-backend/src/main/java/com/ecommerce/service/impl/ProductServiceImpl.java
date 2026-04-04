@@ -283,7 +283,8 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public List<ProductDTO> getActiveProducts() throws DetailException {
 		try {
-			List<ProductDTO> products =  productRepository.findActive().stream().map(productMapper::toDTO).collect(Collectors.toList());
+			List<ProductDTO> products = productRepository.findActive().stream().map(productMapper::toDTO)
+					.collect(Collectors.toList());
 			if (products.isEmpty()) {
 				return new ArrayList<>();
 			}
@@ -302,7 +303,8 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public List<ProductDTO> getFeaturedProducts() throws DetailException {
 		try {
-			List<ProductDTO> products =  productRepository.findFeatured().stream().map(productMapper::toDTO).collect(Collectors.toList());
+			List<ProductDTO> products = productRepository.findFeatured().stream().map(productMapper::toDTO)
+					.collect(Collectors.toList());
 			if (products.isEmpty()) {
 				return new ArrayList<>();
 			}

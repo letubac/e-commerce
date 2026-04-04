@@ -2,7 +2,8 @@ import toast from '../utils/toast';
 import { parseBusinessResponse } from '../utils/responseHandler';
 
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-export const IMAGE_BASE_URL = `${process.env.REACT_APP_API_BASE_URL}/files`;
+// REACT_APP_IMAGE_BASE_URL overrides the default (used in prod to point to Supabase Storage)
+export const IMAGE_BASE_URL = process.env.REACT_APP_IMAGE_BASE_URL || `${process.env.REACT_APP_API_BASE_URL}/files`;
 
 // Helper function to get full image URL
 export const getImageUrl = (imageUrl) => {
