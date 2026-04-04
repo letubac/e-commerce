@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ecommerce.constant.ProductConstant;
 import com.ecommerce.dto.ProductDTO;
+import com.ecommerce.dto.ProductImageDTO;
 import com.ecommerce.entity.Product;
 import com.ecommerce.exception.BadRequestException;
 import com.ecommerce.exception.DetailException;
@@ -93,7 +94,25 @@ public class ProductServiceImpl implements ProductService {
 
 			log.info("Tạo sản phẩm {} thành công - took: {}ms", productDTO.getName(),
 					System.currentTimeMillis() - start);
-			return productMapper.toDTO(createdProduct.get());
+
+			// Save product images if provided
+			ProductDTO resultImg = productMapper.toDTO(createdProduct.get());
+			if (productDTO.getProductImages() != null && !productDTO.getProductImages().isEmpty()) {
+				int sortOrder = 0;
+				for (ProductImageDTO imgDTO : productDTO.getProductImages()) {
+					if (imgDTO.getImageUrl() != null && !imgDTO.getImageUrl().isBlank()) {
+						productRepository.insertProductImage(
+								createdProduct.get().getId(),
+								imgDTO.getImageUrl(),
+								imgDTO.getAltText(),
+								imgDTO.isPrimary(),
+								sortOrder++);
+					}
+				}
+				resultImg.setProductImages(productRepository.findImagesByProductId(createdProduct.get().getId())
+						.stream().map(productMapper::toDtoProductImage).collect(Collectors.toList()));
+			}
+			return resultImg;
 		} catch (DetailException e) {
 			throw e;
 		} catch (Exception e) {
@@ -143,7 +162,26 @@ public class ProductServiceImpl implements ProductService {
 			// Retrieve the updated product
 			Optional<Product> updatedProduct = productRepository.findById(id);
 			log.info("Cập nhật sản phẩm ID {} thành công - took: {}ms", id, System.currentTimeMillis() - start);
-			return productMapper.toDTO(updatedProduct.get());
+
+			ProductDTO updatedDTO = productMapper.toDTO(updatedProduct.get());
+			// Replace images if a new list was provided
+			if (productDTO.getProductImages() != null && !productDTO.getProductImages().isEmpty()) {
+				productRepository.deleteImagesByProductId(id);
+				int sortOrder = 0;
+				for (ProductImageDTO imgDTO : productDTO.getProductImages()) {
+					if (imgDTO.getImageUrl() != null && !imgDTO.getImageUrl().isBlank()) {
+						productRepository.insertProductImage(
+								id,
+								imgDTO.getImageUrl(),
+								imgDTO.getAltText(),
+								imgDTO.isPrimary(),
+								sortOrder++);
+					}
+				}
+				updatedDTO.setProductImages(productRepository.findImagesByProductId(id)
+						.stream().map(productMapper::toDtoProductImage).collect(Collectors.toList()));
+			}
+			return updatedDTO;
 		} catch (DetailException e) {
 			throw e;
 		} catch (Exception e) {

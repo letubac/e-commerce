@@ -17,7 +17,6 @@ function AddProductModal({ isOpen, onClose, onSuccess, editProduct = null }) {
     dimensions: '',
     tags: [],
     specifications: [{ key: '', value: '' }],
-    images: [],
     isActive: true,
     isFeatured: false
   });
@@ -26,7 +25,9 @@ function AddProductModal({ isOpen, onClose, onSuccess, editProduct = null }) {
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [imageUrls, setImageUrls] = useState([]);
+  const [imageUrls, setImageUrls] = useState([]);    // display URLs for <img src>
+  const [imagePaths, setImagePaths] = useState([]);   // raw paths saved to DB
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [currentTag, setCurrentTag] = useState('');
 
   useEffect(() => {
@@ -47,16 +48,15 @@ function AddProductModal({ isOpen, onClose, onSuccess, editProduct = null }) {
           dimensions: editProduct.dimensions || '',
           tags: editProduct.tags || [],
           specifications: editProduct.specifications || [{ key: '', value: '' }],
-          images: editProduct.images || [],
           isActive: editProduct.isActive !== undefined ? editProduct.isActive : true,
           isFeatured: editProduct.isFeatured || false
         });
-        // Set image URLs từ API response format - handle both images and productImages
+        // Load existing images — keep raw paths for submission
         const imagesArray = editProduct.productImages || editProduct.images || [];
-        const imageUrls = imagesArray
-          .map(img => getImageUrl(img.imageUrl))
-          .filter(url => url); // Remove null/undefined
-        setImageUrls(imageUrls);
+        const existingPaths = imagesArray.map(img => img.imageUrl).filter(Boolean);
+        const existingDisplayUrls = existingPaths.map(p => getImageUrl(p)).filter(Boolean);
+        setImagePaths(existingPaths);
+        setImageUrls(existingDisplayUrls);
       }
     }
   }, [isOpen, editProduct]);
@@ -128,22 +128,27 @@ function AddProductModal({ isOpen, onClose, onSuccess, editProduct = null }) {
     }));
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
-    const urls = files.map(file => URL.createObjectURL(file));
-    setImageUrls(prev => [...prev, ...urls]);
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, ...files]
-    }));
+    if (!files.length) return;
+    setUploadingImages(true);
+    try {
+      const results = await Promise.all(files.map(f => api.uploadImage(f, 'products')));
+      const newPaths = results.map(r => r.filePath);
+      const newDisplayUrls = newPaths.map(p => getImageUrl(p));
+      setImagePaths(prev => [...prev, ...newPaths]);
+      setImageUrls(prev => [...prev, ...newDisplayUrls]);
+    } catch (err) {
+      console.error('Image upload error:', err);
+      alert('Lỗi khi tải ảnh lên: ' + err.message);
+    } finally {
+      setUploadingImages(false);
+    }
   };
 
   const removeImage = (index) => {
     setImageUrls(prev => prev.filter((_, i) => i !== index));
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+    setImagePaths(prev => prev.filter((_, i) => i !== index));
   };
 
   const validateForm = () => {
@@ -173,7 +178,12 @@ function AddProductModal({ isOpen, onClose, onSuccess, editProduct = null }) {
         originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : null,
         stockQuantity: parseInt(formData.stockQuantity),
         weight: formData.weight ? parseFloat(formData.weight) : null,
-        specifications: formData.specifications.filter(spec => spec.key && spec.value)
+        specifications: formData.specifications.filter(spec => spec.key && spec.value),
+        productImages: imagePaths.map((path, i) => ({
+          imageUrl: path,
+          isPrimary: i === 0,
+          sortOrder: i
+        }))
       };
 
       if (editProduct) {
@@ -207,11 +217,11 @@ function AddProductModal({ isOpen, onClose, onSuccess, editProduct = null }) {
       dimensions: '',
       tags: [],
       specifications: [{ key: '', value: '' }],
-      images: [],
       isActive: true,
       isFeatured: false
     });
     setImageUrls([]);
+    setImagePaths([]);
     setCurrentTag('');
     setErrors({});
     onClose();
@@ -562,13 +572,14 @@ function AddProductModal({ isOpen, onClose, onSuccess, editProduct = null }) {
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p className="text-gray-600 mb-2">Kéo thả file vào đây hoặc</p>
-              <label className="cursor-pointer bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
-                Chọn file
+              <label className={`cursor-pointer px-4 py-2 rounded-lg transition-colors ${uploadingImages ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white`}>
+                {uploadingImages ? 'Đang tải lên...' : 'Chọn file'}
                 <input
                   type="file"
                   multiple
                   accept="image/*"
                   onChange={handleImageUpload}
+                  disabled={uploadingImages}
                   className="hidden"
                 />
               </label>

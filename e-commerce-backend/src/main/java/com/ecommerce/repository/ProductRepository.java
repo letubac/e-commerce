@@ -7,7 +7,6 @@ import java.util.Optional;
 
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.ecommerce.entity.Product;
 import com.ecommerce.entity.ProductImage;
@@ -103,4 +102,12 @@ public interface ProductRepository extends DbRepository<Product, Long> {
 	Integer hardDelete(@Param("id") Long id);
 
 	List<ProductImage> findImagesByProductId(@Param("productId") Long productId);
+
+	@Modifying
+	Integer insertProductImage(@Param("productId") Long productId, @Param("imageUrl") String imageUrl,
+			@Param("altText") String altText, @Param("isPrimary") boolean isPrimary,
+			@Param("sortOrder") Integer sortOrder);
+
+	@Modifying
+	Integer deleteImagesByProductId(@Param("productId") Long productId);
 }

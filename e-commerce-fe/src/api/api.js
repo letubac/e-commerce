@@ -143,6 +143,25 @@ const api = {
   createProduct: (data) => api.request('/admin/products', { method: 'POST', body: JSON.stringify(data) }),
   updateProduct: (id, data) => api.request(`/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteProduct: (id) => api.request(`/admin/products/${id}`, { method: 'DELETE' }),
+
+  // Upload image file — returns { filePath, fileUrl, fileName, fileSize, contentType }
+  uploadImage: async (file, category = 'products') => {
+    const token = localStorage.getItem('token');
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('category', category);
+    const response = await fetch(`${API_BASE_URL}/admin/upload`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || `Upload failed: ${response.status}`);
+    }
+    const json = await response.json();
+    return json.data; // { filePath, fileUrl, fileName, fileSize, contentType }
+  },
   
   // Categories
   getCategories: () => api.request('/categories'),
