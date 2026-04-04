@@ -26,5 +26,4 @@ INSERT INTO users (
     /*emailVerified*/,
     /*createdAt*/,
     /*updatedAt*/
-)
-RETURNING id;
+);

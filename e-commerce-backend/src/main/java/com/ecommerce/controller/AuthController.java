@@ -36,21 +36,21 @@ public class AuthController {
             // Check if username already exists
             if (!userService.isUsernameAvailable(request.getUsername())) {
                 return ResponseEntity.badRequest()
-                        .body(new ApiResponse<>(false, "Username is already taken!"));
+                        .body(new ApiResponse<>(false, "Tên đăng nhập đã được sử dụng!"));
             }
 
             // Check if email already exists
             if (!userService.isEmailAvailable(request.getEmail())) {
                 return ResponseEntity.badRequest()
-                        .body(new ApiResponse<>(false, "Email is already in use!"));
+                        .body(new ApiResponse<>(false, "Email đã được sử dụng!"));
             }
 
             UserDTO user = userService.createUser(request);
-            return ResponseEntity.ok(new ApiResponse<>(true, "User registered successfully", user));
+            return ResponseEntity.ok(new ApiResponse<>(true, "Đăng ký tài khoản thành công!", user));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Registration failed: " + e.getMessage()));
+                    .body(new ApiResponse<>(false, "Đăng ký thất bại: " + e.getMessage()));
         }
     }
 

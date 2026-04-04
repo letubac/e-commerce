@@ -205,7 +205,10 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public List<ProductDTO> getAllProducts() throws DetailException {
 		try {
-			return productRepository.findAllData().stream().map(productMapper::toDTO).collect(Collectors.toList());
+			log.debug("[getAllProducts] Calling findAllData()...");
+			List<Product> rawProducts = productRepository.findAllData();
+			log.debug("[getAllProducts] findAllData() returned {} products", rawProducts.size());
+			return rawProducts.stream().map(productMapper::toDTO).collect(Collectors.toList());
 		} catch (Exception e) {
 			log.error("Lỗi khi lấy danh sách sản phẩm", e);
 			throw new DetailException(ProductConstant.E854_PRODUCT_FETCH_FAILED);
@@ -216,6 +219,7 @@ public class ProductServiceImpl implements ProductService {
 	public Page<ProductDTO> getAllProducts(Pageable pageable) throws DetailException {
 		try {
 			List<ProductDTO> products = getAllProducts();
+			log.debug("[getAllProducts pageable] Total products after mapping: {}", products.size());
 			if (products.isEmpty()) {
 				return Page.empty(pageable);
 			}

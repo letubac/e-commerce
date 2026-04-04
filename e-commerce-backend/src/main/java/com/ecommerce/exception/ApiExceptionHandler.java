@@ -40,6 +40,28 @@ public class ApiExceptionHandler {
 	}
 
 	// Custom Error
+	@ExceptionHandler(DetailException.class)
+	public BusinessApiResponse detailException(DetailException ex, WebRequest request) {
+		String errorCode = ex.getExceptionErrorCode();
+		logMessage(((ServletWebRequest) request).getRequest().getRequestURI(),
+				errorCode != null ? errorCode : "DetailException");
+		String locale = Optional.ofNullable(this.request.getHeader("Accept-Language")).orElse("vi");
+		String message;
+		if (errorCode != null && ex.isTranslate()) {
+			try {
+				message = messageSource.getMessage(errorCode, ex.getParamater(), new Locale(locale));
+			} catch (Exception e) {
+				message = StringUtils.isNotBlank(ex.getSpecificMsg()) ? ex.getSpecificMsg() : errorCode;
+			}
+		} else {
+			message = StringUtils.isNotBlank(ex.getSpecificMsg()) ? ex.getSpecificMsg()
+					: (errorCode != null ? errorCode : "Lỗi hệ thống");
+		}
+		ExceptionCode expCode = ex.getExceptionCode();
+		int statusCode = expCode != null ? expCode.getValue() : 400;
+		return new BusinessApiResponse(statusCode, AppCoreConstant.ERROR, message, AppCoreConstant.EMPTY, 0);
+	}
+
 	@ExceptionHandler(DuplicateException.class)
 	public BusinessApiResponse duplicateException(DuplicateException ex, WebRequest request) {
 		logMessage(((ServletWebRequest) request).getRequest().getRequestURI(), ex.getMessage());
@@ -66,6 +88,7 @@ public class ApiExceptionHandler {
 			errorMessages.add(message);
 		}
 
-		return new BusinessApiResponse(errorCode, AppCoreConstant.ERROR, String.join("; ", errorMessages), AppCoreConstant.EMPTY, 0);
+		return new BusinessApiResponse(errorCode, AppCoreConstant.ERROR, String.join("; ", errorMessages),
+				AppCoreConstant.EMPTY, 0);
 	}
 }

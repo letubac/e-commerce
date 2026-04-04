@@ -1,1 +1,1 @@
-SELECT * FROM products WHERE featured = true AND is_active = true
+SELECT * FROM products WHERE is_featured = true AND is_active = true

@@ -113,6 +113,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 		log.debug("Fetching all flash sales with pagination");
 
 		List<FlashSale> allFlashSales = flashSaleRepository.findAllFlashSales();
+		log.debug("[getAllFlashSales] findAllFlashSales() returned {} records", allFlashSales.size());
 		List<FlashSaleDTO> dtos = allFlashSales.stream().map(this::convertToDTO).collect(Collectors.toList());
 
 		int start = (int) pageable.getOffset();

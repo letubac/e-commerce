@@ -1,8 +1,8 @@
 import toast from '../utils/toast';
 import { parseBusinessResponse } from '../utils/responseHandler';
 
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8280/api/v1';
-export const IMAGE_BASE_URL = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8280/api/v1'}/files`;
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+export const IMAGE_BASE_URL = `${process.env.REACT_APP_API_BASE_URL}/files`;
 
 // Helper function to get full image URL
 export const getImageUrl = (imageUrl) => {

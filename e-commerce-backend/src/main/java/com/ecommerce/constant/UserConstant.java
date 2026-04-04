@@ -10,52 +10,52 @@ public class UserConstant {
     // ==================== ERROR CODES ====================
 
     // Basic Operations (E950-E954)
-    public static final String USER_NOT_FOUND = "E950";
-    public static final String USER_CREATE_FAILED = "E951";
-    public static final String USER_UPDATE_FAILED = "E952";
-    public static final String USER_DELETE_FAILED = "E953";
-    public static final String USER_FETCH_FAILED = "E954";
+    public static final String USER_NOT_FOUND = "E950_USER_NOT_FOUND";
+    public static final String USER_CREATE_FAILED = "E951_USER_CREATE_FAILED";
+    public static final String USER_UPDATE_FAILED = "E952_USER_UPDATE_FAILED";
+    public static final String USER_DELETE_FAILED = "E953_USER_DELETE_FAILED";
+    public static final String USER_FETCH_FAILED = "E954_USER_FETCH_FAILED";
 
     // Validation & Duplicate (E955-E959)
-    public static final String USERNAME_ALREADY_EXISTS = "E955";
-    public static final String EMAIL_ALREADY_EXISTS = "E956";
-    public static final String INVALID_USER_DATA = "E957";
-    public static final String USER_ALREADY_EXISTS = "E958";
+    public static final String USERNAME_ALREADY_EXISTS = "E955_USERNAME_ALREADY_EXISTS";
+    public static final String EMAIL_ALREADY_EXISTS = "E956_EMAIL_ALREADY_EXISTS";
+    public static final String INVALID_USER_DATA = "E957_INVALID_USER_DATA";
+    public static final String USER_ALREADY_EXISTS = "E958_USER_ALREADY_EXISTS";
 
     // Password Management (E960-E964)
-    public static final String PASSWORD_INVALID = "E960";
-    public static final String PASSWORD_MISMATCH = "E961";
-    public static final String PASSWORD_CHANGE_FAILED = "E962";
-    public static final String PASSWORD_RESET_FAILED = "E963";
-    public static final String PASSWORD_TOO_WEAK = "E964";
+    public static final String PASSWORD_INVALID = "E960_PASSWORD_INVALID";
+    public static final String PASSWORD_MISMATCH = "E961_PASSWORD_MISMATCH";
+    public static final String PASSWORD_CHANGE_FAILED = "E962_PASSWORD_CHANGE_FAILED";
+    public static final String PASSWORD_RESET_FAILED = "E963_PASSWORD_RESET_FAILED";
+    public static final String PASSWORD_TOO_WEAK = "E964_PASSWORD_TOO_WEAK";
 
     // Account Status (E965-E969)
-    public static final String ACCOUNT_LOCKED = "E965";
-    public static final String ACCOUNT_INACTIVE = "E966";
-    public static final String ACCOUNT_LOCK_FAILED = "E967";
-    public static final String ACCOUNT_UNLOCK_FAILED = "E968";
-    public static final String ACCOUNT_STATUS_UPDATE_FAILED = "E969";
+    public static final String ACCOUNT_LOCKED = "E965_ACCOUNT_LOCKED";
+    public static final String ACCOUNT_INACTIVE = "E966_ACCOUNT_INACTIVE";
+    public static final String ACCOUNT_LOCK_FAILED = "E967_ACCOUNT_LOCK_FAILED";
+    public static final String ACCOUNT_UNLOCK_FAILED = "E968_ACCOUNT_UNLOCK_FAILED";
+    public static final String ACCOUNT_STATUS_UPDATE_FAILED = "E969_ACCOUNT_STATUS_UPDATE_FAILED";
 
     // Email & Verification (E970-E974)
-    public static final String EMAIL_SEND_FAILED = "E970";
-    public static final String EMAIL_VERIFICATION_FAILED = "E971";
-    public static final String EMAIL_INVALID = "E972";
-    public static final String VERIFICATION_TOKEN_INVALID = "E973";
-    public static final String VERIFICATION_TOKEN_EXPIRED = "E974";
+    public static final String EMAIL_SEND_FAILED = "E970_EMAIL_SEND_FAILED";
+    public static final String EMAIL_VERIFICATION_FAILED = "E971_EMAIL_VERIFICATION_FAILED";
+    public static final String EMAIL_INVALID = "E972_EMAIL_INVALID";
+    public static final String VERIFICATION_TOKEN_INVALID = "E973_VERIFICATION_TOKEN_INVALID";
+    public static final String VERIFICATION_TOKEN_EXPIRED = "E974_VERIFICATION_TOKEN_EXPIRED";
 
     // Search & Filter (E975-E979)
-    public static final String USER_SEARCH_FAILED = "E975";
-    public static final String USER_FILTER_FAILED = "E976";
+    public static final String USER_SEARCH_FAILED = "E975_USER_SEARCH_FAILED";
+    public static final String USER_FILTER_FAILED = "E976_USER_FILTER_FAILED";
 
     // Statistics & Reports (E980-E984)
-    public static final String USER_STATISTICS_FAILED = "E980";
+    public static final String USER_STATISTICS_FAILED = "E980_USER_STATISTICS_FAILED";
 
     // Pagination (E985-E989)
-    public static final String USER_PAGINATION_FAILED = "E985";
+    public static final String USER_PAGINATION_FAILED = "E985_USER_PAGINATION_FAILED";
 
     // Authorization (E990-E994)
-    public static final String USER_UNAUTHORIZED = "E990";
-    public static final String USER_FORBIDDEN = "E991";
+    public static final String USER_UNAUTHORIZED = "E990_USER_UNAUTHORIZED";
+    public static final String USER_FORBIDDEN = "E991_USER_FORBIDDEN";
 
     // ==================== SUCCESS CODES ====================
 

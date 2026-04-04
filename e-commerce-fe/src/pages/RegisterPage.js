@@ -94,7 +94,7 @@ function RegisterPage() {
 
       await api.register(userData);
       
-      alert('Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.');
+      alert('Đăng ký thành công! Đang chuyển đến trang đăng nhập...');
       navigate('/login');
     } catch (error) {
       if (error.response?.data?.errors) {

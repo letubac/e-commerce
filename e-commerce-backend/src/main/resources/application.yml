@@ -103,6 +103,10 @@ logging:
     org.springframework.security: DEBUG
     org.springframework.web: DEBUG
     org.springframework.kafka: INFO
+    # SQL logging - trace all queries and parameters
+    org.springframework.jdbc.core: DEBUG
+    vn.com.unit.miragesql: DEBUG
+    vn.com.unit.sparwings: DEBUG
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

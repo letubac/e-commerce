@@ -65,7 +65,7 @@ public class UserServiceImpl implements UserService {
                     request.getAddress(),
                     "CUSTOMER",
                     true,
-                    false,
+                    true,
                     now,
                     now);
 
