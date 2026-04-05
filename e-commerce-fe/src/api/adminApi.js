@@ -111,6 +111,7 @@ const adminApi = {
   updateCategory: (id, data) =>
     adminApi.request(`/admin/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteCategory: (id) => adminApi.request(`/admin/categories/${id}`, { method: 'DELETE' }),
+  toggleCategoryStatus: (id) => adminApi.request(`/admin/categories/${id}/toggle-status`, { method: 'PUT' }),
   
   // Brand Management APIs
   getBrands: () => adminApi.request('/admin/brands'),
@@ -120,6 +121,7 @@ const adminApi = {
   updateBrand: (id, data) =>
     adminApi.request(`/admin/brands/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteBrand: (id) => adminApi.request(`/admin/brands/${id}`, { method: 'DELETE' }),
+  toggleBrandStatus: (id) => adminApi.request(`/admin/brands/${id}/toggle-status`, { method: 'PUT' }),
 
   // Chat Management APIs
   getChatConversations: (params) => adminApi.request(`/chat/admin/conversations?${new URLSearchParams(params)}`),

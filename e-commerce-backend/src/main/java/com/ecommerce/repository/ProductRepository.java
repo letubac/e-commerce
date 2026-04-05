@@ -34,7 +34,11 @@ public interface ProductRepository extends DbRepository<Product, Long> {
 
 	List<Product> findByCategory(@Param("categoryId") Long categoryId);
 
+	List<Product> findByCategoryAdmin(@Param("categoryId") Long categoryId);
+
 	List<Product> findByBrand(@Param("brandId") Long brandId);
+
+	List<Product> findByBrandAdmin(@Param("brandId") Long brandId);
 
 	List<Product> findByPriceRange(@Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice);
 

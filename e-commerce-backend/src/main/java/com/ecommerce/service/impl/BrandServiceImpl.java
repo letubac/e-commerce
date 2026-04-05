@@ -79,6 +79,23 @@ public class BrandServiceImpl implements BrandService {
 		}
 	}
 
+	private String generateSlug(String name) {
+		return name.toLowerCase()
+				.replaceAll("[àáâãäå]", "a").replaceAll("[èéêë]", "e")
+				.replaceAll("[ìíîï]", "i").replaceAll("[òóôõö]", "o").replaceAll("[ùúûü]", "u")
+				.replaceAll("[ýÿ]", "y").replaceAll("[ñ]", "n").replaceAll("[ç]", "c")
+				.replaceAll("[đ]", "d")
+				// Vietnamese
+				.replaceAll("[ăắặằẳẵ]", "a").replaceAll("[âấậầẩẫ]", "a")
+				.replaceAll("[êếệềểễ]", "e").replaceAll("[ôốộồổỗ]", "o")
+				.replaceAll("[ơớợờởỡ]", "o").replaceAll("[ưứựừửữ]", "u")
+				.replaceAll("[ịỉĩ]", "i").replaceAll("[ụủũ]", "u")
+				.replaceAll("[ạảã]", "a").replaceAll("[ẹẻẽ]", "e").replaceAll("[ọỏõ]", "o")
+				.replaceAll("[Đ]", "d")
+				.replaceAll("[^a-z0-9\\s-]", "").replaceAll("\\s+", "-")
+				.replaceAll("-+", "-").replaceAll("^-|-$", "");
+	}
+
 	@Override
 	public BrandDTO save(BrandDTO brandDTO) throws DetailException {
 		log.debug("Creating new brand: {}", brandDTO.getName());
@@ -94,15 +111,23 @@ public class BrandServiceImpl implements BrandService {
 				throw new DetailException(BrandConstant.E205_BRAND_NAME_EXISTS);
 			}
 
-			Brand brand = convertToEntity(brandDTO);
-			brand.setCreatedAt(new Date());
-			brand.setUpdatedAt(new Date());
-			brand.setActive(true);
+			Date now = new Date();
+			String slug = (brandDTO.getSlug() != null && !brandDTO.getSlug().isBlank())
+					? brandDTO.getSlug()
+					: generateSlug(brandDTO.getName());
+			String logoUrl = brandDTO.getLogoUrl() != null ? brandDTO.getLogoUrl() : brandDTO.getImageUrl();
 
-			Brand savedBrand = brandRepository.save(brand);
-			log.info("Created brand with ID: {}", savedBrand.getId());
+			Integer result = brandRepository.insertBrand(
+					brandDTO.getName(), slug, brandDTO.getDescription(),
+					logoUrl, brandDTO.getWebsiteUrl(), true, now, now);
 
-			return convertToDTO(savedBrand);
+			if (result == null || result <= 0) {
+				throw new DetailException(BrandConstant.E201_BRAND_CREATE_ERROR);
+			}
+
+			Brand savedBrand = brandRepository.findByExactName(brandDTO.getName());
+			log.info("Created brand with ID: {}", savedBrand != null ? savedBrand.getId() : "unknown");
+			return savedBrand != null ? convertToDTO(savedBrand) : brandDTO;
 		} catch (DetailException e) {
 			throw e;
 		} catch (Exception e) {
@@ -132,15 +157,23 @@ public class BrandServiceImpl implements BrandService {
 				throw new DetailException(BrandConstant.E205_BRAND_NAME_EXISTS);
 			}
 
-			existingBrand.setName(brandDTO.getName());
-			existingBrand.setDescription(brandDTO.getDescription());
-			existingBrand.setImageUrl(brandDTO.getImageUrl());
-			existingBrand.setWebsiteUrl(brandDTO.getWebsiteUrl());
-			existingBrand.setUpdatedAt(new Date());
+			String slug = (brandDTO.getSlug() != null && !brandDTO.getSlug().isBlank())
+					? brandDTO.getSlug()
+					: existingBrand.getSlug() != null ? existingBrand.getSlug() : generateSlug(brandDTO.getName());
+			String logoUrl = brandDTO.getLogoUrl() != null ? brandDTO.getLogoUrl()
+					: (brandDTO.getImageUrl() != null ? brandDTO.getImageUrl() : existingBrand.getLogoUrl());
+			Date now = new Date();
 
-			Brand updatedBrand = brandRepository.save(existingBrand);
-			log.info("Updated brand with ID: {}", updatedBrand.getId());
+			Integer result = brandRepository.updateBrand(
+					brandDTO.getId(), brandDTO.getName(), slug, brandDTO.getDescription(),
+					logoUrl, brandDTO.getWebsiteUrl(), existingBrand.isActive(), now);
 
+			if (result == null || result <= 0) {
+				throw new DetailException(BrandConstant.E202_BRAND_UPDATE_ERROR);
+			}
+
+			Brand updatedBrand = brandRepository.findById(brandDTO.getId());
+			log.info("Updated brand with ID: {}", brandDTO.getId());
 			return convertToDTO(updatedBrand);
 		} catch (DetailException e) {
 			throw e;
@@ -160,12 +193,7 @@ public class BrandServiceImpl implements BrandService {
 				throw new DetailException(BrandConstant.E200_BRAND_NOT_FOUND);
 			}
 
-			// Check if brand has associated products
-			// if (brand.getProducts() != null && !brand.getProducts().isEmpty()) {
-			// throw new DetailException(BrandConstant.E208_BRAND_HAS_PRODUCTS);
-			// }
-
-			brandRepository.delete(brand);
+			brandRepository.deleteBrand(id);
 			log.info("Deleted brand with ID: {}", id);
 		} catch (DetailException e) {
 			throw e;
@@ -191,12 +219,20 @@ public class BrandServiceImpl implements BrandService {
 				throw new DetailException(BrandConstant.E200_BRAND_NOT_FOUND);
 			}
 
-			brand.setActive(!brand.isActive());
-			brand.setUpdatedAt(new Date());
+			boolean newStatus = !brand.isActive();
+			Date now = new Date();
+			String slug = brand.getSlug() != null ? brand.getSlug() : generateSlug(brand.getName());
 
-			Brand updatedBrand = brandRepository.save(brand);
-			log.info("Toggled active status for brand ID: {} to {}", id, updatedBrand.isActive());
+			Integer result = brandRepository.updateBrand(
+					id, brand.getName(), slug, brand.getDescription(),
+					brand.getLogoUrl(), brand.getWebsiteUrl(), newStatus, now);
 
+			if (result == null || result <= 0) {
+				throw new DetailException(BrandConstant.E210_BRAND_TOGGLE_STATUS_ERROR);
+			}
+
+			Brand updatedBrand = brandRepository.findById(id);
+			log.info("Toggled active status for brand ID: {} to {}", id, newStatus);
 			return convertToDTO(updatedBrand);
 		} catch (DetailException e) {
 			throw e;

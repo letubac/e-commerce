@@ -2,7 +2,7 @@
  * author: LeTuBac
  */
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Tags, Globe, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Tags, Globe, Search, Power } from 'lucide-react';
 import adminApi from '../api/adminApi';
 import toast from '../utils/toast';
 import ConfirmDialog, { ACTION_TYPES } from './ConfirmDialog';
@@ -14,6 +14,7 @@ function BrandManagement() {
   const [editingBrand, setEditingBrand] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -87,6 +88,20 @@ function BrandManagement() {
     }
   };
 
+  const handleToggleStatus = async (brand) => {
+    setTogglingId(brand.id);
+    try {
+      await adminApi.toggleBrandStatus(brand.id);
+      const newStatus = !brand.active;
+      toast.success(`${newStatus ? 'Kích hoạt' : 'Vô hiệu hóa'} thương hiệu thành công`);
+      fetchBrands();
+    } catch (error) {
+      toast.error(error.message || 'Không thể thay đổi trạng thái thương hiệu');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   const filtered = brands.filter(b =>
     b.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -146,7 +161,9 @@ function BrandManagement() {
             {filtered.map((brand) => (
               <div
                 key={brand.id}
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                className={`border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow ${
+                  !brand.active ? 'opacity-60' : ''
+                }`}
               >
                 <div className="flex items-center space-x-3 mb-3">
                   <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -174,10 +191,30 @@ function BrandManagement() {
                     )}
                   </div>
                 </div>
+                <div className="mb-3">
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    brand.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {brand.active ? 'Hoạt động' : 'Ẩn'}
+                  </span>
+                </div>
                 {brand.description && (
                   <p className="text-xs text-gray-500 mb-3 line-clamp-2">{brand.description}</p>
                 )}
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => handleToggleStatus(brand)}
+                    disabled={togglingId === brand.id}
+                    title={brand.active ? 'Vô hiệu hóa' : 'Kích hoạt'}
+                    className={`flex items-center justify-center px-2 py-1.5 text-sm border rounded transition-colors ${
+                      togglingId === brand.id ? 'opacity-50 cursor-not-allowed' : ''
+                    } ${brand.active
+                      ? 'border-green-200 text-green-600 bg-green-50 hover:bg-green-100'
+                      : 'border-gray-300 text-gray-400 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Power size={14} />
+                  </button>
                   <button
                     onClick={() => handleEdit(brand)}
                     className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"

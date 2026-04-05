@@ -1,0 +1,1 @@
+SELECT * FROM categories WHERE LOWER(name) = LOWER(/*name*/'x')

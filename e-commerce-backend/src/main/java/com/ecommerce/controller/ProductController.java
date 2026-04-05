@@ -155,9 +155,9 @@ public class ProductController {
             if (keyword != null && !keyword.trim().isEmpty()) {
                 products = productService.searchProducts(keyword, pageRequest);
             } else if (categoryId != null) {
-                products = productService.getProductsByCategory(categoryId, pageRequest);
+                products = productService.getProductsByCategoryAdmin(categoryId, pageRequest);
             } else if (brandId != null && brandId != 0) {
-                products = productService.getProductsByBrand(brandId, pageRequest);
+                products = productService.getProductsByBrandAdmin(brandId, pageRequest);
             } else {
                 products = productService.getAllProducts(pageRequest);
             }

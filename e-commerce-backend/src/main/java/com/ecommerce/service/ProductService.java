@@ -45,9 +45,13 @@ public interface ProductService {
 
         Page<ProductDTO> getProductsByCategory(Long categoryId, Pageable pageable) throws DetailException;
 
+        Page<ProductDTO> getProductsByCategoryAdmin(Long categoryId, Pageable pageable) throws DetailException;
+
         List<ProductDTO> getProductsByBrand(Long brandId) throws DetailException;
 
         Page<ProductDTO> getProductsByBrand(Long brandId, Pageable pageable) throws DetailException;
+
+        Page<ProductDTO> getProductsByBrandAdmin(Long brandId, Pageable pageable) throws DetailException;
 
         List<ProductDTO> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) throws DetailException;
 

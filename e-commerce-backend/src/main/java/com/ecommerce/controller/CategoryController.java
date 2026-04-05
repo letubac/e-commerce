@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ecommerce.constant.CategoryConstant;
-import com.ecommerce.dto.ApiResponse;
 import com.ecommerce.dto.CategoryDTO;
 import com.ecommerce.dto.ProductDTO;
 import com.ecommerce.exception.ErrorHandler;
@@ -75,7 +73,7 @@ public class CategoryController {
      * Get products by category with pagination and filtering
      */
     @GetMapping("/categories/{categoryId}/products")
-    public ResponseEntity<ApiResponse<Page<ProductDTO>>> getCategoryProducts(
+    public ResponseEntity<BusinessApiResponse> getCategoryProducts(
             @PathVariable(name = "categoryId") Long categoryId,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "20") int size,
@@ -85,7 +83,7 @@ public class CategoryController {
             @RequestParam(name = "maxPrice", required = false) Double maxPrice,
             @RequestParam(name = "brandId", required = false) Long brandId,
             @RequestParam(name = "active", required = false, defaultValue = "true") Boolean active) {
-
+        long start = System.currentTimeMillis();
         try {
             // Validate category exists
             categoryService.findById(categoryId);
@@ -96,12 +94,10 @@ public class CategoryController {
             Page<ProductDTO> products = productService.findByCategoryId(
                     categoryId, pageRequest, minPrice, maxPrice, brandId, active);
 
-            return ResponseEntity.ok(ApiResponse.success(products,
-                    "Lấy sản phẩm theo danh mục thành công"));
+            return ResponseEntity.ok(successHandler.handlerSuccess(products, start));
         } catch (Exception e) {
             log.error("Lỗi khi lấy sản phẩm theo danh mục ID: {}", categoryId, e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy sản phẩm theo danh mục"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -111,15 +107,14 @@ public class CategoryController {
      * Get all categories for admin (including inactive)
      */
     @GetMapping("/admin/categories")
-    public ResponseEntity<ApiResponse<List<CategoryDTO>>> getAllCategoriesAdmin() {
+    public ResponseEntity<BusinessApiResponse> getAllCategoriesAdmin() {
+        long start = System.currentTimeMillis();
         try {
             List<CategoryDTO> categories = categoryService.findAll();
-            return ResponseEntity.ok(ApiResponse.success(categories,
-                    "Lấy danh sách tất cả danh mục thành công"));
+            return ResponseEntity.ok(successHandler.handlerSuccess(categories, start));
         } catch (Exception e) {
             log.error("Lỗi khi lấy danh sách tất cả danh mục cho admin", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy danh sách danh mục"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -127,20 +122,15 @@ public class CategoryController {
      * Create new category (Admin only)
      */
     @PostMapping("/admin/categories")
-    public ResponseEntity<ApiResponse<CategoryDTO>> createCategory(@Valid @RequestBody CategoryDTO categoryDTO) {
+    public ResponseEntity<BusinessApiResponse> createCategory(@Valid @RequestBody CategoryDTO categoryDTO) {
+        long start = System.currentTimeMillis();
         try {
             CategoryDTO createdCategory = categoryService.save(categoryDTO);
             log.info("Đã tạo danh mục mới: {}", createdCategory.getName());
-            return ResponseEntity.ok(ApiResponse.success(createdCategory,
-                    "Tạo danh mục thành công"));
-        } catch (IllegalArgumentException e) {
-            log.warn("Dữ liệu không hợp lệ khi tạo danh mục: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Dữ liệu không hợp lệ: " + e.getMessage()));
+            return ResponseEntity.ok(successHandler.handlerSuccess(createdCategory, start));
         } catch (Exception e) {
             log.error("Lỗi khi tạo danh mục", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi tạo danh mục"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -148,26 +138,18 @@ public class CategoryController {
      * Update category (Admin only)
      */
     @PutMapping("/admin/categories/{id}")
-    public ResponseEntity<ApiResponse<CategoryDTO>> updateCategory(
+    public ResponseEntity<BusinessApiResponse> updateCategory(
             @PathVariable(name = "id") Long id,
             @Valid @RequestBody CategoryDTO categoryDTO) {
+        long start = System.currentTimeMillis();
         try {
             categoryDTO.setId(id);
             CategoryDTO updatedCategory = categoryService.update(categoryDTO);
             log.info("Đã cập nhật danh mục ID: {}", id);
-            return ResponseEntity.ok(ApiResponse.success(updatedCategory,
-                    "Cập nhật danh mục thành công"));
-        } catch (IllegalArgumentException e) {
-            log.warn("Dữ liệu không hợp lệ khi cập nhật danh mục ID {}: {}", id, e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Dữ liệu không hợp lệ: " + e.getMessage()));
-        } catch (RuntimeException e) {
-            log.warn("Không tìm thấy danh mục ID: {}", id);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(successHandler.handlerSuccess(updatedCategory, start));
         } catch (Exception e) {
             log.error("Lỗi khi cập nhật danh mục ID: {}", id, e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi cập nhật danh mục"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -175,18 +157,15 @@ public class CategoryController {
      * Delete category (Admin only)
      */
     @DeleteMapping("/admin/categories/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable(name = "id") Long id) {
+    public ResponseEntity<BusinessApiResponse> deleteCategory(@PathVariable(name = "id") Long id) {
+        long start = System.currentTimeMillis();
         try {
             categoryService.deleteById(id);
             log.info("Đã xóa danh mục ID: {}", id);
-            return ResponseEntity.ok(ApiResponse.success(null, "Xóa danh mục thành công"));
-        } catch (RuntimeException e) {
-            log.warn("Không tìm thấy danh mục ID: {}", id);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(successHandler.handlerSuccess(null, start));
         } catch (Exception e) {
             log.error("Lỗi khi xóa danh mục ID: {}", id, e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi xóa danh mục"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -194,17 +173,14 @@ public class CategoryController {
      * Get category by ID
      */
     @GetMapping("/admin/categories/{id}")
-    public ResponseEntity<ApiResponse<CategoryDTO>> getCategoryById(@PathVariable(name = "id") Long id) {
+    public ResponseEntity<BusinessApiResponse> getCategoryById(@PathVariable(name = "id") Long id) {
+        long start = System.currentTimeMillis();
         try {
             CategoryDTO category = categoryService.findById(id);
-            return ResponseEntity.ok(ApiResponse.success(category, "Lấy thông tin danh mục thành công"));
-        } catch (RuntimeException e) {
-            log.warn("Không tìm thấy danh mục ID: {}", id);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(successHandler.handlerSuccess(category, start));
         } catch (Exception e) {
             log.error("Lỗi khi lấy danh mục ID: {}", id, e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi lấy thông tin danh mục"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 
@@ -212,20 +188,16 @@ public class CategoryController {
      * Toggle category active status (Admin only)
      */
     @PutMapping("/admin/categories/{id}/toggle-status")
-    public ResponseEntity<ApiResponse<CategoryDTO>> toggleCategoryStatus(@PathVariable(name = "id") Long id) {
+    public ResponseEntity<BusinessApiResponse> toggleCategoryStatus(@PathVariable(name = "id") Long id) {
+        long start = System.currentTimeMillis();
         try {
             CategoryDTO updatedCategory = categoryService.toggleActiveStatus(id);
             String status = updatedCategory.isActive() ? "kích hoạt" : "vô hiệu hóa";
             log.info("Đã {} danh mục ID: {}", status, id);
-            return ResponseEntity.ok(ApiResponse.success(updatedCategory,
-                    "Thay đổi trạng thái danh mục thành công"));
-        } catch (RuntimeException e) {
-            log.warn("Không tìm thấy danh mục ID: {}", id);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(successHandler.handlerSuccess(updatedCategory, start));
         } catch (Exception e) {
             log.error("Lỗi khi thay đổi trạng thái danh mục ID: {}", id, e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Lỗi hệ thống khi thay đổi trạng thái danh mục"));
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
     }
 }

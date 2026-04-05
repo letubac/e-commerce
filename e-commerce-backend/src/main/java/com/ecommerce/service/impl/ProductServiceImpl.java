@@ -485,6 +485,50 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
+	public Page<ProductDTO> getProductsByCategoryAdmin(Long categoryId, Pageable pageable) throws DetailException {
+		try {
+			List<ProductDTO> products = productRepository.findByCategoryAdmin(categoryId).stream()
+					.map(productMapper::toDTO).collect(Collectors.toList());
+			if (products.isEmpty()) {
+				return Page.empty(pageable);
+			}
+			products.forEach(product -> {
+				product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+						.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+			});
+			int start = Math.min((int) pageable.getOffset(), products.size());
+			int end = Math.min((start + pageable.getPageSize()), products.size());
+			List<ProductDTO> subList = products.subList(start, end);
+			return new PageImpl<>(subList, pageable, products.size());
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy sản phẩm theo category ID cho admin: {}", categoryId, e);
+			throw new DetailException(ProductConstant.E875_PRODUCTS_BY_CATEGORY_FAILED);
+		}
+	}
+
+	@Override
+	public Page<ProductDTO> getProductsByBrandAdmin(Long brandId, Pageable pageable) throws DetailException {
+		try {
+			List<ProductDTO> products = productRepository.findByBrandAdmin(brandId).stream()
+					.map(productMapper::toDTO).collect(Collectors.toList());
+			if (products.isEmpty()) {
+				return Page.empty(pageable);
+			}
+			products.forEach(product -> {
+				product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+						.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+			});
+			int start = Math.min((int) pageable.getOffset(), products.size());
+			int end = Math.min((start + pageable.getPageSize()), products.size());
+			List<ProductDTO> subList = products.subList(start, end);
+			return new PageImpl<>(subList, pageable, products.size());
+		} catch (Exception e) {
+			log.error("Lỗi khi lấy sản phẩm theo brand ID cho admin: {}", brandId, e);
+			throw new DetailException(ProductConstant.E876_PRODUCTS_BY_BRAND_FAILED);
+		}
+	}
+
+	@Override
 	public List<ProductDTO> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) throws DetailException {
 		try {
 			return productRepository.findByPriceRange(minPrice, maxPrice).stream().map(productMapper::toDTO)

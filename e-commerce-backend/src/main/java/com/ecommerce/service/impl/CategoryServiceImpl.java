@@ -79,6 +79,20 @@ public class CategoryServiceImpl implements CategoryService {
 		}
 	}
 
+	private String generateSlug(String name) {
+		return name.toLowerCase()
+				.replaceAll("[àáâãäå]", "a").replaceAll("[èéêë]", "e")
+				.replaceAll("[ìíîï]", "i").replaceAll("[òóôõö]", "o").replaceAll("[ùúûü]", "u")
+				.replaceAll("[ăắặằẳẵ]", "a").replaceAll("[âấậầẩẫ]", "a")
+				.replaceAll("[êếệềểễ]", "e").replaceAll("[ôốộồổỗ]", "o")
+				.replaceAll("[ơớợờởỡ]", "o").replaceAll("[ưứựừửữ]", "u")
+				.replaceAll("[ịỉĩ]", "i").replaceAll("[ụủũ]", "u")
+				.replaceAll("[ạảã]", "a").replaceAll("[ẹẻẽ]", "e").replaceAll("[ọỏõ]", "o")
+				.replaceAll("[đĐ]", "d")
+				.replaceAll("[^a-z0-9\\s-]", "").replaceAll("\\s+", "-")
+				.replaceAll("-+", "-").replaceAll("^-|-$", "");
+	}
+
 	@Override
 	public CategoryDTO save(CategoryDTO categoryDTO) throws DetailException {
 		log.debug("Creating new category: {}", categoryDTO.getName());
@@ -94,15 +108,24 @@ public class CategoryServiceImpl implements CategoryService {
 				throw new DetailException(CategoryConstant.E411_CATEGORY_NAME_EXISTS);
 			}
 
-			Category category = convertToEntity(categoryDTO);
-			category.setCreatedAt(new Date());
-			category.setUpdatedAt(new Date());
-			category.setActive(true);
+			Date now = new Date();
+			String slug = (categoryDTO.getSlug() != null && !categoryDTO.getSlug().isBlank())
+					? categoryDTO.getSlug()
+					: generateSlug(categoryDTO.getName());
 
-			Category savedCategory = categoryRepository.save(category);
-			log.info("Created category with ID: {}", savedCategory.getId());
+			Integer result = categoryRepository.insertCategory(
+					categoryDTO.getName(), slug, categoryDTO.getDescription(),
+					categoryDTO.getParentId(), categoryDTO.getImageUrl(),
+					categoryDTO.getSortOrder() != null ? categoryDTO.getSortOrder() : 0,
+					true, now, now);
 
-			return convertToDTO(savedCategory);
+			if (result == null || result <= 0) {
+				throw new DetailException(CategoryConstant.E406_CATEGORY_CREATE_ERROR);
+			}
+
+			Category savedCategory = categoryRepository.findByExactName(categoryDTO.getName()).orElse(null);
+			log.info("Created category with ID: {}", savedCategory != null ? savedCategory.getId() : "unknown");
+			return savedCategory != null ? convertToDTO(savedCategory) : categoryDTO;
 		} catch (DetailException e) {
 			throw e;
 		} catch (Exception e) {
@@ -135,14 +158,27 @@ public class CategoryServiceImpl implements CategoryService {
 				throw new DetailException(CategoryConstant.E411_CATEGORY_NAME_EXISTS);
 			}
 
-			existingCategory.setName(categoryDTO.getName());
-			existingCategory.setDescription(categoryDTO.getDescription());
-			existingCategory.setImageUrl(categoryDTO.getImageUrl());
-			existingCategory.setUpdatedAt(new Date());
+			String slug = (categoryDTO.getSlug() != null && !categoryDTO.getSlug().isBlank())
+					? categoryDTO.getSlug()
+					: existingCategory.getSlug() != null ? existingCategory.getSlug()
+							: generateSlug(categoryDTO.getName());
+			Date now = new Date();
 
-			Category updatedCategory = categoryRepository.save(existingCategory);
-			log.info("Updated category with ID: {}", updatedCategory.getId());
+			Integer result = categoryRepository.updateCategory(
+					categoryDTO.getId(), categoryDTO.getName(), slug,
+					categoryDTO.getDescription(), categoryDTO.getParentId(),
+					categoryDTO.getImageUrl(),
+					categoryDTO.getSortOrder() != null ? categoryDTO.getSortOrder()
+							: (existingCategory.getSortOrder() != null ? existingCategory.getSortOrder() : 0),
+					existingCategory.isActive(), now);
 
+			if (result == null || result <= 0) {
+				throw new DetailException(CategoryConstant.E407_CATEGORY_UPDATE_ERROR);
+			}
+
+			Category updatedCategory = categoryRepository.findById(categoryDTO.getId())
+					.orElse(existingCategory);
+			log.info("Updated category with ID: {}", categoryDTO.getId());
 			return convertToDTO(updatedCategory);
 		} catch (DetailException e) {
 			throw e;
@@ -157,15 +193,12 @@ public class CategoryServiceImpl implements CategoryService {
 		log.debug("Deleting category with ID: {}", id);
 
 		try {
-			Category category = categoryRepository.findById(id)
-					.orElseThrow(() -> new DetailException(CategoryConstant.E400_CATEGORY_NOT_FOUND));
+			boolean exists = categoryRepository.existsById(id);
+			if (!exists) {
+				throw new DetailException(CategoryConstant.E400_CATEGORY_NOT_FOUND);
+			}
 
-			// Check if category has associated products
-			// if (category.getProducts() != null && !category.getProducts().isEmpty()) {
-			// throw new DetailException(CategoryConstant.E425_CATEGORY_HAS_PRODUCTS);
-			// }
-
-			categoryRepository.delete(category);
+			categoryRepository.deleteCategory(id);
 			log.info("Deleted category with ID: {}", id);
 		} catch (DetailException e) {
 			throw e;
@@ -188,12 +221,22 @@ public class CategoryServiceImpl implements CategoryService {
 			Category category = categoryRepository.findById(id)
 					.orElseThrow(() -> new DetailException(CategoryConstant.E400_CATEGORY_NOT_FOUND));
 
-			category.setActive(!category.isActive());
-			category.setUpdatedAt(new Date());
+			boolean newStatus = !category.isActive();
+			Date now = new Date();
+			String slug = category.getSlug() != null ? category.getSlug() : generateSlug(category.getName());
 
-			Category updatedCategory = categoryRepository.save(category);
-			log.info("Toggled active status for category ID: {} to {}", id, updatedCategory.isActive());
+			Integer result = categoryRepository.updateCategory(
+					id, category.getName(), slug, category.getDescription(),
+					category.getParentId(), category.getImageUrl(),
+					category.getSortOrder() != null ? category.getSortOrder() : 0,
+					newStatus, now);
 
+			if (result == null || result <= 0) {
+				throw new DetailException(CategoryConstant.E409_CATEGORY_TOGGLE_ERROR);
+			}
+
+			Category updatedCategory = categoryRepository.findById(id).orElse(category);
+			log.info("Toggled active status for category ID: {} to {}", id, newStatus);
 			return convertToDTO(updatedCategory);
 		} catch (DetailException e) {
 			throw e;
