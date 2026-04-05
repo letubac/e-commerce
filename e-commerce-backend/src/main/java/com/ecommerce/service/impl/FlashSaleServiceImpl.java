@@ -524,60 +524,66 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 	public void syncFlashSaleStatus() {
 		// 1. Auto-activate flash sales that should now be running
 		List<FlashSale> toActivate = flashSaleRepository.findToActivate();
-		for (FlashSale fs : toActivate) {
-			// Only activate if it has at least one active product
-			List<FlashSaleProduct> activeProds = flashSaleProductRepository.findActiveByFlashSaleId(fs.getId());
-			if (!activeProds.isEmpty()) {
-				flashSaleRepository.updateStatus(fs.getId(), true);
-				log.info("[Scheduler] Auto-activated flash sale id={} name={}", fs.getId(), fs.getName());
-				// Notify all users
-				try {
-					NotificationDTO notif = new NotificationDTO();
-					notif.setTitle("🔥 Flash Sale bắt đầu!");
-					notif.setMessage(fs.getName() + " đã bắt đầu! Đừng bỏ lỡ cơ hội mà.");
-					notif.setType("FLASH_SALE");
-					notif.setEntityType("FLASH_SALE");
-					notif.setEntityId(fs.getId());
-					notif.setPriority("HIGH");
-					notif.setLink("/flash-sale");
-					notificationService.broadcastToAll(notif);
-				} catch (Exception e) {
-					log.warn("[Scheduler] Failed to send activate notification for flash sale id={}: {}", fs.getId(),
-							e.getMessage());
+		if (!toActivate.isEmpty()) {
+			for (FlashSale fs : toActivate) {
+				// Only activate if it has at least one active product
+				List<FlashSaleProduct> activeProds = flashSaleProductRepository.findActiveByFlashSaleId(fs.getId());
+				if (!activeProds.isEmpty()) {
+					flashSaleRepository.updateStatus(fs.getId(), true);
+					log.info("[Scheduler] Auto-activated flash sale id={} name={}", fs.getId(), fs.getName());
+					// Notify all users
+					try {
+						NotificationDTO notif = new NotificationDTO();
+						notif.setTitle("🔥 Flash Sale bắt đầu!");
+						notif.setMessage(fs.getName() + " đã bắt đầu! Đừng bỏ lỡ cơ hội mà.");
+						notif.setType("FLASH_SALE");
+						notif.setEntityType("FLASH_SALE");
+						notif.setEntityId(fs.getId());
+						notif.setPriority("HIGH");
+						notif.setLink("/flash-sale");
+						notificationService.broadcastToAll(notif);
+					} catch (Exception e) {
+						log.warn("[Scheduler] Failed to send activate notification for flash sale id={}: {}", fs.getId(),
+								e.getMessage());
+					}
 				}
 			}
 		}
 
 		// 2. Auto-expire flash sales that have passed their end time
 		List<FlashSale> expired = flashSaleRepository.findExpiredActive();
-		for (FlashSale fs : expired) {
-			flashSaleRepository.updateStatus(fs.getId(), false);
-			log.info("[Scheduler] Auto-expired flash sale id={} name={}", fs.getId(), fs.getName());
-			// Notify admins that flash sale has ended
-			try {
-				NotificationDTO notif = new NotificationDTO();
-				notif.setTitle("⏱️ Flash Sale kết thúc");
-				notif.setMessage(fs.getName() + " đã kết thúc.");
-				notif.setType("FLASH_SALE");
-				notif.setEntityType("FLASH_SALE");
-				notif.setEntityId(fs.getId());
-				notif.setPriority("NORMAL");
-				notif.setTargetRole("ADMIN");
-				notificationService.broadcastToRole("ADMIN", notif);
-			} catch (Exception e) {
-				log.warn("[Scheduler] Failed to send expire notification for flash sale id={}: {}", fs.getId(),
-						e.getMessage());
+		if (!expired.isEmpty()) {
+			for (FlashSale fs : expired) {
+				flashSaleRepository.updateStatus(fs.getId(), false);
+				log.info("[Scheduler] Auto-expired flash sale id={} name={}", fs.getId(), fs.getName());
+				// Notify admins that flash sale has ended
+				try {
+					NotificationDTO notif = new NotificationDTO();
+					notif.setTitle("⏱️ Flash Sale kết thúc");
+					notif.setMessage(fs.getName() + " đã kết thúc.");
+					notif.setType("FLASH_SALE");
+					notif.setEntityType("FLASH_SALE");
+					notif.setEntityId(fs.getId());
+					notif.setPriority("NORMAL");
+					notif.setTargetRole("ADMIN");
+					notificationService.broadcastToRole("ADMIN", notif);
+				} catch (Exception e) {
+					log.warn("[Scheduler] Failed to send expire notification for flash sale id={}: {}", fs.getId(),
+							e.getMessage());
+				}
 			}
 		}
 
 		// 3. Mark sold-out products as inactive for all currently active flash sales
 		List<FlashSale> activeFlashSales = flashSaleRepository.findActive();
-		for (FlashSale fs : activeFlashSales) {
-			List<FlashSaleProduct> soldOut = flashSaleProductRepository.findSoldOutByFlashSaleId(fs.getId());
-			for (FlashSaleProduct fsp : soldOut) {
-				flashSaleProductRepository.updateActiveStatus(fsp.getId(), false);
-				log.info("[Scheduler] Marked sold-out product id={} in flash sale id={}", fsp.getProductId(),
-						fs.getId());
+		if (!activeFlashSales.isEmpty()) {
+			for (FlashSale fs : activeFlashSales) {
+				List<FlashSaleProduct> soldOut = flashSaleProductRepository.findSoldOutByFlashSaleId(fs.getId());
+				for (FlashSaleProduct fsp : soldOut) {
+					flashSaleProductRepository.updateActiveStatus(fsp.getId(), false);
+					log.info("[Scheduler] Marked sold-out product id={} in flash sale id={}", fsp.getProductId(),
+							fs.getId());
+				}
 			}
 		}
 	}
