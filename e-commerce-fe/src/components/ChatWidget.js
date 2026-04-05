@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useReducer } from 'react';
+import ReactDOM from 'react-dom';
 import { 
   MessageCircle, 
   X, 
@@ -562,7 +563,7 @@ function ChatWidget() {
 
   if (!user) return null;
 
-  return (
+  return ReactDOM.createPortal(
     <>
       {/* Chat Button */}
       <div className="fixed bottom-6 right-6 z-50">
@@ -761,7 +762,7 @@ function ChatWidget() {
         </div>
       )}
     </>
-  );
+  , document.body);
 }
 
 export default ChatWidget;

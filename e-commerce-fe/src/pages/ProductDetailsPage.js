@@ -2,17 +2,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Heart, Star, Minus, Plus, Package, Shield, Truck } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import ReviewSection from '../components/ReviewSection';
 import RelatedProducts from '../components/RelatedProducts';
 import ImageLightbox from '../components/ImageLightbox';
-import api, { API_BASE_URL } from '../api/api';
+import api, { getImageUrl } from '../api/api';
 import toast from '../utils/toast';
+import { isFavorite as isFav, toggleFavorite } from '../utils/favoritesUtils';
 import './ProductDetailsPage.css';
 
 function ProductDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { user: currentUser } = useAuth();
   
   const [product, setProduct] = useState(null);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -23,28 +26,14 @@ function ProductDetailsPage() {
   const [activeTab, setActiveTab] = useState('details'); // details, description, reviews
   const [reviews, setReviews] = useState([]);
   const [reviewStats, setReviewStats] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
-
-  // Fetch current user
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const user = await api.getCurrentUser();
-        setCurrentUser(user);
-      } catch (error) {
-        console.log('User not logged in');
-      }
-    };
-    fetchCurrentUser();
-  }, []);
 
   const fetchReviews = useCallback(async () => {
     try {
       const response = await api.request(`/products/${id}/reviews?page=0&size=100&sortBy=createdAt&sortDirection=desc`);
       setReviews(response.content || []);
       
-      // Calculate review stats
-      const totalReviews = response.totalElements || 0;
+      // Calculate review stats from loaded content (totalElements from BE = Integer.MAX_VALUE)
+      const totalReviews = response.content?.length || 0;
       const contentLength = response.content?.length || 0;
       const avgRating = contentLength > 0 
         ? response.content.reduce((sum, r) => sum + r.rating, 0) / contentLength
@@ -60,6 +49,9 @@ function ProductDetailsPage() {
         totalReviews: totalReviews,
         ratingBreakdown: ratingBreakdown
       });
+
+      // Sync header stats with actual review data
+      setProduct(prev => prev ? { ...prev, reviewCount: totalReviews, averageRating: avgRating } : prev);
     } catch (error) {
       console.error('Error fetching reviews:', error);
     }
@@ -83,6 +75,36 @@ function ProductDetailsPage() {
     fetchProductDetails();
     fetchReviews();
   }, [fetchProductDetails, fetchReviews]);
+
+  // Sync heart state with localStorage whenever product changes
+  useEffect(() => {
+    if (product) {
+      setIsFavorite(isFav(product.id));
+    }
+  }, [product]);
+
+  // SEO: Update page title and meta description when product loads
+  useEffect(() => {
+    if (product) {
+      document.title = `${product.name} | E-SHOP`;
+      // Update/create meta description
+      let metaDesc = document.querySelector('meta[name="description"]');
+      if (!metaDesc) {
+        metaDesc = document.createElement('meta');
+        metaDesc.name = 'description';
+        document.head.appendChild(metaDesc);
+      }
+      metaDesc.content = product.description
+        ? product.description.replace(/<[^>]+>/g, '').slice(0, 160)
+        : `Mua ${product.name} chính hãng tại E-SHOP với giá tốt nhất, giao hàng nhanh toàn quốc.`;
+    }
+    return () => {
+      // Restore defaults when leaving the page
+      document.title = 'E-SHOP';
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.content = 'Mua sắm điện tử chính hãng tại E-SHOP';
+    };
+  }, [product]);
 
   const handleAddToCart = () => {
     if (product) {
@@ -170,16 +192,16 @@ function ProductDetailsPage() {
 
   const displayImages = product.productImages?.length > 0 
     ? product.productImages.map(img => ({
-        url: img.imageUrl.startsWith('http') ? img.imageUrl : `${API_BASE_URL}/files${img.imageUrl}`,
-        imageUrl: img.imageUrl.startsWith('http') ? img.imageUrl : `${API_BASE_URL}/files${img.imageUrl}`,
+        url: getImageUrl(img.imageUrl),
+        imageUrl: getImageUrl(img.imageUrl),
         altText: img.altText
       }))
     : product.imageUrl 
       ? [{ 
-          url: product.imageUrl.startsWith('http') ? product.imageUrl : `${API_BASE_URL}/files${product.imageUrl}`,
-          imageUrl: product.imageUrl.startsWith('http') ? product.imageUrl : `${API_BASE_URL}/files${product.imageUrl}`
+          url: getImageUrl(product.imageUrl),
+          imageUrl: getImageUrl(product.imageUrl)
         }] 
-      : [{ url: '/images/placeholder.jpg' }];
+      : [{ url: null }];
 
   const imageUrls = displayImages.map(img => img.url || img.imageUrl);
 
@@ -202,7 +224,7 @@ function ProductDetailsPage() {
             <div className="product-image-section">
               <div className="product-main-image" onClick={handleImageClick}>
                 <img
-                  src={displayImages[selectedImage]?.url || displayImages[selectedImage]?.imageUrl || '/images/placeholder.jpg'}
+                  src={displayImages[selectedImage]?.url || displayImages[selectedImage]?.imageUrl || undefined}
                   alt={product.name}
                   className="main-image"
                 />
@@ -220,7 +242,7 @@ function ProductDetailsPage() {
                       className={`thumbnail ${selectedImage === index ? 'active' : ''}`}
                     >
                       <img
-                        src={image.url || image.imageUrl || '/images/placeholder.jpg'}
+                        src={image.url || image.imageUrl || undefined}
                         alt={`${product.name} ${index + 1}`}
                       />
                     </button>
@@ -347,7 +369,18 @@ function ProductDetailsPage() {
               {/* Action Buttons */}
               <div className="action-buttons">
                 <button
-                  onClick={() => setIsFavorite(!isFavorite)}
+                  onClick={() => {
+                    if (product) {
+                      const newState = toggleFavorite({
+                        id: product.id,
+                        name: product.name,
+                        price: product.salePrice || product.price,
+                        imageUrl: product.images?.[0]?.imageUrl || product.imageUrl || null,
+                      });
+                      setIsFavorite(newState);
+                      toast.success(newState ? 'Đã thêm vào yêu thích' : 'Đã bỏ khỏi yêu thích');
+                    }
+                  }}
                   className={`btn-favorite ${isFavorite ? 'active' : ''}`}
                   title="Thêm vào yêu thích"
                 >
@@ -488,9 +521,10 @@ function ProductDetailsPage() {
         </div>
 
         {/* Related Products */}
-        {product.categoryId && (
+        {(product.categoryId || product.brandId) && (
           <RelatedProducts 
-            categoryId={product.categoryId} 
+            categoryId={product.categoryId}
+            brandId={product.brandId}
             currentProductId={product.id} 
           />
         )}

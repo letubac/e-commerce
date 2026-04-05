@@ -1,6 +1,22 @@
 import toast from '../utils/toast';
 import { parseBusinessResponse } from '../utils/responseHandler';
 
+// ─── FE Search Cache (Item #0) ────────────────────────────────────────────────
+// Simple in-memory cache với TTL 5 phút cho các request tìm kiếm sản phẩm
+const _searchCache = new Map(); // key → { data, expiry }
+const SEARCH_CACHE_TTL = 5 * 60 * 1000; // 5 phút
+
+const getCached = (key) => {
+  const entry = _searchCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiry) { _searchCache.delete(key); return null; }
+  return entry.data;
+};
+const setCache = (key, data) => {
+  _searchCache.set(key, { data, expiry: Date.now() + SEARCH_CACHE_TTL });
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 // REACT_APP_IMAGE_BASE_URL overrides the default (used in prod to point to Supabase Storage)
 export const IMAGE_BASE_URL = process.env.REACT_APP_IMAGE_BASE_URL || `${process.env.REACT_APP_API_BASE_URL}/files`;
@@ -60,10 +76,13 @@ const api = {
           // Only clear auth data if this is NOT the login endpoint itself
           // (login returns 401 for wrong credentials — don't wipe unrelated state)
           if (!endpoint.includes('/auth/login')) {
+            const hadToken = localStorage.getItem('token');
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            // Show toast notification
-            toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            // Only toast if the user actually had a session (not on fresh anonymous page loads)
+            if (hadToken) {
+              toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            }
           }
           
           throw new Error('Authentication required');
@@ -105,6 +124,12 @@ const api = {
       delete query.sort;
     }
 
+    // BE ProductController nhận 'keyword', FE gửi 'search' — map lại đúng tên param
+    if (query.search !== undefined) {
+      if (query.search) query.keyword = query.search;
+      delete query.search;
+    }
+
     const sanitizedParams = api.sanitizeParams ? api.sanitizeParams(query) : sanitizeParams(query); // Sanitize params to remove "null" values
 
     // Ensure no "null" values are sent for Long-type parameters
@@ -116,8 +141,11 @@ const api = {
       queryParams.delete("categoryId");
     }
 
-    // Gọi API và normalize response
-    const res = await api.request(`/products?${queryParams.toString()}`);
+    // Gọi API và normalize response (dùng cache nếu có)
+    const cacheKey = `getProducts:${queryParams.toString()}`;
+    const cached = getCached(cacheKey);
+    const res = cached ?? await api.request(`/products?${queryParams.toString()}`);
+    if (!cached) setCache(cacheKey, res);
     // parseBusinessResponse đã trả về data, có thể là array hoặc pagination object
     const items = res?.content ?? res?.items ?? (Array.isArray(res) ? res : []);
     const totalPages = res?.totalPages ?? null;
@@ -135,8 +163,23 @@ const api = {
 
   getProduct: (id) => api.request(`/products/${id}`),
   getProductDetails: (id) => api.request(`/products/${id}`),
-  searchProducts: (keyword, params = {}) => api.request(`/products/search?keyword=${encodeURIComponent(keyword)}&${new URLSearchParams(params)}`),
-  searchSuggestions: (keyword) => api.request(`/products/search/suggestions?keyword=${keyword}`),
+  searchProducts: async (keyword, params = {}) => {
+    const qs = `keyword=${encodeURIComponent(keyword)}&${new URLSearchParams(params)}`;
+    const cacheKey = `searchProducts:${qs}`;
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+    const data = await api.request(`/products/search?${qs}`);
+    setCache(cacheKey, data);
+    return data;
+  },
+  searchSuggestions: async (keyword) => {
+    const cacheKey = `searchSuggestions:${keyword}`;
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+    const data = await api.request(`/products/search/suggestions?keyword=${keyword}`);
+    setCache(cacheKey, data);
+    return data;
+  },
   getFeaturedProducts: () => api.request('/products/featured'),
   
   // Admin Product Management

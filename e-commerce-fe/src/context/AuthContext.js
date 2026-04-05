@@ -132,8 +132,12 @@ export const AuthProvider = ({ children }) => {
 
   const handleTokenExpired = () => {
     setShowExpirationModal(false);
+    const hadToken = localStorage.getItem('token');
     logout();
-    toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    // Only toast if the session was still active (not already cleared by api.js)
+    if (hadToken) {
+      toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    }
   };
 
   const handleDismissModal = () => {

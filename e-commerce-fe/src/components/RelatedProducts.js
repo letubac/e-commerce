@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
-import { API_BASE_URL } from '../api/api';
-import api from '../api/api';
+import api, { getImageUrl } from '../api/api';
 
 const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f0f0f0'/%3E%3Ctext x='150' y='156' text-anchor='middle' fill='%23999' font-family='sans-serif' font-size='14'%3ENo Image%3C/text%3E%3C/svg%3E";
 
-function RelatedProducts({ categoryId, currentProductId }) {
+function RelatedProducts({ categoryId, brandId, currentProductId }) {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -15,22 +14,29 @@ function RelatedProducts({ categoryId, currentProductId }) {
   const fetchRelatedProducts = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch products from same category, exclude current product
-      const response = await api.getProductsByCategory(categoryId, { page: 0, size: 12 });
-      const filteredProducts = (response.content || []).filter(p => p.id !== currentProductId);
+      let filteredProducts = [];
+      if (categoryId) {
+        // Fetch products from same category
+        const response = await api.getProductsByCategory(categoryId, { page: 0, size: 12 });
+        filteredProducts = (response.content || []).filter(p => p.id !== currentProductId);
+      } else if (brandId) {
+        // Fallback: fetch products from same brand
+        const response = await api.getBrandProducts(brandId, { page: 0, size: 12 });
+        filteredProducts = (response.content || []).filter(p => p.id !== currentProductId);
+      }
       setProducts(filteredProducts);
     } catch (error) {
       console.error('Error fetching related products:', error);
     } finally {
       setLoading(false);
     }
-  }, [categoryId, currentProductId]);
+  }, [categoryId, brandId, currentProductId]);
 
   useEffect(() => {
-    if (categoryId) {
+    if (categoryId || brandId) {
       fetchRelatedProducts();
     }
-  }, [categoryId, fetchRelatedProducts]);
+  }, [categoryId, brandId, fetchRelatedProducts]);
 
   const itemsPerView = 4; // Show 4 products at a time
   const maxIndex = Math.max(0, products.length - itemsPerView);
@@ -103,11 +109,7 @@ function RelatedProducts({ categoryId, currentProductId }) {
                   {/* Product Image */}
                   <div className="relative pt-[100%] bg-gray-100">
                     <img
-                      src={
-                        product.imageUrl
-                          ? `${API_BASE_URL}/files${product.imageUrl}`
-                          : PLACEHOLDER_IMG
-                      }
+                      src={getImageUrl(product.imageUrl)}
                       alt={product.name}
                       className="absolute inset-0 w-full h-full object-cover"
                       onError={(e) => {

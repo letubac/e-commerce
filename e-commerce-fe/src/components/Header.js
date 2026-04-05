@@ -1,31 +1,54 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { useDebounce } from '../hooks/useDebounce';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, Search, Menu, X, Settings, LogOut } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, X, Settings, LogOut, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import NotificationBell from './NotificationBell';
-import api from '../api/api';
+import api, { getImageUrl } from '../api/api';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Header() {
   const { user, logout, isAdmin } = useAuth();
   const { cart } = useCart();
+  const { theme, toggleTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 400);
   const [suggestions, setSuggestions] = useState([]);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const suggestionsRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    if (searchQuery.length > 2) fetchSuggestions();
-    else setSuggestions([]);
-  }, [searchQuery]);
+  const CART_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' fill='%23f3f4f6'/%3E%3C/svg%3E";
 
-  const fetchSuggestions = async () => {
+  // Fetch suggestions only after debounce settles (400 ms idle) — avoids per-keystroke API calls
+  useEffect(() => {
+    if (debouncedSearch.length > 2) {
+      fetchSuggestions(debouncedSearch);
+    } else {
+      setSuggestions([]);
+    }
+  }, [debouncedSearch]);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
+        setSuggestions([]);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const fetchSuggestions = async (query) => {
     try {
-      const data = await api.searchSuggestions(searchQuery);
-      setSuggestions(data);
+      const data = await api.searchSuggestions(query);
+      setSuggestions(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
+      setSuggestions([]);
     }
   };
 
@@ -51,16 +74,18 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-4 md:space-x-8">
             <button
               onClick={() => navigate('/')}
-              className="text-2xl font-bold text-white flex items-center space-x-2"
+              className="text-2xl font-bold text-white flex items-center space-x-2 flex-shrink-0 whitespace-nowrap"
             >
-              <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
+              <div className="w-8 h-8 bg-white rounded flex items-center justify-center flex-shrink-0">
                 <span className="text-red-600 font-bold text-sm">T</span>
               </div>
-              <span>E-SHOP</span>
+              <span className="whitespace-nowrap">E-SHOP</span>
             </button>
+
+
 
             {/* Search bar */}
             <div className="hidden md:block relative">
@@ -81,7 +106,7 @@ export default function Header() {
               </form>
 
               {suggestions.length > 0 && (
-                <div className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <div ref={suggestionsRef} className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                   {suggestions.map((suggestion, index) => (
                     <div
                       key={index}
@@ -149,29 +174,96 @@ export default function Header() {
               {/* Notification Bell - chỉ hiển thị khi đã login */}
               {user && <NotificationBell />}
 
+              {/* Dark/Light mode toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 hover:bg-red-700 rounded-full text-white transition-colors"
+                title={theme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+              >
+                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+
               {/* Cart - chỉ hiển thị cho customer, không hiển thị cho admin */}
               {user && !isAdmin() && (
-                <button
-                  onClick={() => navigate('/cart')}
-                  className="relative p-2 hover:bg-red-700 rounded-full text-white"
-                >
-                  <ShoppingCart size={24} />
-                  {(cart.itemCount || 0) > 0 && (
-                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {cart.itemCount || 0}
-                    </span>
-                  )}
-                </button>
+                <div className="relative group">
+                  <button
+                    onClick={() => navigate('/cart')}
+                    className="relative p-2 hover:bg-red-700 rounded-full text-white"
+                  >
+                    <ShoppingCart size={24} />
+                    {(cart.itemCount || 0) > 0 && (
+                      <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-yellow-400 text-red-800 text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                        {cart.itemCount || 0}
+                      </span>
+                    )}
+                  </button>
+                  {/* Cart hover popup */}
+                  <div className="absolute right-0 top-full mt-1 w-80 bg-white border border-gray-100 rounded-lg shadow-xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150">
+                    <div className="px-4 py-2.5 border-b border-gray-200">
+                      <p className="text-sm font-semibold text-gray-800">Sản phẩm mới thêm</p>
+                    </div>
+                    {(cart.items || []).length === 0 ? (
+                      <div className="py-8 text-center text-gray-500 text-sm">Giỏ hàng trống</div>
+                    ) : (
+                      <>
+                        <div className="max-h-60 overflow-y-auto">
+                          {(cart.items || []).slice(0, 5).map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0">
+                              <img
+                                src={getImageUrl(item.productImage) || CART_PLACEHOLDER}
+                                alt={item.productName}
+                                className="w-12 h-12 object-cover rounded border border-gray-200 flex-shrink-0"
+                                onError={(e) => { e.target.onerror = null; e.target.src = CART_PLACEHOLDER; }}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-gray-800 font-medium line-clamp-2">{item.productName}</p>
+                                <p className="text-xs text-red-600 mt-0.5">
+                                  x{item.quantity} — {((item.price || item.unitPrice || 0) * item.quantity).toLocaleString('vi-VN')}₫
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="px-4 py-3 border-t border-gray-200">
+                          <div className="flex justify-between text-sm mb-2">
+                            <span className="text-gray-500">{cart.itemCount || 0} sản phẩm trong giỏ</span>
+                            <span className="font-semibold text-red-600">{(cart.totalPrice || 0).toLocaleString('vi-VN')}₫</span>
+                          </div>
+                          <button
+                            onClick={() => navigate('/cart')}
+                            className="w-full py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition"
+                          >
+                            Xem giỏ hàng
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               )}
               
               {/* Cart cho guest user (chưa login) */}
               {!user && (
-                <button
-                  onClick={() => navigate('/cart')}
-                  className="relative p-2 hover:bg-red-700 rounded-full text-white"
-                >
-                  <ShoppingCart size={24} />
-                </button>
+                <div className="relative group">
+                  <button
+                    onClick={() => navigate('/cart')}
+                    className="relative p-2 hover:bg-red-700 rounded-full text-white"
+                  >
+                    <ShoppingCart size={24} />
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-100 rounded-lg shadow-xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150">
+                    <div className="py-6 px-4 text-center">
+                      <ShoppingCart size={32} className="mx-auto text-gray-300 mb-2" />
+                      <p className="text-sm text-gray-500 mb-3">Vui lòng đăng nhập để xem giỏ hàng</p>
+                      <button
+                        onClick={() => navigate('/login')}
+                        className="w-full py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition"
+                      >
+                        Đăng nhập
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {/* User menu */}

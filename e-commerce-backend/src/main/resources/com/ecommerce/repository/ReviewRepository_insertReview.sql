@@ -10,14 +10,14 @@ INSERT INTO reviews (
     created_at,
     updated_at
 ) VALUES (
-    /* productId */,
-    /* userId */,
-    /* rating */,
-    /* title */,
-    /* comment */,
-    /* isAnonymous */,
-    /* isVerifiedPurchase */,
-    /* isApproved */,
-    /* createdAt */,
-    /* updatedAt */
+    /*review.productId*/,
+    /*review.userId*/,
+    /*review.rating*/,
+    /*review.title*/,
+    /*review.comment*/,
+    /*review.isAnonymous*/,
+    /*review.isVerifiedPurchase*/,
+    /*review.isApproved*/,
+    /*review.createdAt*/,
+    /*review.updatedAt*/
 )

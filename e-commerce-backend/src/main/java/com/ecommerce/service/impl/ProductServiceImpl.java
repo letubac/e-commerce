@@ -25,6 +25,7 @@ import com.ecommerce.exception.DetailException;
 import com.ecommerce.exception.ResourceNotFoundException;
 import com.ecommerce.mapper.ProductMapper;
 import com.ecommerce.repository.ProductRepository;
+import com.ecommerce.repository.ReviewRepository;
 import com.ecommerce.service.ProductService;
 
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ public class ProductServiceImpl implements ProductService {
 
 	private final ProductRepository productRepository;
 	private final ProductMapper productMapper;
+	private final ReviewRepository reviewRepository;
 
 	// Helper method to generate slug from name
 	private String generateSlug(String name) {
@@ -212,6 +214,15 @@ public class ProductServiceImpl implements ProductService {
 			// Lazy load images if needed
 			productDTO.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
 					.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+			// Populate review stats
+			try {
+				Long reviewCount = reviewRepository.getReviewCountByProductId(id);
+				productDTO.setReviewCount(reviewCount != null ? reviewCount.intValue() : 0);
+				Double avgRating = reviewRepository.getAverageRatingByProductId(id);
+				productDTO.setAverageRating(avgRating != null ? avgRating : 0.0);
+			} catch (Exception statsEx) {
+				log.warn("Không lấy được review stats cho sản phẩm {}: {}", id, statsEx.getMessage());
+			}
 			return productDTO;
 		} catch (DetailException e) {
 			throw e;

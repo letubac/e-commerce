@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api, { API_BASE_URL } from '../api/api';
+import api, { getImageUrl } from '../api/api';
 import toast from '../utils/toast';
 import CountdownTimer from './CountdownTimer';
 
@@ -22,9 +22,7 @@ export default function FlashSale() {
   const ITEMS_VISIBLE = 5;
 
   const getProductImageUrl = (imageUrl) => {
-    if (!imageUrl) return PLACEHOLDER_IMG;
-    if (imageUrl.startsWith('http')) return imageUrl;
-    return `${API_BASE_URL}/files${imageUrl}`;
+    return getImageUrl(imageUrl) || PLACEHOLDER_IMG;
   };
 
   const calcDiscount = (originalPrice, flashPrice) => {
@@ -75,7 +73,7 @@ export default function FlashSale() {
   // Countdown timer
   useEffect(() => {
     if (!selectedSession) return;
-
+    let refetchFired = false; // guard: only refetch once per expiry event
     const updateTimer = () => {
       const now = Date.now();
       const targetTime = activeFlashSale
@@ -85,7 +83,10 @@ export default function FlashSale() {
 
       if (distance <= 0) {
         setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
-        fetchFlashSaleData();
+        if (!refetchFired) {
+          refetchFired = true;
+          fetchFlashSaleData();
+        }
         return;
       }
       setTimeLeft({
@@ -131,7 +132,21 @@ export default function FlashSale() {
     );
   }
 
-  if (!activeFlashSale && upcomingSales.length === 0) return null;
+  if (!activeFlashSale && upcomingSales.length === 0) {
+    return (
+      <div className="bg-white rounded-lg overflow-hidden shadow-sm mb-4">
+        <div className="bg-gradient-to-r from-red-600 to-red-500 px-4 py-3 flex items-center gap-2">
+          <Zap className="w-6 h-6 text-yellow-300 fill-yellow-300" />
+          <span className="text-white font-bold text-xl uppercase tracking-wide">Flash Sale</span>
+        </div>
+        <div className="py-10 text-center">
+          <Zap className="w-10 h-10 text-red-200 mx-auto mb-3" />
+          <p className="text-gray-500 font-semibold text-base">Sắp diễn ra...</p>
+          <p className="text-sm text-gray-400 mt-1">Chương trình Flash Sale sẽ sớm được cập nhật</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-sm mb-4">
@@ -215,7 +230,7 @@ export default function FlashSale() {
                   key={product.id || product.productId}
                   className="flex-1 min-w-0 bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition cursor-pointer"
                   style={{ minWidth: '160px', maxWidth: '200px' }}
-                  onClick={() => navigate(`/products/${product.productId}`)}
+                  onClick={() => navigate(`/product/${product.productId}`)}
                 >
                   {/* Image + discount badge + progress bar */}
                   <div className="relative">
@@ -279,7 +294,7 @@ export default function FlashSale() {
           <Zap className="w-10 h-10 text-red-300 mx-auto mb-2" />
           {!activeFlashSale ? (
             <>
-              <p className="text-gray-500 font-medium">Flash Sale sắp bắt đầu!</p>
+              <p className="text-gray-500 font-semibold text-base">Sắp diễn ra...</p>
               {selectedSession?.startTime && (
                 <p className="text-sm text-gray-400 mt-1">
                   Bắt đầu lúc{' '}
@@ -288,7 +303,10 @@ export default function FlashSale() {
               )}
             </>
           ) : (
-            <p className="text-gray-400">Không có sản phẩm Flash Sale</p>
+            <>
+              <p className="text-gray-500 font-semibold text-base">Sắp diễn ra...</p>
+              <p className="text-sm text-gray-400 mt-1">Sản phẩm sẽ sớm được cập nhật</p>
+            </>
           )}
         </div>
       )}

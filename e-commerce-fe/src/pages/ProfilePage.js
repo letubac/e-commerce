@@ -13,7 +13,8 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/api';
+import api, { getImageUrl } from '../api/api';
+import { getFavorites, removeFavorite } from '../utils/favoritesUtils';
 
 function ProfilePage() {
   const navigate = useNavigate();
@@ -67,15 +68,8 @@ function ProfilePage() {
   const fetchFavorites = async () => {
     try {
       setLoading(true);
-      // Assuming API endpoint for favorites exists
-      // const data = await api.getFavorites();
-      // setFavorites(data.content || data || []);
-      
-      // Mock data for now
-      setFavorites([
-        { id: 1, name: 'MacBook Air M2', price: 26990000, image: 'https://via.placeholder.com/200x200/f0f0f0/666666?text=MacBook+Air' },
-        { id: 2, name: 'iPhone 15 Pro Max', price: 32990000, image: 'https://via.placeholder.com/200x200/f0f0f0/666666?text=iPhone+15' }
-      ]);
+      // Load from localStorage (toggled from product pages)
+      setFavorites(getFavorites());
     } catch (error) {
       console.error('Error fetching favorites:', error);
     } finally {
@@ -329,11 +323,16 @@ function ProfilePage() {
     <div className="bg-white rounded-lg shadow-sm p-6">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Sản phẩm yêu thích</h2>
       
-      {favorites.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto" />
+          <p className="text-gray-600 mt-2">Đang tải...</p>
+        </div>
+      ) : favorites.length === 0 ? (
         <div className="text-center py-12">
           <Heart size={48} className="mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-semibold text-gray-600 mb-2">Chưa có sản phẩm yêu thích</h3>
-          <p className="text-gray-500 mb-4">Hãy thêm các sản phẩm bạn yêu thích để dễ dàng tìm thấy sau này!</p>
+          <p className="text-gray-500 mb-4">Nhấn biểu tượng ❤️ trên trang sản phẩm để thêm vào danh sách yêu thích!</p>
           <button
             onClick={() => navigate('/products')}
             className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
@@ -343,27 +342,49 @@ function ProfilePage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {favorites.map((product) => (
-            <div key={product.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-48 object-cover rounded-lg mb-4"
-              />
-              <h4 className="font-semibold mb-2 line-clamp-2">{product.name}</h4>
-              <p className="text-red-600 font-bold text-lg mb-3">
-                {product.price.toLocaleString('vi-VN')}₫
-              </p>
-              <div className="flex gap-2">
-                <button className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">
-                  Thêm vào giỏ
-                </button>
-                <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                  <Heart size={16} className="text-red-600" fill="currentColor" />
-                </button>
+          {favorites.map((product) => {
+            const imgSrc = getImageUrl(product.imageUrl);
+            return (
+              <div key={product.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                <div
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/product/${product.id}`)}
+                >
+                  {imgSrc ? (
+                    <img
+                      src={imgSrc}
+                      alt={product.name}
+                      className="w-full h-48 object-cover rounded-lg mb-4"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
+                      <Heart size={36} className="text-gray-300" />
+                    </div>
+                  )}
+                  <h4 className="font-semibold mb-2 line-clamp-2 text-gray-800">{product.name}</h4>
+                  <p className="text-red-600 font-bold text-lg mb-3">
+                    {(product.price || 0).toLocaleString('vi-VN')}₫
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => navigate(`/product/${product.id}`)}
+                    className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+                  >
+                    Xem sản phẩm
+                  </button>
+                  <button
+                    onClick={() => { removeFavorite(product.id); setFavorites(getFavorites()); }}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-red-50 hover:border-red-300 transition"
+                    title="Xóa khỏi yêu thích"
+                  >
+                    <Heart size={16} className="text-red-600" fill="currentColor" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

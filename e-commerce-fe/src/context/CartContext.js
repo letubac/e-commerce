@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../api/api';
 import { useAuth } from './AuthContext';
 import toast from '../utils/toast';
@@ -6,15 +6,47 @@ import toast from '../utils/toast';
 const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
+const GUEST_CART_KEY = 'eshop_guest_cart';
+
+/** Persist guest cart items to localStorage */
+const saveGuestCart = (items) => {
+  try {
+    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
+  } catch (_) {}
+};
+
+/** Load guest cart items from localStorage */
+const loadGuestCart = () => {
+  try {
+    const raw = localStorage.getItem(GUEST_CART_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (_) {
+    return [];
+  }
+};
+
+/** Derive a cart-shaped object from a guest items array */
+const buildGuestCartState = (items) => ({
+  items,
+  totalPrice: items.reduce((s, i) => s + (i.price || 0) * i.quantity, 0),
+  itemCount: items.reduce((s, i) => s + i.quantity, 0)
+});
+
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState({ items: [], totalPrice: 0, itemCount: 0 });
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
+  // Helper to update guest cart in both state and localStorage
+  const setGuestCart = useCallback((items) => {
+    const newCart = buildGuestCartState(items);
+    setCart(newCart);
+    saveGuestCart(items);
+  }, []);
+
   useEffect(() => {
     console.log('🛒 CartContext - user:', user); // Debug log
     
-    // Chỉ fetch cart nếu user là CUSTOMER, không fetch cho ADMIN
     if (user) {
       const userRole = user.role || (user.roles && user.roles[0]);
       console.log('🛒 CartContext - User role:', userRole);
@@ -26,13 +58,16 @@ export const CartProvider = ({ children }) => {
         return;
       }
       
-      console.log('🛒 CartContext - User is customer, fetching cart...'); // Debug log
+      console.log('🛒 CartContext - User is customer, fetching cart...');
       fetchCart();
     } else {
-      console.log('🛒 CartContext - No user, skipping cart fetch'); // Debug log
+      // Guest: load persisted cart from localStorage
+      console.log('🛒 CartContext - No user, loading guest cart from localStorage');
+      const guestItems = loadGuestCart();
+      setCart(buildGuestCartState(guestItems));
       setLoading(false);
     }
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchCart = async () => {
     try {
@@ -50,9 +85,34 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const addToCart = async (productId, quantity) => {
+  const addToCart = async (productId, quantity, productMeta = {}) => {
+    if (!user) {
+      // Guest: merge into localStorage cart
+      const current = loadGuestCart();
+      const existing = current.find(i => i.productId === productId);
+      let updated;
+      if (existing) {
+        updated = current.map(i =>
+          i.productId === productId
+            ? { ...i, quantity: i.quantity + quantity }
+            : i
+        );
+      } else {
+        updated = [...current, {
+          id: `guest-${productId}`,
+          productId,
+          quantity,
+          productName: productMeta.name || 'Sản phẩm',
+          productImage: productMeta.imageUrl || null,
+          price: productMeta.price || 0,
+          stockQuantity: productMeta.stockQuantity || 99
+        }];
+      }
+      setGuestCart(updated);
+      toast.success('Thêm sản phẩm vào giỏ hàng thành công!');
+      return buildGuestCartState(updated);
+    }
     try {
-      // BE trả về CartDTO sau khi thêm item
       const data = await api.addToCart({ productId, quantity });
       setCart(data || { items: [], totalPrice: 0, itemCount: 0 });
       toast.success('Thêm sản phẩm vào giỏ hàng thành công!');
@@ -60,7 +120,6 @@ export const CartProvider = ({ children }) => {
     } catch (error) {
       console.error('Error adding to cart:', error);
       if (error.message !== 'Authentication required') {
-        // Error message đã được i18n từ BE
         toast.error(error.message || 'Đã xảy ra lỗi khi thêm vào giỏ hàng');
       }
       throw error;
@@ -68,17 +127,23 @@ export const CartProvider = ({ children }) => {
   };
 
   const updateItemQuantity = async (itemId, quantity) => {
+    if (!user) {
+      // Guest: update in localStorage
+      const updated = loadGuestCart().map(i =>
+        i.id === itemId ? { ...i, quantity } : i
+      );
+      setGuestCart(updated);
+      return buildGuestCartState(updated);
+    }
     try {
-      console.log('🔄 Updating cart item:', itemId, 'to quantity:', quantity); // Debug
-      // BE trả về CartDTO sau khi update quantity
+      console.log('🔄 Updating cart item:', itemId, 'to quantity:', quantity);
       const data = await api.updateCartItem(itemId, quantity);
-      console.log('✅ Cart updated successfully:', data); // Debug
+      console.log('✅ Cart updated successfully:', data);
       setCart(data || { items: [], totalPrice: 0, itemCount: 0 });
       return data;
     } catch (error) {
       console.error('❌ Error updating cart item:', error);
       if (error.message !== 'Authentication required') {
-        // Error message đã được i18n từ BE (VD: "Không đủ số lượng tồn kho")
         toast.error(error.message || 'Đã xảy ra lỗi khi cập nhật giỏ hàng');
       }
       throw error;
@@ -86,18 +151,23 @@ export const CartProvider = ({ children }) => {
   };
 
   const removeFromCart = async (itemId) => {
+    if (!user) {
+      // Guest: remove from localStorage
+      const updated = loadGuestCart().filter(i => i.id !== itemId);
+      setGuestCart(updated);
+      toast.success('Xóa sản phẩm khỏi giỏ hàng thành công!');
+      return buildGuestCartState(updated);
+    }
     try {
-      console.log('🗑️ Removing cart item:', itemId); // Debug
-      // BE trả về CartDTO sau khi xóa item
+      console.log('🗑️ Removing cart item:', itemId);
       const data = await api.removeFromCart(itemId);
-      console.log('✅ Cart after removal:', data); // Debug
+      console.log('✅ Cart after removal:', data);
       setCart(data || { items: [], totalPrice: 0, itemCount: 0 });
       toast.success('Xóa sản phẩm khỏi giỏ hàng thành công!');
       return data;
     } catch (error) {
       console.error('❌ Error removing cart item:', error);
       if (error.message !== 'Authentication required') {
-        // Error message đã được i18n từ BE
         toast.error(error.message || 'Đã xảy ra lỗi khi xóa sản phẩm');
       }
       throw error;
@@ -105,19 +175,21 @@ export const CartProvider = ({ children }) => {
   };
 
   const clearCart = async (silent = false) => {
-    try {
-      console.log('🧹 Clearing entire cart'); // Debug
-      // BE trả về void, set cart rỗng
-      await api.clearCart();
-      console.log('✅ Cart cleared'); // Debug
+    if (!user) {
+      saveGuestCart([]);
       setCart({ items: [], totalPrice: 0, itemCount: 0 });
-      if (!silent) {
-        toast.success('Xóa toàn bộ giỏ hàng thành công!');
-      }
+      if (!silent) toast.success('Xóa toàn bộ giỏ hàng thành công!');
+      return;
+    }
+    try {
+      console.log('🧹 Clearing entire cart');
+      await api.clearCart();
+      console.log('✅ Cart cleared');
+      setCart({ items: [], totalPrice: 0, itemCount: 0 });
+      if (!silent) toast.success('Xóa toàn bộ giỏ hàng thành công!');
     } catch (error) {
       console.error('❌ Error clearing cart:', error);
       if (error.message !== 'Authentication required') {
-        // Error message đã được i18n từ BE
         toast.error(error.message || 'Đã xảy ra lỗi khi xóa giỏ hàng');
       }
       throw error;

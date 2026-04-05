@@ -3,6 +3,8 @@ import { Package, Clock, CheckCircle, XCircle, Calendar, Truck, ShoppingBag } fr
 import api, { getImageUrl } from '../api/api';
 import toast from '../utils/toast';
 
+const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23f3f4f6'/%3E%3Cpath d='M30 25h20v20H30z' fill='%23d1d5db'/%3E%3Ccircle cx='40' cy='50' r='8' fill='%23d1d5db'/%3E%3C/svg%3E";
+
 const OrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -312,12 +314,12 @@ const OrdersPage = () => {
                     {order.items.map((item, index) => (
                       <div key={index} className="flex items-start space-x-4">
                         <img
-                          src={getImageUrl(item.productImageUrl) || '/images/placeholder.jpg'}
+                          src={getImageUrl(item.productImageUrl) || PLACEHOLDER_IMG}
                           alt={item.productName || item.name}
                           className="w-20 h-20 object-cover border border-gray-200"
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = '/images/placeholder.jpg';
+                            e.target.src = PLACEHOLDER_IMG;
                           }}
                         />
                         <div className="flex-1 min-w-0">
@@ -437,12 +439,12 @@ const OrdersPage = () => {
                       <div className="flex items-center space-x-4 flex-1">
                         {item.productImageUrl && (
                           <img 
-                            src={getImageUrl(item.productImageUrl)} 
+                            src={getImageUrl(item.productImageUrl) || PLACEHOLDER_IMG} 
                             alt={item.productName || item.name}
                             className="w-16 h-16 object-cover rounded"
                             onError={(e) => {
                               e.target.onerror = null;
-                              e.target.src = '/images/placeholder.jpg';
+                              e.target.src = PLACEHOLDER_IMG;
                             }}
                           />
                         )}

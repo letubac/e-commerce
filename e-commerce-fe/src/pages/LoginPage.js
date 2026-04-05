@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+const REMEMBER_KEY = 'eshop_remember_creds';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -12,11 +14,26 @@ function LoginPage() {
     email: '',
     password: ''
   });
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [twoFactorRequired, setTwoFactorRequired] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
+
+  // Load saved credentials if "remember me" was previously checked
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(REMEMBER_KEY);
+      if (saved) {
+        const { email, password } = JSON.parse(atob(saved));
+        setFormData({ email: email || '', password: password || '' });
+        setRememberMe(true);
+      }
+    } catch {
+      localStorage.removeItem(REMEMBER_KEY);
+    }
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -31,6 +48,13 @@ function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Save or clear remember-me credentials
+    if (rememberMe) {
+      localStorage.setItem(REMEMBER_KEY, btoa(JSON.stringify({ email: formData.email, password: formData.password })));
+    } else {
+      localStorage.removeItem(REMEMBER_KEY);
+    }
 
     try {
       const result = await login(formData.email, formData.password, twoFactorCode);
@@ -192,6 +216,8 @@ function LoginPage() {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">

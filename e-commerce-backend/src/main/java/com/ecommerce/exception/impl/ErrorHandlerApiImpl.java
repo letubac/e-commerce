@@ -20,6 +20,7 @@ import com.ecommerce.util.MovieCollectionUtil;
 import com.ecommerce.webapp.BusinessApiResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * ErrorHandlerApiImpl
@@ -29,7 +30,8 @@ import jakarta.servlet.http.HttpServletRequest;
  * @author BacLV
  */
 @Component
-public class ErrorHandlerApiImpl implements ErrorHandler  {
+@Slf4j
+public class ErrorHandlerApiImpl implements ErrorHandler {
 
     @Autowired
     private MessageSource messageSource;
@@ -61,10 +63,37 @@ public class ErrorHandlerApiImpl implements ErrorHandler  {
         }
 
         String code = expCode.getText();
+        // DetailException stores the full error key (e.g. "905_REVIEW_ALREADY_EXISTS").
+        // expCode.getText() strips the numeric prefix and returns only
+        // "REVIEW_ALREADY_EXISTS",
+        // which does not match any properties key. Use the full code for i18n lookup.
+        if (ex instanceof DetailException) {
+            String fullCode = ((DetailException) ex).getExceptionErrorCode();
+            if (fullCode != null) {
+                code = fullCode;
+            }
+        }
 
         if (isTranslate) {
-            message = this.messageSource.getMessage(code, paramater,
-                    new Locale(Optional.ofNullable(this.request.getHeader("Accept-Language")).orElse("en")));
+            String ehLocaleHeader = Optional.ofNullable(this.request.getHeader("Accept-Language")).orElse("vi");
+            String ehLang = ehLocaleHeader.split("[-,;]")[0].trim();
+            Locale locale = new Locale(ehLang.isEmpty() ? "vi" : ehLang);
+            try {
+                String translated = this.messageSource.getMessage(code, paramater, locale);
+                // setUseCodeAsDefaultMessage(true) returns the code itself when key not found
+                // only accept if it's actually different from the key (i.e. was translated)
+                if (translated != null && !translated.equals(code)) {
+                    message = translated;
+                } else {
+                    // Try with default locale as fallback
+                    translated = this.messageSource.getMessage(code, paramater, Locale.US);
+                    if (translated != null && !translated.equals(code)) {
+                        message = translated;
+                    }
+                }
+            } catch (Exception msgEx) {
+                log.warn("i18n lookup failed for code [{}]: {}", code, msgEx.getMessage());
+            }
         }
 
         if (StringUtils.isBlank(message)) {
@@ -79,8 +108,10 @@ public class ErrorHandlerApiImpl implements ErrorHandler  {
         boolean isTranslate = false;
 
         if (isTranslate) {
+            String ehLocaleHeader2 = Optional.ofNullable(this.request.getHeader("Accept-Language")).orElse("vi");
+            String ehLang2 = ehLocaleHeader2.split("[-,;]")[0].trim();
             message = this.messageSource.getMessage(MessageError.ERROR_COMMON, null,
-                    new Locale(Optional.ofNullable(this.request.getHeader("Accept-Language")).orElse("en")));
+                    new Locale(ehLang2.isEmpty() ? "vi" : ehLang2));
         }
 
         return new BusinessApiResponse(codeStatus, message, null, null);
@@ -107,13 +138,14 @@ public class ErrorHandlerApiImpl implements ErrorHandler  {
             codeStatus = expCode.getValue();
             message = this.messageSource.getMessage(expCode.getText(), args,
                     new Locale(Optional.ofNullable(this.request.getHeader("Accept-Language")).orElse("en")));
-            
+
             if (StringUtils.isNotBlank(defaultMessage)) {
                 message = message.concat(System.lineSeparator()).concat(defaultMessage);
             }
         }
 
-        return new BusinessApiResponse(codeStatus, AppCoreConstant.ERROR, null, message, data, AppCoreConstant.RESULT_CODE_SYSTEM_ERROR);
+        return new BusinessApiResponse(codeStatus, AppCoreConstant.ERROR, null, message, data,
+                AppCoreConstant.RESULT_CODE_SYSTEM_ERROR);
 
     }
 }

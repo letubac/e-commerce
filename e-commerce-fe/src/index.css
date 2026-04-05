@@ -155,3 +155,91 @@
 .animation-delay-1000 {
   animation-delay: 1s;
 }
+
+/* =============================================
+   Item #9 - Button press / click feedback
+   ============================================= */
+button,
+[role="button"],
+a[href],
+.btn,
+.btn-favorite,
+.btn-add-cart,
+.btn-buy-now {
+  transition: transform 0.1s ease, opacity 0.1s ease, box-shadow 0.1s ease;
+}
+
+button:active:not(:disabled),
+[role="button"]:active,
+.btn:active,
+.btn-favorite:active,
+.btn-add-cart:active,
+.btn-buy-now:active {
+  transform: scale(0.96);
+  opacity: 0.88;
+}
+
+/* =============================================
+   Item #1 - Dark / Light mode overrides
+   Tailwind darkMode:'class' — applies when <html class="dark">
+   ============================================= */
+
+/* Base */
+.dark body {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Backgrounds */
+.dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-gray-50 { background-color: #1e293b !important; }
+.dark .bg-gray-100 { background-color: #0f172a !important; }
+.dark .bg-gray-200 { background-color: #334155 !important; }
+
+/* Text */
+.dark .text-gray-900 { color: #f1f5f9 !important; }
+.dark .text-gray-800 { color: #e2e8f0 !important; }
+.dark .text-gray-700 { color: #cbd5e1 !important; }
+.dark .text-gray-600 { color: #94a3b8 !important; }
+.dark .text-gray-500 { color: #64748b !important; }
+
+/* Borders */
+.dark .border { border-color: #334155 !important; }
+.dark .border-gray-100 { border-color: #1e293b !important; }
+.dark .border-gray-200 { border-color: #334155 !important; }
+.dark .border-gray-300 { border-color: #475569 !important; }
+
+/* Cards / Panels */
+.dark .shadow,
+.dark .shadow-sm,
+.dark .shadow-md,
+.dark .shadow-lg {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Inputs */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Dividers */
+.dark .divide-gray-200 > * + * { border-color: #334155 !important; }
+
+/* Hover on dark bg elements */
+.dark .hover\:bg-gray-100:hover { background-color: #1e293b !important; }
+.dark .hover\:bg-gray-50:hover  { background-color: #1e293b !important; }
+
+/* Table */
+.dark table thead { background-color: #1e293b !important; }
+.dark table th   { color: #94a3b8 !important; border-color: #334155 !important; }
+.dark table td   { border-color: #334155 !important; }
+.dark table tr:nth-child(even) { background-color: #1e293b !important; }

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ChatWidget from './components/ChatWidget';
@@ -31,7 +32,7 @@ function AppContent() {
   const showLayout = !hideLayoutPaths.some(path => location.pathname.startsWith(path));
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-200">
       {showLayout && <Header />}
       <main className={`flex-1 ${showLayout ? "pt-16" : ""}`}>
         <Routes>
@@ -108,14 +109,16 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <Router>
-          <NotificationProvider>
-            <AppContent />
-          </NotificationProvider>
-        </Router>
-      </CartProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <CartProvider>
+          <Router>
+            <NotificationProvider>
+              <AppContent />
+            </NotificationProvider>
+          </Router>
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

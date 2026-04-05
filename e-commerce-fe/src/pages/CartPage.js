@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Minus, Plus, Trash2, ArrowLeft, AlertCircle, Tag, Ticket } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { API_BASE_URL } from '../api/api';
+import api, { getImageUrl } from '../api/api';
 import toast from '../utils/toast';
 import './CartPage.css';
 
@@ -136,34 +136,28 @@ function CartPage() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/public/coupons/apply`, {
+      const couponData = await api.request('/public/coupons/apply', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
         body: JSON.stringify({
           couponCode: couponCode.trim(),
           orderAmount: selectedTotal
         })
       });
 
-      const data = await response.json();
-      
-      if (data.data && data.data.valid) {
+      if (couponData && couponData.valid) {
         setAppliedCoupon({
           code: couponCode.trim(),
-          discount: data.data.discountAmount,
-          type: data.data.discountType,
-          value: data.data.discountValue
+          discount: couponData.discountAmount,
+          type: couponData.discountType,
+          value: couponData.discountValue
         });
-        toast.success(`Áp dụng mã giảm giá thành công! Giảm ${data.data.discountAmount.toLocaleString('vi-VN')}₫`);
+        toast.success(`Áp dụng mã giảm giá thành công! Giảm ${couponData.discountAmount.toLocaleString('vi-VN')}₫`);
       } else {
-        toast.error(data.message || 'Mã giảm giá không hợp lệ');
+        toast.error('Mã giảm giá không hợp lệ');
       }
     } catch (error) {
       console.error('Error applying coupon:', error);
-      toast.error('Lỗi khi áp dụng mã giảm giá');
+      toast.error(error.message || 'Lỗi khi áp dụng mã giảm giá');
     }
   };
 
@@ -171,14 +165,12 @@ function CartPage() {
   const fetchAvailableCoupons = async () => {
     setLoadingCoupons(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/public/coupons?size=50`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
-      if (data.data && data.data.content) {
-        setAvailableCoupons(data.data.content);
+      const couponsData = await api.request('/public/coupons?size=50');
+      if (couponsData && couponsData.content) {
+        setAvailableCoupons(couponsData.content);
+        setShowCouponModal(true);
+      } else if (Array.isArray(couponsData)) {
+        setAvailableCoupons(couponsData);
         setShowCouponModal(true);
       }
     } catch (error) {
@@ -317,11 +309,7 @@ function CartPage() {
                             {/* Product Image */}
                             <div className="w-20 h-20 flex-shrink-0">
                               <img
-                                src={
-                                  item.productImage
-                                    ? `${API_BASE_URL}/files${item.productImage}`
-                                    : PLACEHOLDER_IMG
-                                }
+                                src={getImageUrl(item.productImage) || PLACEHOLDER_IMG}
                                 alt={item.productName || 'Product'}
                                 className="w-full h-full object-cover rounded-lg border border-gray-200"
                                 onError={(e) => {

@@ -75,7 +75,12 @@ public class ReviewServiceImpl implements ReviewService {
 			review.setCreatedAt(new Date());
 			review.setUpdatedAt(new Date());
 
-			Review savedReview = reviewRepository.create(review);
+			// Dùng insertReview thay cho create() để tránh lỗi seq_reviews chưa tồn tại
+			// trên prod
+			reviewRepository.insertReview(review);
+			// Fetch lại review vừa insert để trả về DTO đầy đủ
+			Review savedReview = reviewRepository.findByProductIdAndUserId(productId, userId)
+					.orElseThrow(() -> new DetailException(ReviewConstant.E901_REVIEW_CREATE_FAILED));
 			log.info("Tạo đánh giá thành công cho sản phẩm ID {} bởi user ID {}", productId, userId);
 			return reviewMapper.toDTO(savedReview);
 		} catch (DetailException e) {
@@ -101,7 +106,11 @@ public class ReviewServiceImpl implements ReviewService {
 			review.setComment(request.getComment());
 			review.setUpdatedAt(new Date());
 
-			Review updatedReview = reviewRepository.update(review);
+			// Dùng updateReview thay cho update() của WritableRepository để tránh
+			// PSQLException Unknown Types value
+			reviewRepository.updateReview(review);
+			Review updatedReview = reviewRepository.findById(reviewId)
+					.orElseThrow(() -> new DetailException(ReviewConstant.E900_REVIEW_NOT_FOUND));
 			log.info("Cập nhật đánh giá ID {} thành công", reviewId);
 			return reviewMapper.toDTO(updatedReview);
 		} catch (DetailException e) {
@@ -123,7 +132,9 @@ public class ReviewServiceImpl implements ReviewService {
 				throw new DetailException(ReviewConstant.E911_REVIEW_NOT_OWNED);
 			}
 
-			reviewRepository.delete(review);
+			// Dùng deleteReviewById thay cho delete() của WritableRepository để tránh
+			// PSQLException Unknown Types value
+			reviewRepository.deleteReviewById(review.getId());
 			log.info("Xóa đánh giá ID {} thành công", reviewId);
 		} catch (DetailException e) {
 			throw e;
@@ -369,12 +380,15 @@ public class ReviewServiceImpl implements ReviewService {
 			review.setUserId(user.getId());
 			review.setRating(reviewDTO.getRating());
 			review.setComment(reviewDTO.getComment());
+			review.setIsAnonymous(reviewDTO.getIsAnonymous() != null ? reviewDTO.getIsAnonymous() : false);
 			review.setIsVerifiedPurchase(false);
 			review.setIsApproved(true); // Default to approved);
 			review.setCreatedAt(new Date());
 			review.setUpdatedAt(new Date());
 
-			Review savedReview = reviewRepository.create(review);
+			reviewRepository.insertReview(review);
+			Review savedReview = reviewRepository.findByProductIdAndUserId(reviewDTO.getProductId(), user.getId())
+					.orElseThrow(() -> new DetailException(ReviewConstant.E901_REVIEW_CREATE_FAILED));
 			log.info("Đã tạo đánh giá thành công ID: {} cho sản phẩm ID: {} bởi user: {}", savedReview.getId(),
 					reviewDTO.getProductId(), username);
 
@@ -410,7 +424,9 @@ public class ReviewServiceImpl implements ReviewService {
 			review.setComment(reviewDTO.getComment());
 			review.setUpdatedAt(new Date());
 
-			Review updatedReview = reviewRepository.update(review);
+			reviewRepository.updateReview(review);
+			Review updatedReview = reviewRepository.findById(review.getId())
+					.orElseThrow(() -> new DetailException(ReviewConstant.E900_REVIEW_NOT_FOUND));
 			log.info("Cập nhật đánh giá ID {} thành công bởi user: {}", reviewDTO.getId(), username);
 			return reviewMapper.toDTO(updatedReview);
 		} catch (DetailException e) {
@@ -442,7 +458,7 @@ public class ReviewServiceImpl implements ReviewService {
 				}
 			}
 
-			reviewRepository.delete(review);
+			reviewRepository.deleteReviewById(review.getId());
 			log.info("Xóa đánh giá ID {} thành công bởi user: {}", reviewId, username);
 		} catch (DetailException e) {
 			throw e;

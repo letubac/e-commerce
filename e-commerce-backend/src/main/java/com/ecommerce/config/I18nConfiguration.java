@@ -13,17 +13,17 @@ import com.ecommerce.constant.AppApiConstant;
 @Configuration
 public class I18nConfiguration {
 
-	@Bean(name = "messageSource")
-    public ResourceBundleMessageSource getMessageResource()  {
-    	ResourceBundleMessageSource rs = new ResourceBundleMessageSource();
+    @Bean(name = "messageSource")
+    public ResourceBundleMessageSource getMessageResource() {
+        ResourceBundleMessageSource rs = new ResourceBundleMessageSource();
         rs.setBasenames("messages/messages");
         rs.setDefaultEncoding(AppApiConstant.UTF_8);
         rs.setUseCodeAsDefaultMessage(true);
         return rs;
     }
-    
+
     @Bean
-    public LocaleResolver localeResolvers() {
+    public LocaleResolver localeResolver() {
         SessionLocaleResolver slr = new SessionLocaleResolver();
         slr.setDefaultLocale(Locale.US);
         return slr;

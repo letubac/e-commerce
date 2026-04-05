@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api, { API_BASE_URL } from '../api/api';
+import api, { getImageUrl } from '../api/api';
 import toast from '../utils/toast';
 import { Zap, Clock, ShoppingCart, Flame, Tag, Filter } from 'lucide-react';
 import CountdownTimer from '../components/CountdownTimer';
@@ -40,11 +40,7 @@ function FlashSalePage() {
     return `${s.getHours().toString().padStart(2,'0')}:${s.getMinutes().toString().padStart(2,'0')} - ${e.getHours().toString().padStart(2,'0')}:${e.getMinutes().toString().padStart(2,'0')}`;
   };
 
-  const getProductImageUrl = (imageUrl) => {
-    if (!imageUrl) return PLACEHOLDER_IMG;
-    if (imageUrl.startsWith('http')) return imageUrl;
-    return `${API_BASE_URL}/files${imageUrl}`;
-  };
+  const getProductImageUrl = (imageUrl) => getImageUrl(imageUrl);
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -55,7 +51,8 @@ function FlashSalePage() {
       if (list.length > 0) {
         const active = list.find(s => isActive(s));
         const defaultSession = active || list.find(s => isUpcoming(s)) || list[0];
-        setSelectedSession(defaultSession);
+        // Only update selectedSession when the id actually changes to prevent infinite loop
+        setSelectedSession(prev => (prev?.id === defaultSession?.id ? prev : defaultSession));
       }
     } catch (error) {
       console.error('Error fetching flash sale schedule:', error);
@@ -92,6 +89,7 @@ function FlashSalePage() {
   // Countdown timer
   useEffect(() => {
     if (!selectedSession) return;
+    let refetchFired = false; // guard: only refetch once per expiry event
     const updateTimer = () => {
       const now = Date.now();
       const targetTime = isActive(selectedSession)
@@ -100,7 +98,10 @@ function FlashSalePage() {
       const distance = targetTime - now;
       if (distance <= 0) {
         setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
-        fetchSessions();
+        if (!refetchFired) {
+          refetchFired = true;
+          fetchSessions();
+        }
         return;
       }
       setTimeLeft({
@@ -291,7 +292,7 @@ function FlashSalePage() {
                 <div
                   key={product.id || product.productId}
                   className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer flex flex-col"
-                  onClick={() => navigate(`/products/${product.productId}`)}
+                  onClick={() => navigate(`/product/${product.productId}`)}
                 >
                   {/* Image */}
                   <div className="relative">
@@ -381,12 +382,12 @@ function FlashSalePage() {
             {selectedSession ? (
               selectedIsActive ? (
                 <>
-                  <h3 className="text-gray-500 font-medium text-lg mb-1">Không có sản phẩm</h3>
-                  <p className="text-gray-400 text-sm">Flash Sale này chưa có sản phẩm nào</p>
+                  <h3 className="text-gray-700 font-semibold text-lg mb-1">Sắp diễn ra...</h3>
+                  <p className="text-gray-500 text-sm">Sản phẩm Flash Sale sẽ sớm được cập nhật</p>
                 </>
               ) : (
                 <>
-                  <h3 className="text-gray-700 font-semibold text-lg mb-1">Flash Sale sắp bắt đầu!</h3>
+                  <h3 className="text-gray-700 font-semibold text-lg mb-1">Sắp diễn ra...</h3>
                   <p className="text-gray-500 text-sm">
                     Phiên bắt đầu lúc{' '}
                     {new Date(selectedSession.startTime).toLocaleString('vi-VN', {

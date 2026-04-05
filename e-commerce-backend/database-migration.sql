@@ -55,3 +55,10 @@ CREATE TRIGGER update_products_updated_at
 
 -- 5. Validation
 SELECT 'Migration completed successfully!' as status;
+
+-- 6. Đảm bảo sequence seq_reviews tồn tại (cần thiết cho insertReview)
+CREATE SEQUENCE IF NOT EXISTS seq_reviews START 1;
+SELECT setval('seq_reviews', (SELECT COALESCE(MAX(id), 1) FROM reviews));
+ALTER TABLE reviews ALTER COLUMN id SET DEFAULT nextval('seq_reviews');
+
+SELECT 'seq_reviews migration completed!' as status;

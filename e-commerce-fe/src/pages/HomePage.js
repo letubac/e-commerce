@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Smartphone, Laptop, Monitor, Headphones, Watch, Camera, Gamepad2, Tv, Home, Zap, Package, ChevronLeft, ChevronRight, Star, Shield, RefreshCw, CreditCard, Truck } from 'lucide-react';
 import FlashSale from '../components/FlashSale';
 import NewArrivals from '../components/NewArrivals';
+import SectionBlock from '../components/SectionBlock';
 import TrendingSearch from '../components/TrendingSearch';
-import CategoryBar from '../components/CategoryBar';
 import WelcomePopup from '../components/WelcomePopup';
 import { useAuth } from '../context/AuthContext';
-import api, { API_BASE_URL } from '../api/api';
+import api, { getImageUrl } from '../api/api';
 
 const categoryIcons = {
   'Điện thoại': Smartphone,
@@ -61,6 +61,8 @@ function HomePage() {
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showAllCats, setShowAllCats] = useState(false);
+  const CATS_VISIBLE = 10;
 
   useEffect(() => {
     if (user && !hasShownPopup) {
@@ -109,10 +111,6 @@ function HomePage() {
     fetchData();
     return () => { cancelled = true; };
   }, []);
-
-  const handleCategorySelect = (category) => {
-    navigate(category ? `/products?categoryId=${category.id}` : '/products');
-  };
 
   const prevSlide = () => setCurrentSlide(prev => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
   const nextSlide = () => setCurrentSlide(prev => (prev + 1) % HERO_SLIDES.length);
@@ -176,21 +174,21 @@ function HomePage() {
         </div>
       </section>
 
-      {/* 2. Quick Links - Category icons */}
-      <section className="bg-white shadow-sm">
+      {/* 2. Quick Links - Category icons (sticky below header) */}
+      <section className="bg-white shadow-sm sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          <div className="flex flex-wrap justify-center gap-1">
             {loadingCategories
               ? [...Array(8)].map((_, i) => (
                   <div key={i} className="flex-shrink-0 w-20 h-20 bg-gray-100 rounded-xl animate-pulse" />
                 ))
-              : categories.map((cat) => {
+              : (showAllCats ? categories : categories.slice(0, CATS_VISIBLE)).map((cat) => {
                   const Icon = categoryIcons[cat.name] || Package;
                   return (
                     <button
                       key={cat.id}
                       onClick={() => navigate(`/products?categoryId=${cat.id}`)}
-                      className="flex-shrink-0 flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-red-50 transition group min-w-[72px]"
+                      className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-red-50 transition group min-w-[72px]"
                     >
                       <div className="w-12 h-12 bg-red-50 group-hover:bg-red-100 rounded-xl flex items-center justify-center transition">
                         <Icon className="w-6 h-6 text-red-600" />
@@ -201,15 +199,19 @@ function HomePage() {
                     </button>
                   );
                 })}
-            <button
-              onClick={() => navigate('/products')}
-              className="flex-shrink-0 flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-gray-50 transition min-w-[72px]"
-            >
-              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                <ChevronRight className="w-6 h-6 text-gray-500" />
-              </div>
-              <span className="text-xs text-gray-500 font-medium text-center">Xem thêm</span>
-            </button>
+            {!loadingCategories && categories.length > CATS_VISIBLE && (
+              <button
+                onClick={() => setShowAllCats(prev => !prev)}
+                className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-gray-50 transition min-w-[72px]"
+              >
+                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                  <ChevronRight className={`w-6 h-6 text-gray-500 transition-transform ${showAllCats ? 'rotate-90' : ''}`} />
+                </div>
+                <span className="text-xs text-gray-500 font-medium text-center">
+                  {showAllCats ? 'Thu gọn' : 'Xem thêm'}
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </section>
@@ -221,19 +223,12 @@ function HomePage() {
 
       {/* 4. Featured Products */}
       <section className="max-w-7xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-xl shadow-sm p-5">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2">
-              <Zap className="w-6 h-6 text-red-600 fill-red-100" />
-              <h2 className="text-xl font-bold text-gray-800">Sản phẩm nổi bật</h2>
-            </div>
-            <button
-              onClick={() => navigate('/products')}
-              className="text-red-600 text-sm font-medium hover:underline flex items-center gap-1"
-            >
-              Xem tất cả <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+        <SectionBlock
+          title="Sản phẩm nổi bật"
+          icon={<Zap className="w-5 h-5 text-yellow-300 fill-yellow-300" />}
+          onViewAll={() => navigate('/products')}
+          gradient="from-red-500 to-red-700"
+        >
 
           {loadingProducts ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -247,13 +242,12 @@ function HomePage() {
                 const price = (product.salePrice || product.price || 0);
                 const originalPrice = product.price || 0;
                 const showStrike = product.salePrice && product.salePrice < originalPrice;
-                const imgUrl = product.imageUrl
-                  ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${API_BASE_URL}/files${product.imageUrl}`)
-                  : null;
+                const primaryImage = product.productImages?.find(img => img.primary) || product.productImages?.[0];
+                const imgUrl = getImageUrl(primaryImage?.imageUrl || product.imageUrl);
                 return (
                   <div
                     key={product.id}
-                    onClick={() => navigate(`/products/${product.id}`)}
+                    onClick={() => navigate(`/product/${product.id}`)}
                     className="border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition cursor-pointer group"
                   >
                     <div className="relative overflow-hidden bg-gray-50" style={{ height: '180px' }}>
@@ -318,7 +312,7 @@ function HomePage() {
               </button>
             </div>
           )}
-        </div>
+        </SectionBlock>
       </section>
 
       {/* 5. Promotion Banners */}
@@ -384,12 +378,7 @@ function HomePage() {
         </div>
       </section>
 
-      {/* 8. Category Bar + Trending Search */}
-      <CategoryBar
-        onCategorySelect={handleCategorySelect}
-        selectedCategory={null}
-      />
-
+      {/* 8. Trending Search */}
       <section className="bg-white py-6">
         <div className="max-w-7xl mx-auto px-4">
           <TrendingSearch />

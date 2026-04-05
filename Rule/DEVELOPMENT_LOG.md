@@ -285,6 +285,154 @@ Mỗi tính năng phát triển sẽ được ghi lại trong file này với:
 
 ---
 
+## 📅 Upgrade Batch (Phase 3) — 13 Items
+
+### ✅ Item #0 — FE Search Caching
+**Files Modified**: `src/api/api.js`
+**Mô Tả**:
+- Thêm in-memory `Map` cache với TTL 5 phút (`_searchCache`)
+- `getProducts`, `searchProducts`, `searchSuggestions` đều kiểm tra cache trước khi gọi API
+- Cache key sinh từ query string — tự động invalidate sau 5 phút
+**Status**: ✅ Hoàn chỉnh
+
+---
+
+### ✅ Item #1 — Dark / Light Mode
+**Files Modified**: `src/index.css`
+**Mô Tả**:
+- Tailwind `darkMode: 'class'` đã cấu hình đúng trong ThemeContext
+- Thêm CSS overrides cho `.dark` scope: `bg-white`, `bg-gray-*`, `text-gray-*`, `border-*`, `input`, `table` ...
+- Áp dụng toàn site mà không cần sửa từng component
+**Status**: ✅ Hoàn chỉnh
+
+---
+
+### ✅ Item #2 — E-SHOP Header Logo Wrapping
+**Files Modified**: `src/components/Header.js`
+**Mô Tả**:
+- Logo button thêm `flex-shrink-0 whitespace-nowrap`
+- `<span>E-SHOP</span>` thêm `whitespace-nowrap`
+- Container đổi sang `space-x-4 md:space-x-8` để responsive
+**Status**: ✅ Hoàn chỉnh
+
+---
+
+### ✅ Item #3 — Gỡ Mock Data FE (Favorites)
+**Files Modified**: `src/pages/ProfilePage.js`, `src/utils/favoritesUtils.js` (NEW)
+**Mô Tả**:
+- Tạo utility `favoritesUtils.js` quản lý yêu thích qua localStorage (key: `eshop_favorites`)
+- `ProfilePage.fetchFavorites()` đọc từ localStorage thay vì mock data
+**Status**: ✅ Hoàn chỉnh
+
+---
+
+### ✅ Item #4 / #5 — Search Param Fix + Filters
+**Files Modified**: `src/api/api.js`
+**Mô Tả**:
+- `ProductController.java` nhận `@RequestParam(name = "keyword")`
+- FE gửi `search` nhưng BE expect `keyword` → thêm mapping trong `getProducts`:
+  `if (query.search) { query.keyword = query.search; delete query.search; }`
+- Tất cả filter: price sort, keyword, minPrice/maxPrice, Load More, pagination đều hoạt động sau fix
+**Status**: ✅ Hoàn chỉnh
+
+---
+
+### ✅ Item #6 — Popup X Button Không Đóng
+**Files Modified**: `src/components/WelcomePopup.js`
+**Root cause**: Dual `fixed inset-0` divs + `onClose` trong deps gây timer reset; `pointer-events-none` chặn click
+**Fix**:
+- `useRef` cho `onCloseRef` — stable reference, không trigger re-render
+- `useEffect([isOpen])` only — dùng `onCloseRef.current?.()`
+- Cấu trúc lại JSX: single backdrop `onClick={onClose}`, modal content `onClick={e.stopPropagation()}`
+**Status**: ✅ Hoàn chỉnh
+
+---
+
+### ✅ Item #7 — Flash Sale Infinite API Loop
+**Files Modified**: `src/pages/FlashSalePage.js`, `src/components/FlashSale.js`
+**Root cause**: Countdown timer `updateTimer()` gọi `fetchSessions()` mỗi giây khi `distance <= 0`
+**Fix**:
+- `let refetchFired = false` guard — chỉ gọi fetch 1 lần mỗi expiry event
+- `setSelectedSession(prev => (prev?.id === id ? prev : newSession))` — tránh re-render vô ích
+**Status**: ✅ Hoàn chỉnh
+
+---
+
+### ✅ Item #8 — Review Creation BE Fail
+**Files Modified**: 
+- `src/main/java/com/ecommerce/repository/ReviewRepository.java`
+- `src/main/resources/com/ecommerce/repository/ReviewRepository_insertReview.sql`
+- `src/main/java/com/ecommerce/service/impl/ReviewServiceImpl.java`
+- `database-migration.sql`
+**Root cause**: `reviewRepository.create(review)` dùng sparwings built-in gọi `nextval('seq_reviews')` — nếu seq chưa tạo trong prod → exception
+**Fix**:
+- Thêm method `void insertReview(@Param("review") Review review)` vào `ReviewRepository`
+- Sửa SQL `ReviewRepository_insertReview.sql` dùng đúng cú pháp sparwings `/*review.fieldName*/`
+- `ReviewServiceImpl.createReview()`: dùng `insertReview()` + `findByProductIdAndUserId()` thay cho `create()`
+- `database-migration.sql`: thêm `CREATE SEQUENCE IF NOT EXISTS seq_reviews` + `ALTER TABLE reviews ALTER COLUMN id SET DEFAULT nextval('seq_reviews')`
+**Status**: ✅ Hoàn chỉnh
+
+---
+
+### ✅ Item #9 — Button Press Visual Feedback
+**Files Modified**: `src/index.css`
+**Mô Tả**:
+- Global CSS cho `button`, `[role="button"]`, `a[href]`, `.btn-favorite`, `.btn-add-cart`, `.btn-buy-now`
+- `transition: transform 0.1s ease, opacity 0.1s ease`
+- `:active:not(:disabled)` → `transform: scale(0.96); opacity: 0.88`
+**Status**: ✅ Hoàn chỉnh
+
+---
+
+### ✅ Item #10 — Flash Sale Empty State "Sắp diễn ra..."
+**Files Modified**: `src/pages/FlashSalePage.js`, `src/components/FlashSale.js`
+**Mô Tả**:
+- Khi session chưa có sản phẩm hoặc chưa bắt đầu: hiển thị "Sắp diễn ra..." thay vì generic message
+- Cả FlashSalePage và FlashSale component đều đồng nhất text
+**Status**: ✅ Hoàn chỉnh
+
+---
+
+### ✅ Item #11 — Duplicate Category Block
+**Files Modified**: `src/pages/HomePage.js`
+**Mô Tả**:
+- Xóa `CategoryBar` import và Section 8 (block dưới "Xu hướng tìm kiếm")
+- Section 2 Quick Links thêm `sticky top-16 z-40` — cố định khi scroll
+- Xóa `handleCategorySelect` function không còn dùng
+**Status**: ✅ Hoàn chỉnh
+
+---
+
+### ✅ Item #12 — Wishlist Product Images Missing
+**Files Modified**: `src/pages/ProfilePage.js`, `src/utils/favoritesUtils.js` (NEW)
+**Mô Tả**:
+- Tạo `favoritesUtils.js` với localStorage CRUD cho favorites
+- `ProfilePage.renderFavoritesTab()` dùng `getImageUrl(product.imageUrl)` — resolve Supabase URL
+- `onError` handler ẩn broken images, hiển thị placeholder thay thế
+- Heart button trong `ProductDetailsPage.js` gọi `toggleFavorite()` + toast feedback
+**Status**: ✅ Hoàn chỉnh
+
+---
+
+## 📊 Phase 3 Upgrade Summary
+
+| # | Hạng mục | Status | Files Changed |
+|---|----------|--------|---------------|
+| 0 | FE Search Cache (TTL 5p) | ✅ | api.js |
+| 1 | Dark/Light Mode CSS | ✅ | index.css |
+| 2 | E-SHOP logo wrap fix | ✅ | Header.js |
+| 3 | Gỡ mock data favorites | ✅ | ProfilePage.js, favoritesUtils.js |
+| 4/5 | Search keyword fix + filters | ✅ | api.js |
+| 6 | Popup X button | ✅ | WelcomePopup.js |
+| 7 | Flash Sale infinite loop | ✅ | FlashSalePage.js, FlashSale.js |
+| 8 | Review creation BE fix | ✅ | ReviewRepository.java, ReviewRepository_insertReview.sql, ReviewServiceImpl.java, database-migration.sql |
+| 9 | Button press feedback | ✅ | index.css |
+| 10 | Flash Sale empty "Sắp diễn ra..." | ✅ | FlashSalePage.js, FlashSale.js |
+| 11 | Duplicate category block | ✅ | HomePage.js |
+| 12 | Wishlist images | ✅ | ProfilePage.js, ProductDetailsPage.js, favoritesUtils.js |
+
+---
+
 ## 🎯 Dashboard Architecture
 
 ```

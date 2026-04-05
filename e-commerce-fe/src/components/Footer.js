@@ -3,7 +3,7 @@ import { MapPin, Phone, Facebook, Twitter, Instagram, Youtube } from 'lucide-rea
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-100 pt-12 pb-6">
+    <footer className="bg-gray-100 pt-12">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-5 gap-8">
           {/* Company Info */}

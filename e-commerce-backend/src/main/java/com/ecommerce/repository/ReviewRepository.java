@@ -12,6 +12,8 @@ import org.springframework.stereotype.Repository;
 import com.ecommerce.entity.Review;
 import com.ecommerce.repository.base.DbRepository;
 
+import vn.com.unit.springframework.data.mirage.repository.query.Modifying;
+
 @Repository
 public interface ReviewRepository extends DbRepository<Review, Long> {
 
@@ -47,4 +49,13 @@ public interface ReviewRepository extends DbRepository<Review, Long> {
 
     // Maps to: reviewRepository_getAverageRatingAfter.sql
     Double getAverageRatingAfter(@Param("date") Date date);
+
+    @Modifying
+    void insertReview(@Param("review") Review review);
+
+    @Modifying
+    void updateReview(@Param("review") Review review);
+
+    @Modifying
+    void deleteReviewById(@Param("id") Long id);
 }

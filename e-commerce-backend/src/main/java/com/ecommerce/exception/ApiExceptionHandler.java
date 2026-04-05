@@ -45,11 +45,13 @@ public class ApiExceptionHandler {
 		String errorCode = ex.getExceptionErrorCode();
 		logMessage(((ServletWebRequest) request).getRequest().getRequestURI(),
 				errorCode != null ? errorCode : "DetailException");
-		String locale = Optional.ofNullable(this.request.getHeader("Accept-Language")).orElse("vi");
+		String localeHeader = Optional.ofNullable(this.request.getHeader("Accept-Language")).orElse("vi");
+		String lang = localeHeader.split("[-,;]")[0].trim();
+		Locale locale = new Locale(lang.isEmpty() ? "vi" : lang);
 		String message;
 		if (errorCode != null && ex.isTranslate()) {
 			try {
-				message = messageSource.getMessage(errorCode, ex.getParamater(), new Locale(locale));
+				message = messageSource.getMessage(errorCode, ex.getParamater(), locale);
 			} catch (Exception e) {
 				message = StringUtils.isNotBlank(ex.getSpecificMsg()) ? ex.getSpecificMsg() : errorCode;
 			}
@@ -83,8 +85,10 @@ public class ApiExceptionHandler {
 			String messageCode = expCode.getText();
 			PathImpl path = (PathImpl) constraintViolation.getPropertyPath();
 			String[] params = new String[] { path.getLeafNode().asString() };
-			String message = this.messageSource.getMessage(messageCode, params,
-					new Locale(Optional.ofNullable(this.request.getHeader("Accept-Language")).orElse("en")));
+			String cvLocaleHeader = Optional.ofNullable(this.request.getHeader("Accept-Language")).orElse("en");
+			String cvLang = cvLocaleHeader.split("[-,;]")[0].trim();
+			Locale cvLocale = new Locale(cvLang.isEmpty() ? "en" : cvLang);
+			String message = this.messageSource.getMessage(messageCode, params, cvLocale);
 			errorMessages.add(message);
 		}
 

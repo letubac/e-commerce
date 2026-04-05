@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, Sparkles, Star, Heart, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -6,88 +6,89 @@ const WelcomePopup = ({ isOpen, onClose, userName }) => {
   const navigate = useNavigate();
   const [confetti, setConfetti] = useState([]);
   const [flowers, setFlowers] = useState([]);
+  const onCloseRef = useRef(onClose);
+
+  // Keep ref in sync without triggering effect
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   useEffect(() => {
-    if (isOpen) {
-      // Generate confetti particles
-      const confettiArray = Array.from({ length: 50 }, (_, i) => ({
-        id: i,
-        left: Math.random() * 100,
-        delay: Math.random() * 3,
-        duration: 3 + Math.random() * 2,
-        color: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'][Math.floor(Math.random() * 6)]
-      }));
-      setConfetti(confettiArray);
+    if (!isOpen) return;
 
-      // Generate floating flowers
-      const flowersArray = Array.from({ length: 20 }, (_, i) => ({
-        id: i,
-        left: Math.random() * 100,
-        delay: Math.random() * 2,
-        duration: 4 + Math.random() * 2,
-      }));
-      setFlowers(flowersArray);
+    // Generate confetti particles
+    const confettiArray = Array.from({ length: 50 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 3,
+      duration: 3 + Math.random() * 2,
+      color: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'][Math.floor(Math.random() * 6)]
+    }));
+    setConfetti(confettiArray);
 
-      // Auto close after 5 seconds
-      const timer = setTimeout(() => {
-        onClose();
-      }, 8000);
+    // Generate floating flowers
+    const flowersArray = Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 2,
+      duration: 4 + Math.random() * 2,
+    }));
+    setFlowers(flowersArray);
 
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, onClose]);
+    // Auto close after 8 seconds
+    const timer = setTimeout(() => {
+      onCloseRef.current?.();
+    }, 8000);
+
+    return () => clearTimeout(timer);
+  }, [isOpen]); // Only depends on isOpen — stable ref handles onClose
 
   if (!isOpen) return null;
 
   return (
-    <>
-      {/* Backdrop with blur */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 transition-opacity duration-300"
-        onClick={onClose}
-      >
-        {/* Confetti Animation */}
-        {confetti.map((particle) => (
-          <div
-            key={particle.id}
-            className="absolute w-3 h-3 rounded-full animate-confetti"
-            style={{
-              left: `${particle.left}%`,
-              top: '-20px',
-              backgroundColor: particle.color,
-              animationDelay: `${particle.delay}s`,
-              animationDuration: `${particle.duration}s`
-            }}
-          />
-        ))}
+    /* Single backdrop — clicking outside modal calls onClose */
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300"
+      onClick={onClose}
+    >
+      {/* Confetti Animation */}
+      {confetti.map((particle) => (
+        <div
+          key={particle.id}
+          className="absolute w-3 h-3 rounded-full animate-confetti pointer-events-none"
+          style={{
+            left: `${particle.left}%`,
+            top: '-20px',
+            backgroundColor: particle.color,
+            animationDelay: `${particle.delay}s`,
+            animationDuration: `${particle.duration}s`
+          }}
+        />
+      ))}
 
-        {/* Floating Flowers */}
-        {flowers.map((flower) => (
-          <div
-            key={`flower-${flower.id}`}
-            className="absolute animate-float opacity-70"
-            style={{
-              left: `${flower.left}%`,
-              top: '-50px',
-              animationDelay: `${flower.delay}s`,
-              animationDuration: `${flower.duration}s`
-            }}
-          >
-            <Sparkles className="text-yellow-300" size={24} />
-          </div>
-        ))}
-      </div>
-
-      {/* Modal Content */}
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
-        <div 
-          className="relative bg-gradient-to-br from-red-600 via-red-700 to-pink-600 rounded-3xl shadow-2xl max-w-2xl w-full p-8 md:p-12 transform animate-scale-in pointer-events-auto"
-          onClick={(e) => e.stopPropagation()}
+      {/* Floating Flowers */}
+      {flowers.map((flower) => (
+        <div
+          key={`flower-${flower.id}`}
+          className="absolute animate-float opacity-70 pointer-events-none"
+          style={{
+            left: `${flower.left}%`,
+            top: '-50px',
+            animationDelay: `${flower.delay}s`,
+            animationDuration: `${flower.duration}s`
+          }}
         >
+          <Sparkles className="text-yellow-300" size={24} />
+        </div>
+      ))}
+
+      {/* Modal Content — stopPropagation so clicks inside don't close */}
+      <div
+        className="relative bg-gradient-to-br from-red-600 via-red-700 to-pink-600 rounded-3xl shadow-2xl max-w-md w-full p-5 transform animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
+      >
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-white hover:text-red-200 transition-colors duration-200 z-10"
+            className="absolute top-4 right-4 text-white hover:text-red-200 transition-colors duration-200 z-20"
           >
             <X size={28} />
           </button>
@@ -135,19 +136,13 @@ const WelcomePopup = ({ isOpen, onClose, userName }) => {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-600">
               <button
-                onClick={() => {
-                  navigate('/products');
-                  onClose();
-                }}
+                onClick={() => { navigate('/products'); onClose(); }}
                 className="bg-white text-red-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-yellow-100 transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
                 🛍️ Khám phá ngay
               </button>
               <button
-                onClick={() => {
-                  navigate('/flash-sale');
-                  onClose();
-                }}
+                onClick={() => { navigate('/flash-sale'); onClose(); }}
                 className="bg-yellow-400 text-red-800 px-8 py-4 rounded-xl font-bold text-lg hover:bg-yellow-300 transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
                 ⚡ Flash Sale
@@ -162,9 +157,8 @@ const WelcomePopup = ({ isOpen, onClose, userName }) => {
               </p>
             </div>
           </div>
-        </div>
       </div>
-    </>
+    </div>
   );
 };
 
