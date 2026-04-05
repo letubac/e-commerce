@@ -93,6 +93,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	}
 
 	/**
+	 * Skip JWT filter for error dispatches to avoid re-running auth on Spring
+	 * Boot's
+	 * internal /error forwarding, which would produce a confusing 401 with path
+	 * /error.
+	 */
+	@Override
+	protected boolean shouldNotFilterErrorDispatch() {
+		return true;
+	}
+
+	/**
 	 * Determine if JWT validation should be skipped for certain paths
 	 */
 	private static final Set<String> PUBLIC_ENDPOINTS = Set.of("/api/v1/auth/login", "/api/v1/auth/register",

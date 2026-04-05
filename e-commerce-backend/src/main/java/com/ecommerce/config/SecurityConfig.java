@@ -81,6 +81,7 @@ public class SecurityConfig {
                         .permitAll().requestMatchers("/api/v1/brands/**").permitAll()
                         .requestMatchers("/api/v1/files/**").permitAll().requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/error").permitAll()
 
                         // Còn lại phải login
                         .anyRequest().authenticated());
