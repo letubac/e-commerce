@@ -1,4 +1,4 @@
-package com.ecommerce.service.impl;
+﻿package com.ecommerce.service.impl;
 
 import com.ecommerce.entity.Order;
 import com.ecommerce.repository.CouponRepository;
@@ -78,7 +78,7 @@ public class ScheduledTasksService {
                 }
             });
         } catch (Exception e) {
-            log.warn("[Cron] Could not load job configs from DB (table may not exist yet): {}", e.getMessage());
+            log.warn("[Cron] Could not load job configs from DB: {}", e.getMessage());
         }
     }
 
