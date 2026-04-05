@@ -221,11 +221,8 @@ public class BrandServiceImpl implements BrandService {
 
 			boolean newStatus = !brand.isActive();
 			Date now = new Date();
-			String slug = brand.getSlug() != null ? brand.getSlug() : generateSlug(brand.getName());
 
-			Integer result = brandRepository.updateBrand(
-					id, brand.getName(), slug, brand.getDescription(),
-					brand.getLogoUrl(), brand.getWebsiteUrl(), newStatus, now);
+			Integer result = brandRepository.toggleActiveStatus(id, newStatus, now);
 
 			if (result == null || result <= 0) {
 				throw new DetailException(BrandConstant.E210_BRAND_TOGGLE_STATUS_ERROR);

@@ -223,13 +223,8 @@ public class CategoryServiceImpl implements CategoryService {
 
 			boolean newStatus = !category.isActive();
 			Date now = new Date();
-			String slug = category.getSlug() != null ? category.getSlug() : generateSlug(category.getName());
 
-			Integer result = categoryRepository.updateCategory(
-					id, category.getName(), slug, category.getDescription(),
-					category.getParentId(), category.getImageUrl(),
-					category.getSortOrder() != null ? category.getSortOrder() : 0,
-					newStatus, now);
+			Integer result = categoryRepository.toggleActiveStatus(id, newStatus, now);
 
 			if (result == null || result <= 0) {
 				throw new DetailException(CategoryConstant.E409_CATEGORY_TOGGLE_ERROR);

@@ -57,5 +57,9 @@ public interface BrandRepository extends DbRepository<Brand, Long> {
             @Param("updatedAt") Date updatedAt);
 
     @Modifying
+    Integer toggleActiveStatus(@Param("id") Long id, @Param("isActive") boolean isActive,
+            @Param("updatedAt") Date updatedAt);
+
+    @Modifying
     Integer deleteBrand(@Param("id") Long id);
 }

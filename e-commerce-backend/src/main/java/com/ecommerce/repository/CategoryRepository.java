@@ -52,5 +52,9 @@ public interface CategoryRepository extends DbRepository<Category, Long> {
             @Param("isActive") boolean isActive, @Param("updatedAt") Date updatedAt);
 
     @Modifying
+    Integer toggleActiveStatus(@Param("id") Long id, @Param("isActive") boolean isActive,
+            @Param("updatedAt") Date updatedAt);
+
+    @Modifying
     Integer deleteCategory(@Param("id") Long id);
 }

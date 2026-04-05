@@ -1,4 +1,4 @@
-package com.ecommerce.service.impl;
+﻿package com.ecommerce.service.impl;
 
 import com.ecommerce.entity.Order;
 import com.ecommerce.repository.CouponRepository;
@@ -71,12 +71,26 @@ public class ScheduledTasksService {
     @PostConstruct
     public void loadJobConfigsFromDb() {
         try {
-            cronJobConfigRepository.findAll().forEach(config -> {
-                if (!config.isEnabled()) {
-                    disabledJobs.add(config.getJobName());
-                    log.info("[Cron] Job '{}' loaded as DISABLED from DB", config.getJobName());
+            // Load existing states from DB
+            Map<String, Boolean> dbConfigs = new HashMap<>();
+            cronJobConfigRepository.findAll().forEach(config -> dbConfigs.put(config.getJobName(), config.isEnabled()));
+
+            // Apply DB state; seed any job not yet recorded
+            Date now = new Date();
+            for (String jobName : ALL_JOB_KEYS) {
+                if (dbConfigs.containsKey(jobName)) {
+                    if (!dbConfigs.get(jobName)) {
+                        disabledJobs.add(jobName);
+                        log.info("[Cron] Job '{}' restored as DISABLED from DB", jobName);
+                    } else {
+                        log.info("[Cron] Job '{}' restored as ENABLED from DB", jobName);
+                    }
+                } else {
+                    // Job not in DB yet — seed as ENABLED
+                    cronJobConfigRepository.upsert(jobName, true, now);
+                    log.info("[Cron] Job '{}' seeded as ENABLED in DB", jobName);
                 }
-            });
+            }
         } catch (Exception e) {
             log.warn("[Cron] Could not load job configs from DB: {}", e.getMessage());
         }
@@ -249,22 +263,26 @@ public class ScheduledTasksService {
 
     /**
      * Toggle job enabled/disabled state. Returns the new enabled state.
+     * <p>
+     * Persists to DB <em>first</em>; only updates in-memory state when the DB
+     * write succeeds. This ensures the persisted state always matches memory
+     * and any DB failure is surfaced to the caller instead of being swallowed.
      */
+    @Transactional
     public boolean toggleJob(String jobName) {
-        boolean isNowEnabled;
-        if (disabledJobs.contains(jobName)) {
+        boolean isNowEnabled = disabledJobs.contains(jobName); // true = was disabled → now enable
+
+        // Persist to DB first — exception propagates to CronJobController on failure
+        cronJobConfigRepository.upsert(jobName, isNowEnabled, new Date());
+
+        // Update in-memory state only after successful DB write
+        if (isNowEnabled) {
             disabledJobs.remove(jobName);
-            isNowEnabled = true;
-            log.info("[Cron] Job {} has been ENABLED by admin", jobName);
+            pausedUntilMap.remove(jobName);
+            log.info("[Cron] Job '{}' ENABLED by admin and persisted to DB", jobName);
         } else {
             disabledJobs.add(jobName);
-            isNowEnabled = false;
-            log.info("[Cron] Job {} has been DISABLED by admin", jobName);
-        }
-        try {
-            cronJobConfigRepository.upsert(jobName, isNowEnabled, new Date());
-        } catch (Exception e) {
-            log.error("[Cron] Failed to persist job config for '{}': {}", jobName, e.getMessage());
+            log.info("[Cron] Job '{}' DISABLED by admin and persisted to DB", jobName);
         }
         return isNowEnabled;
     }
