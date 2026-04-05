@@ -1,4 +1,4 @@
-package com.ecommerce.dto;
+﻿package com.ecommerce.dto;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -18,6 +18,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class ProductDTO {
     private Long id;
 

@@ -1,4 +1,4 @@
-package com.ecommerce.repository;
+﻿package com.ecommerce.repository;
 
 import com.ecommerce.entity.FlashSale;
 import com.ecommerce.repository.base.DbRepository;
@@ -9,6 +9,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
+/**
+ * author: LeTuBac
+ */
 public interface FlashSaleRepository extends DbRepository<FlashSale, Long> {
 
     // Maps to: FlashSaleRepository_findAllFlashSales.sql

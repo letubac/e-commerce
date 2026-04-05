@@ -1,4 +1,4 @@
-package com.ecommerce.ai.tools;
+﻿package com.ecommerce.ai.tools;
 
 import com.ecommerce.dto.FlashSaleDTO;
 import com.ecommerce.dto.FlashSaleProductDTO;
@@ -18,6 +18,9 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class FlashSaleTool {
 
     private final FlashSaleService flashSaleService;

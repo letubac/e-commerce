@@ -1,4 +1,4 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * Notification Module Constants
@@ -11,6 +11,9 @@ package com.ecommerce.constant;
  * - E820-E829: User & Permission (10 codes)
  * - E830-E839: WebSocket & Connection (10 codes)
  * - E840-E849: Business Logic (10 codes)
+ */
+/**
+ * author: LeTuBac
  */
 public class NotificationConstant {
 

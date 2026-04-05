@@ -1,4 +1,4 @@
-package com.ecommerce.controller;
+﻿package com.ecommerce.controller;
 
 import com.ecommerce.constant.FlashSaleConstant;
 import com.ecommerce.dto.FlashSaleDTO;
@@ -26,6 +26,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1")
 @Slf4j
+/**
+ * author: LeTuBac
+ */
 public class FlashSaleController {
 
     @Autowired

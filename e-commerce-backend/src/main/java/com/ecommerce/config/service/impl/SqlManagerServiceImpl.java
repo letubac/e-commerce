@@ -1,4 +1,4 @@
-package com.ecommerce.config.service.impl;
+﻿package com.ecommerce.config.service.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +40,9 @@ import vn.com.unit.miragesql.miragesql.type.enumerate.EnumStringValueType;
 
 @Primary
 @Service("sqlManagerPr")
+/**
+ * author: LeTuBac
+ */
 public class SqlManagerServiceImpl extends SqlManagerImpl implements SqlManagerService {
     private static final Logger logger = LoggerFactory.getLogger(SqlManagerServiceImpl.class);
 

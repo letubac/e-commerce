@@ -1,4 +1,4 @@
-package com.ecommerce.controller;
+﻿package com.ecommerce.controller;
 
 import java.util.Map;
 
@@ -22,6 +22,9 @@ import com.ecommerce.webapp.BusinessApiResponse;
  */
 @RestController
 @RequestMapping("/api/v1/dashboard")
+/**
+ * author: LeTuBac
+ */
 public class DashboardController {
 
     private static final Logger log = LoggerFactory.getLogger(DashboardController.class);

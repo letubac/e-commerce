@@ -1,4 +1,4 @@
-package com.ecommerce.ai.tools;
+﻿package com.ecommerce.ai.tools;
 
 import com.ecommerce.service.DashboardService;
 import com.ecommerce.service.ProductService;
@@ -18,6 +18,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class InventoryTool {
 
     private final ProductService productService;

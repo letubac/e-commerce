@@ -1,4 +1,4 @@
-package com.ecommerce.config;
+﻿package com.ecommerce.config;
 
 import vn.com.unit.miragesql.miragesql.annotation.PrimaryKey;
 import vn.com.unit.miragesql.miragesql.dialect.Dialect;
@@ -10,6 +10,9 @@ import vn.com.unit.miragesql.miragesql.type.ValueType;
  * @version 01-00
  * @since 01-00
  * @author 
+ */
+/**
+ * author: LeTuBac
  */
 public class SQLServerDialect implements Dialect {
 

@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import com.ecommerce.dto.ProductDTO;
 import com.ecommerce.exception.DetailException;
@@ -8,6 +8,9 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * author: LeTuBac
+ */
 public interface ProductService {
 
         // Product management

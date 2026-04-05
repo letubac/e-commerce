@@ -1,4 +1,4 @@
-package com.ecommerce.ai.tools;
+﻿package com.ecommerce.ai.tools;
 
 import com.ecommerce.dto.CartDTO;
 import com.ecommerce.dto.CartItemDTO;
@@ -16,6 +16,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class CartTool {
 
     private final CartService cartService;

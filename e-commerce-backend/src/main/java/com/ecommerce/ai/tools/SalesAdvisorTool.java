@@ -1,4 +1,4 @@
-package com.ecommerce.ai.tools;
+﻿package com.ecommerce.ai.tools;
 
 import com.ecommerce.service.DashboardService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +16,9 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class SalesAdvisorTool {
 
     private final DashboardService dashboardService;

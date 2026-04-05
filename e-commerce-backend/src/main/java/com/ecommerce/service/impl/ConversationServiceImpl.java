@@ -1,4 +1,4 @@
-package com.ecommerce.service.impl;
+﻿package com.ecommerce.service.impl;
 
 import java.util.Date;
 import java.util.List;
@@ -27,6 +27,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * author: LeTuBac
+ */
 public class ConversationServiceImpl implements ConversationService {
 
 	private final ConversationRepository conversationRepository;

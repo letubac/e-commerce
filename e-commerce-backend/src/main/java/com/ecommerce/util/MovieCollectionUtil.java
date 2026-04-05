@@ -1,4 +1,4 @@
-package com.ecommerce.util;
+﻿package com.ecommerce.util;
 
 import java.util.Collection;
 
@@ -9,6 +9,9 @@ import org.apache.commons.collections4.CollectionUtils;
  * @version 01-00
  * @since 01-00
  * @author BacLV
+ */
+/**
+ * author: LeTuBac
  */
 public class MovieCollectionUtil {
 

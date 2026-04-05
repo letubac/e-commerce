@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import com.ecommerce.dto.FlashSaleDTO;
 import com.ecommerce.dto.FlashSaleProductDTO;
@@ -8,6 +8,9 @@ import org.springframework.data.domain.Pageable;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * author: LeTuBac
+ */
 public interface FlashSaleService {
 
     // Flash Sale management

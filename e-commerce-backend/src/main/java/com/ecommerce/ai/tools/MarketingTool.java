@@ -1,4 +1,4 @@
-package com.ecommerce.ai.tools;
+﻿package com.ecommerce.ai.tools;
 
 import com.ecommerce.service.CouponService;
 import com.ecommerce.service.FlashSaleService;
@@ -17,6 +17,9 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class MarketingTool {
 
     private final FlashSaleService flashSaleService;

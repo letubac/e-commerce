@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -9,6 +9,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
 @Service
+/**
+ * author: LeTuBac
+ */
 public class SessionTimeoutService {
 
 	@Value("${app.session.timeout:1800000}") // 30 phút mặc định

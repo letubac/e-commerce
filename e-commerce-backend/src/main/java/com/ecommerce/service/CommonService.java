@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import java.util.Date;
 
@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 import com.ecommerce.exception.DetailException;
 
 @Service
+/**
+ * author: LeTuBac
+ */
 public interface CommonService {
 
     Date getSystemDate();

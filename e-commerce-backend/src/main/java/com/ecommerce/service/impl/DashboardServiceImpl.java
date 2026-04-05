@@ -1,4 +1,4 @@
-package com.ecommerce.service.impl;
+﻿package com.ecommerce.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -30,6 +30,9 @@ import lombok.RequiredArgsConstructor;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class DashboardServiceImpl implements DashboardService {
 
 	private static final Logger log = LoggerFactory.getLogger(DashboardServiceImpl.class);

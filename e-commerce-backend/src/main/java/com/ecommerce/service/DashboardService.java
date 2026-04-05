@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import java.util.Map;
 
@@ -6,6 +6,9 @@ import com.ecommerce.exception.DetailException;
 
 /**
  * Service interface for dashboard data and statistics
+ */
+/**
+ * author: LeTuBac
  */
 public interface DashboardService {
 

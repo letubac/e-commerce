@@ -1,10 +1,13 @@
-package com.ecommerce.dto.request;
+﻿package com.ecommerce.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 /**
  * Request DTO for sending messages
+ */
+/**
+ * author: LeTuBac
  */
 public class SendMessageRequest {
 

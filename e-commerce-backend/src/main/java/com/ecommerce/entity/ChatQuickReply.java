@@ -1,4 +1,4 @@
-package com.ecommerce.entity;
+﻿package com.ecommerce.entity;
 
 import jakarta.persistence.*;
 import vn.com.unit.miragesql.miragesql.annotation.PrimaryKey;
@@ -9,6 +9,9 @@ import com.ecommerce.constant.TableConstant;
 
 @Entity
 @Table(name = TableConstant.CHAT_QUICK_REPLIES)
+/**
+ * author: LeTuBac
+ */
 public class ChatQuickReply {
     @Id
     @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ

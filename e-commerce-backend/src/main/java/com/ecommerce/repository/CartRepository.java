@@ -1,4 +1,4 @@
-package com.ecommerce.repository;
+﻿package com.ecommerce.repository;
 
 import java.util.Optional;
 
@@ -12,6 +12,9 @@ import com.ecommerce.repository.base.DbRepository;
 import vn.com.unit.springframework.data.mirage.repository.query.Modifying;
 
 @Repository
+/**
+ * author: LeTuBac
+ */
 public interface CartRepository extends DbRepository<Cart, Long> {
 
     // Maps to: cartRepository_findByUserId.sql

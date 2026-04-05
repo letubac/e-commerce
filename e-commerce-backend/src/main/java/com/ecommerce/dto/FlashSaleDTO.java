@@ -1,4 +1,4 @@
-package com.ecommerce.dto;
+﻿package com.ecommerce.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,6 +12,9 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class FlashSaleDTO {
     private Long id;
     private String name;

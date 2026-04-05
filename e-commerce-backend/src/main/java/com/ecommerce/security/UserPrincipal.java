@@ -1,4 +1,4 @@
-package com.ecommerce.security;
+﻿package com.ecommerce.security;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -10,6 +10,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.ecommerce.entity.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+/**
+ * author: LeTuBac
+ */
 public class UserPrincipal implements UserDetails {
     private Long id;
     private String username;

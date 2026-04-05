@@ -1,4 +1,4 @@
-package com.ecommerce.entity;
+﻿package com.ecommerce.entity;
 
 import java.util.Date;
 
@@ -20,6 +20,9 @@ import vn.com.unit.miragesql.miragesql.annotation.PrimaryKey;
 @AllArgsConstructor
 @Entity
 @Table(name = TableConstant.CARTS)
+/**
+ * author: LeTuBac
+ */
 public class Cart {
     @Id
     @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ

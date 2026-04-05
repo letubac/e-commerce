@@ -1,4 +1,4 @@
-package com.ecommerce.controller;
+﻿package com.ecommerce.controller;
 
 import java.util.List;
 
@@ -35,6 +35,9 @@ import com.ecommerce.webapp.BusinessApiResponse;
 @RestController
 @RequestMapping("/api/v1")
 @CrossOrigin(origins = "*", maxAge = 3600)
+/**
+ * author: LeTuBac
+ */
 public class NotificationController {
 
     @Autowired

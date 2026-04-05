@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import java.util.List;
 import java.util.Map;
@@ -12,6 +12,9 @@ import com.ecommerce.dto.UserDTO;
 import com.ecommerce.entity.User;
 import com.ecommerce.exception.DetailException;
 
+/**
+ * author: LeTuBac
+ */
 public interface UserService {
 
     // User management

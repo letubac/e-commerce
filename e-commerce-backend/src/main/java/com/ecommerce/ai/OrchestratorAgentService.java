@@ -1,4 +1,4 @@
-package com.ecommerce.ai;
+﻿package com.ecommerce.ai;
 
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
@@ -21,6 +21,9 @@ import java.time.Duration;
  */
 @Slf4j
 @Service
+/**
+ * author: LeTuBac
+ */
 public class OrchestratorAgentService {
 
     @Value("${app.ai.openai.api-key:sk-placeholder}")

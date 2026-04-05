@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React, { useState } from 'react';
 import { Star, MessageCircle, Trash2 } from 'lucide-react';
 import api from '../api/api';

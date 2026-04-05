@@ -1,4 +1,4 @@
-package com.ecommerce.service.impl;
+﻿package com.ecommerce.service.impl;
 
 import java.util.Date;
 import java.util.List;
@@ -23,6 +23,9 @@ import com.ecommerce.service.CategoryService;
  */
 @Service
 @Transactional
+/**
+ * author: LeTuBac
+ */
 public class CategoryServiceImpl implements CategoryService {
 
 	private static final Logger log = LoggerFactory.getLogger(CategoryServiceImpl.class);

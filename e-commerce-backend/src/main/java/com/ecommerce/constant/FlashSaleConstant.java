@@ -1,9 +1,12 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * Constants for Flash Sale module error and success codes
  * Error codes: E700-E749
  * Success codes: S700-S749
+ */
+/**
+ * author: LeTuBac
  */
 public class FlashSaleConstant {
     // ==================== ERROR CODES ====================

@@ -1,4 +1,4 @@
-package com.ecommerce.repository;
+﻿package com.ecommerce.repository;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -15,6 +15,9 @@ import com.ecommerce.repository.base.DbRepository;
 import vn.com.unit.springframework.data.mirage.repository.query.Modifying;
 
 @Repository
+/**
+ * author: LeTuBac
+ */
 public interface ProductRepository extends DbRepository<Product, Long> {
 
 	List<Product> findAllData();

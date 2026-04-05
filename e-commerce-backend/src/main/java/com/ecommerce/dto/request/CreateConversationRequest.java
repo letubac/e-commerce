@@ -1,9 +1,12 @@
-package com.ecommerce.dto.request;
+﻿package com.ecommerce.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 
 /**
  * Request DTO for creating conversations
+ */
+/**
+ * author: LeTuBac
  */
 public class CreateConversationRequest {
 

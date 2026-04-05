@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React, { useState } from 'react';
 import { Eye, ShoppingCart } from 'lucide-react';
 import { useCart } from '../context/CartContext';

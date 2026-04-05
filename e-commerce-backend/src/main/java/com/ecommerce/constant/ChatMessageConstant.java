@@ -1,10 +1,13 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * Chat Message Code Constants
  * 
  * @author System
  * @version 1.0
+ */
+/**
+ * author: LeTuBac
  */
 public class ChatMessageConstant {
 

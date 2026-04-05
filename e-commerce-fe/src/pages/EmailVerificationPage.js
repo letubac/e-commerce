@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Mail, CheckCircle, AlertCircle, Loader, ArrowLeft } from 'lucide-react';

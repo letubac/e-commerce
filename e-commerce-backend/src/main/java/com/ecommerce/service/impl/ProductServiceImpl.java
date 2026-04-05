@@ -1,4 +1,4 @@
-package com.ecommerce.service.impl;
+﻿package com.ecommerce.service.impl;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -33,6 +33,9 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * author: LeTuBac
+ */
 public class ProductServiceImpl implements ProductService {
 
 	private static final Logger log = LoggerFactory.getLogger(ProductServiceImpl.class);

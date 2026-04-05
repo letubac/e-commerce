@@ -1,4 +1,4 @@
-package com.ecommerce.util;
+﻿package com.ecommerce.util;
 
 import java.text.Normalizer;
 import java.util.regex.Pattern;
@@ -6,6 +6,9 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 
 
+/**
+ * author: LeTuBac
+ */
 public class CommonStringUtil extends StringUtils{
 
 	public static boolean isNotBlank(final CharSequence cs) {

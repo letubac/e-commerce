@@ -1,4 +1,4 @@
-package com.ecommerce.repository;
+﻿package com.ecommerce.repository;
 
 import java.util.Date;
 import java.util.List;
@@ -16,6 +16,9 @@ import com.ecommerce.repository.base.DbRepository;
 import vn.com.unit.springframework.data.mirage.repository.query.Modifying;
 
 @Repository
+/**
+ * author: LeTuBac
+ */
 public interface CouponRepository extends DbRepository<Coupon, Long> {
 
     // Maps to: couponRepository_findAllData.sql

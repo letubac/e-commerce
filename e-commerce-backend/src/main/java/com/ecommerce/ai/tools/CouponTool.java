@@ -1,4 +1,4 @@
-package com.ecommerce.ai.tools;
+﻿package com.ecommerce.ai.tools;
 
 import com.ecommerce.dto.CouponDTO;
 import com.ecommerce.service.CouponService;
@@ -15,6 +15,9 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class CouponTool {
 
     private final CouponService couponService;

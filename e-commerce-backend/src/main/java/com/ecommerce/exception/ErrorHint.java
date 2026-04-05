@@ -1,5 +1,8 @@
-package com.ecommerce.exception;
+﻿package com.ecommerce.exception;
 
+/**
+ * author: LeTuBac
+ */
 public enum ErrorHint {
     REQUIRE_LOGIN,            // Redirect login
     REQUIRE_CREATE_ACCOUNT,      // Redirect create

@@ -1,4 +1,4 @@
-package com.ecommerce.dto;
+﻿package com.ecommerce.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -12,6 +12,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class CreateUserRequest {
 
     @NotBlank(message = "Username is required")

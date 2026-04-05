@@ -1,4 +1,4 @@
-package com.ecommerce.config;
+﻿package com.ecommerce.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +15,9 @@ import java.util.List;
  * Cấu hình CORS cho toàn bộ ứng dụng
  */
 @Configuration
+/**
+ * author: LeTuBac
+ */
 public class CorsConfig {
 
     @Value("${app.cors.allowed-origins}")

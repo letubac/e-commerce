@@ -1,4 +1,4 @@
-package com.ecommerce.util;
+﻿package com.ecommerce.util;
 
 import java.io.IOException;
 import java.util.Map;
@@ -15,6 +15,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import jakarta.transaction.SystemException;
 
+/**
+ * author: LeTuBac
+ */
 public class CommonJsonUtil {
 
     /**

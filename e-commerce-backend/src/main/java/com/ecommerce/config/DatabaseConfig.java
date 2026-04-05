@@ -1,4 +1,4 @@
-package com.ecommerce.config;
+﻿package com.ecommerce.config;
 
 import javax.sql.DataSource;
 
@@ -13,6 +13,9 @@ import com.ecommerce.constant.AppCoreConstant;
 import com.zaxxer.hikari.HikariDataSource;
 
 @Configuration
+/**
+ * author: LeTuBac
+ */
 public class DatabaseConfig {
 
 	@Autowired

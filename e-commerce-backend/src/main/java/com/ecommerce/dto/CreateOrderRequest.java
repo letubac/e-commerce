@@ -1,4 +1,4 @@
-package com.ecommerce.dto;
+﻿package com.ecommerce.dto;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -16,6 +16,9 @@ import lombok.AllArgsConstructor;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class CreateOrderRequest {
     @Valid
     @NotNull(message = "Customer info is required")

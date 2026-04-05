@@ -1,4 +1,4 @@
-package com.ecommerce.annotation;
+﻿package com.ecommerce.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -17,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Target({ ElementType.METHOD, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Transactional(transactionManager = "transactionManagerSql", readOnly = true)
+/**
+ * author: LeTuBac
+ */
 public @interface CoreReadOnlyTx {
 
 }

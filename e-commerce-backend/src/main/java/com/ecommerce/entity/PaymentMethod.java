@@ -1,5 +1,8 @@
-package com.ecommerce.entity;
+﻿package com.ecommerce.entity;
 
+/**
+ * author: LeTuBac
+ */
 public enum PaymentMethod {
     COD("Thanh toán khi nhận hàng"),
     VNPAY("VNPay"),

@@ -1,4 +1,4 @@
-package com.ecommerce.dto;
+﻿package com.ecommerce.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,6 +12,9 @@ import java.util.Date;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class CartItemDTO {
     private Long id;
     private Long cartId;

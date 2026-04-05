@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Power, PowerOff, Package, Calendar, TrendingUp, Clock, AlertCircle, Search } from 'lucide-react';
 import adminApi from '../api/adminApi';

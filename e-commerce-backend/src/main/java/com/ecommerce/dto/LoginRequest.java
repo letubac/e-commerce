@@ -1,7 +1,10 @@
-package com.ecommerce.dto;
+﻿package com.ecommerce.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ * author: LeTuBac
+ */
 public class LoginRequest {
     @NotBlank(message = "Username or email is required")
     private String usernameOrEmail;

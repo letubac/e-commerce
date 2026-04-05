@@ -1,4 +1,4 @@
-package com.ecommerce.service.impl;
+﻿package com.ecommerce.service.impl;
 
 import java.util.Date;
 import java.util.Calendar;
@@ -29,6 +29,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * author: LeTuBac
+ */
 public class TrendingSearchServiceImpl implements TrendingSearchService {
 
 	private final TrendingSearchRepository trendingSearchRepository;

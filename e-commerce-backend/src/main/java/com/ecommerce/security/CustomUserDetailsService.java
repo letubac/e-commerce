@@ -1,4 +1,4 @@
-package com.ecommerce.security;
+﻿package com.ecommerce.security;
 
 import com.ecommerce.entity.User;
 import com.ecommerce.repository.UserRepository;
@@ -11,6 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
+/**
+ * author: LeTuBac
+ */
 public class CustomUserDetailsService implements UserDetailsService {
 
     @Autowired

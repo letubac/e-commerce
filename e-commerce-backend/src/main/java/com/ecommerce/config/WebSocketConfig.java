@@ -1,4 +1,4 @@
-package com.ecommerce.config;
+﻿package com.ecommerce.config;
 
 import com.ecommerce.websocket.ChatWebSocketHandler;
 import com.ecommerce.websocket.WebSocketAuthInterceptor;
@@ -11,6 +11,9 @@ import org.springframework.web.socket.config.annotation.*;
 @Configuration
 @EnableWebSocket
 @EnableWebSocketMessageBroker
+/**
+ * author: LeTuBac
+ */
 public class WebSocketConfig implements WebSocketConfigurer, WebSocketMessageBrokerConfigurer {
 
     @Autowired

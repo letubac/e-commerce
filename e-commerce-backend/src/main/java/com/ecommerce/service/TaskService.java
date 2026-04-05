@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import com.ecommerce.dto.TaskDTO;
 import com.ecommerce.exception.DetailException;
@@ -6,6 +6,9 @@ import com.ecommerce.exception.DetailException;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * author: LeTuBac
+ */
 public interface TaskService {
 
     List<TaskDTO> getAllTasks() throws DetailException;

@@ -1,4 +1,4 @@
-package com.ecommerce.ai;
+﻿package com.ecommerce.ai;
 
 import com.ecommerce.ai.tools.DashboardAnalyticsTool;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -22,6 +22,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Service
+/**
+ * author: LeTuBac
+ */
 public class AdminAnalyticsAiService {
 
     @Value("${app.ai.openai.api-key:sk-placeholder}")

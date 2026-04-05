@@ -1,4 +1,4 @@
-package com.ecommerce.ai;
+﻿package com.ecommerce.ai;
 
 import com.ecommerce.ai.tools.BrandTool;
 import com.ecommerce.ai.tools.CartTool;
@@ -33,6 +33,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Service
+/**
+ * author: LeTuBac
+ */
 public class AiSupportService {
 
     @Value("${app.ai.openai.api-key:sk-placeholder}")

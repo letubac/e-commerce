@@ -1,4 +1,4 @@
-package com.ecommerce.dto;
+﻿package com.ecommerce.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -8,6 +8,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @param <T> Type of data being returned
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+/**
+ * author: LeTuBac
+ */
 public class ApiResponse<T> {
     private boolean success;
     private String message;

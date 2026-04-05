@@ -1,4 +1,4 @@
-package com.ecommerce.config;
+﻿package com.ecommerce.config;
 
 import java.util.Locale;
 
@@ -11,6 +11,9 @@ import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import com.ecommerce.constant.AppApiConstant;
 
 @Configuration
+/**
+ * author: LeTuBac
+ */
 public class I18nConfiguration {
 
     @Bean(name = "messageSource")

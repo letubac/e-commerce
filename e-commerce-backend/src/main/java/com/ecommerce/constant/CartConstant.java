@@ -1,9 +1,12 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * Cart Module Constants
  * Error codes: E300-E349
  * Success codes: S300-S329
+ */
+/**
+ * author: LeTuBac
  */
 public class CartConstant {
 

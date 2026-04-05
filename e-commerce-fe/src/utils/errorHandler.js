@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import toast from './toast';
 
 /**

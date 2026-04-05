@@ -1,4 +1,4 @@
-package com.ecommerce.repository;
+﻿package com.ecommerce.repository;
 
 import com.ecommerce.entity.OrderItem;
 import com.ecommerce.repository.base.DbRepository;
@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+/**
+ * author: LeTuBac
+ */
 public interface OrderItemRepository extends DbRepository<OrderItem, Long> {
 
     /**

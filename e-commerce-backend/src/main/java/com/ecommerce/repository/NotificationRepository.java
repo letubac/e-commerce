@@ -1,4 +1,4 @@
-package com.ecommerce.repository;
+﻿package com.ecommerce.repository;
 
 import java.util.Date;
 import java.util.List;
@@ -18,6 +18,9 @@ import vn.com.unit.springframework.data.mirage.repository.query.Modifying;
  * Each method maps to a SQL file in resources/com/ecommerce/repository/
  */
 @Repository
+/**
+ * author: LeTuBac
+ */
 public interface NotificationRepository extends DbRepository<Notification, Long> {
 
     /**

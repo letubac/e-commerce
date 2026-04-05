@@ -1,9 +1,12 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * Coupon Module Constants
  * Error codes: E600-E649
  * Success codes: S600-S629
+ */
+/**
+ * author: LeTuBac
  */
 public class CouponConstant {
 

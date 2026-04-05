@@ -1,4 +1,4 @@
-package com.ecommerce.config;
+﻿package com.ecommerce.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -21,6 +21,9 @@ import java.util.Map;
 @Configuration
 @EnableKafka
 @ConditionalOnProperty(name = "spring.kafka.enabled", havingValue = "true", matchIfMissing = false)
+/**
+ * author: LeTuBac
+ */
 public class KafkaConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")

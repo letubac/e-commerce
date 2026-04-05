@@ -1,5 +1,8 @@
-package com.ecommerce.exception;
+﻿package com.ecommerce.exception;
 
+/**
+ * author: LeTuBac
+ */
 public class CoreExceptionCodeConstant {
 	/** Mapper object */ 
 	public static final String E301701_CORE_MODEL_MAPPER_ERROR = "301701_CORE_MODEL_MAPPER_ERROR";

@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import com.ecommerce.dto.ConversationDTO;
 import com.ecommerce.entity.ConversationStatus;
@@ -7,6 +7,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
 
+/**
+ * author: LeTuBac
+ */
 public interface ConversationService {
     ConversationDTO createConversation(Long userId, String subject) throws DetailException;
 

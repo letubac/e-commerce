@@ -1,4 +1,4 @@
-package com.ecommerce.security;
+﻿package com.ecommerce.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -9,6 +9,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+/**
+ * author: LeTuBac
+ */
 public class AuthService {
 
     @Autowired

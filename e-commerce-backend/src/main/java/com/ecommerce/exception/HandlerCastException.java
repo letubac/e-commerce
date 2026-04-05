@@ -1,6 +1,9 @@
-package com.ecommerce.exception;
+﻿package com.ecommerce.exception;
 
 
+/**
+ * author: LeTuBac
+ */
 public interface HandlerCastException {
 	 public void castException(Exception ex, String exceptionConstant)throws DetailException;
 

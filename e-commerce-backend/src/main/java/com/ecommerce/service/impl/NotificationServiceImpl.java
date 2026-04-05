@@ -1,4 +1,4 @@
-package com.ecommerce.service.impl;
+﻿package com.ecommerce.service.impl;
 
 import com.ecommerce.constant.NotificationConstant;
 import com.ecommerce.dto.NotificationDTO;
@@ -20,6 +20,9 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+/**
+ * author: LeTuBac
+ */
 public class NotificationServiceImpl implements NotificationService {
 
     @Autowired

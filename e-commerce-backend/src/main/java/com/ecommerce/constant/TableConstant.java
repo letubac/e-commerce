@@ -1,5 +1,8 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
+/**
+ * author: LeTuBac
+ */
 public class TableConstant {
 
 	public static final String SEQ = "seq_";

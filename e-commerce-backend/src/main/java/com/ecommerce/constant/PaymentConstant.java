@@ -1,8 +1,11 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * Payment Module Constants
  * Code Range: E800-E849 (Errors), S800-S829 (Success)
+ */
+/**
+ * author: LeTuBac
  */
 public class PaymentConstant {
 

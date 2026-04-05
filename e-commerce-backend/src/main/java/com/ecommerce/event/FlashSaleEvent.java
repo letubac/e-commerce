@@ -1,4 +1,4 @@
-package com.ecommerce.event;
+﻿package com.ecommerce.event;
 
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
@@ -8,6 +8,9 @@ import org.springframework.context.ApplicationEvent;
  * Published when Flash Sale is created, activated, or ending
  */
 @Getter
+/**
+ * author: LeTuBac
+ */
 public class FlashSaleEvent extends ApplicationEvent {
 
     private final Long flashSaleId;

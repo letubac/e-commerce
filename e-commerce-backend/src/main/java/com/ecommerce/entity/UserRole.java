@@ -1,5 +1,8 @@
-package com.ecommerce.entity;
+﻿package com.ecommerce.entity;
 
+/**
+ * author: LeTuBac
+ */
 public class UserRole {
     public static final String ADMIN = "ADMIN";
     public static final String CUSTOMER = "CUSTOMER";

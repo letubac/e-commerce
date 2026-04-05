@@ -1,4 +1,4 @@
-package com.ecommerce.websocket;
+﻿package com.ecommerce.websocket;
 
 import com.ecommerce.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +11,9 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 import java.util.Map;
 
 @Component
+/**
+ * author: LeTuBac
+ */
 public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 
     @Autowired

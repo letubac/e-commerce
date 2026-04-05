@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

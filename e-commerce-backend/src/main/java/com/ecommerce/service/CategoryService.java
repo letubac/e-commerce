@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import com.ecommerce.dto.CategoryDTO;
 import com.ecommerce.exception.DetailException;
@@ -9,6 +9,9 @@ import java.util.List;
 
 /**
  * Service interface for managing categories
+ */
+/**
+ * author: LeTuBac
  */
 public interface CategoryService {
 

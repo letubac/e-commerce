@@ -1,4 +1,4 @@
-package com.ecommerce.mapper;
+﻿package com.ecommerce.mapper;
 
 import org.springframework.stereotype.Component;
 
@@ -6,6 +6,9 @@ import com.ecommerce.dto.UserDTO;
 import com.ecommerce.entity.User;
 
 @Component
+/**
+ * author: LeTuBac
+ */
 public class UserMapper {
 
     public UserDTO toDTO(User user) {

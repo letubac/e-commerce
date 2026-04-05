@@ -1,4 +1,4 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -6,6 +6,9 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 @Service
+/**
+ * author: LeTuBac
+ */
 public class DataTypeConstant {
 
 	public static final String DATA_TYPE_STRING = "String";

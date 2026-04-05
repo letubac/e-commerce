@@ -1,9 +1,12 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * Constants for Category module error and success codes
  * Error codes: E400-E449
  * Success codes: S400-S429
+ */
+/**
+ * author: LeTuBac
  */
 public class CategoryConstant {
 

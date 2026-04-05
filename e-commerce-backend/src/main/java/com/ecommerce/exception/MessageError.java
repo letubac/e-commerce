@@ -1,5 +1,8 @@
-package com.ecommerce.exception;
+﻿package com.ecommerce.exception;
 
+/**
+ * author: LeTuBac
+ */
 public interface MessageError {
 
     String AS_INVALID_HEADER = "Request không tồn tại";

@@ -1,9 +1,12 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import com.ecommerce.dto.CartDTO;
 import com.ecommerce.dto.AddToCartRequest;
 import com.ecommerce.exception.DetailException;
 
+/**
+ * author: LeTuBac
+ */
 public interface CartService {
     CartDTO getCartByUserId(Long userId) throws DetailException;
 

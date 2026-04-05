@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import com.ecommerce.dto.BrandDTO;
 import com.ecommerce.exception.DetailException;
@@ -11,6 +11,9 @@ import java.util.Map;
 
 /**
  * Service interface for managing brands
+ */
+/**
+ * author: LeTuBac
  */
 public interface BrandService {
 

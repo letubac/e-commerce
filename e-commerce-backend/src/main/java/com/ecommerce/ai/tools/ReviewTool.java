@@ -1,4 +1,4 @@
-package com.ecommerce.ai.tools;
+﻿package com.ecommerce.ai.tools;
 
 import com.ecommerce.dto.ReviewDTO;
 import com.ecommerce.service.ReviewService;
@@ -15,6 +15,9 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class ReviewTool {
 
     private final ReviewService reviewService;

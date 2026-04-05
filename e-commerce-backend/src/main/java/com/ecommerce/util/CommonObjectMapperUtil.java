@@ -1,4 +1,4 @@
-package com.ecommerce.util;
+﻿package com.ecommerce.util;
 
 import java.util.Collection;
 import java.util.List;
@@ -6,6 +6,9 @@ import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 
+/**
+ * author: LeTuBac
+ */
 public class CommonObjectMapperUtil {
 
     private static ModelMapper modelMapper = new ModelMapper();

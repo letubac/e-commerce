@@ -1,4 +1,4 @@
-package com.ecommerce.dto;
+﻿package com.ecommerce.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,6 +13,9 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class OrderDTO {
     private Long id;
     private String orderNumber;

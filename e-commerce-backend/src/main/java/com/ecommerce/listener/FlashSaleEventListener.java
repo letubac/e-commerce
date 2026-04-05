@@ -1,4 +1,4 @@
-package com.ecommerce.listener;
+﻿package com.ecommerce.listener;
 
 import com.ecommerce.dto.NotificationDTO;
 import com.ecommerce.event.FlashSaleEvent;
@@ -15,6 +15,9 @@ import java.util.Date;
  * Listens to flash sale events and broadcasts notifications to all users
  */
 @Component
+/**
+ * author: LeTuBac
+ */
 public class FlashSaleEventListener {
 
     @Autowired

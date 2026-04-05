@@ -1,5 +1,8 @@
-package com.ecommerce.entity;
+﻿package com.ecommerce.entity;
 
+/**
+ * author: LeTuBac
+ */
 public class OrderStatus {
     public static final String PENDING = "PENDING";
     public static final String CONFIRMED = "CONFIRMED";

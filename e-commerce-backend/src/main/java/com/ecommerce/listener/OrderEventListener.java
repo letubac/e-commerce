@@ -1,4 +1,4 @@
-package com.ecommerce.listener;
+﻿package com.ecommerce.listener;
 
 import com.ecommerce.dto.NotificationDTO;
 import com.ecommerce.event.OrderEvent;
@@ -15,6 +15,9 @@ import java.util.Date;
  * Listens to order events and sends notifications
  */
 @Component
+/**
+ * author: LeTuBac
+ */
 public class OrderEventListener {
 
     @Autowired

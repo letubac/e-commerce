@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, Cpu, Monitor, HardDrive, MemoryStick, Gamepad2, Mouse, Headphones, Keyboard, Zap, Fan, Smartphone, Laptop, Watch, Shirt, Sparkles } from 'lucide-react';
 import api from '../api/api';

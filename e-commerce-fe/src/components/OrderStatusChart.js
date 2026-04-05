@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React from 'react';
 import {
   PieChart,

@@ -1,8 +1,11 @@
-package com.ecommerce.exception;
+﻿package com.ecommerce.exception;
 
 import lombok.Getter;
 
 @Getter
+/**
+ * author: LeTuBac
+ */
 public class DetailException extends GlobalException{
 
     private static final long serialVersionUID = 8281428469514471020L;

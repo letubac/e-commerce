@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import com.ecommerce.dto.CouponDTO;
 import com.ecommerce.exception.DetailException;
@@ -7,6 +7,9 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * author: LeTuBac
+ */
 public interface CouponService {
     CouponDTO createCoupon(CouponDTO couponDTO) throws DetailException;
 

@@ -1,9 +1,12 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * Dashboard Module Constants
  * Error codes: E700-E749
  * Success codes: S700-S729
+ */
+/**
+ * author: LeTuBac
  */
 public class DashboardConstant {
 

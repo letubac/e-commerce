@@ -1,4 +1,4 @@
-package com.ecommerce.config;
+﻿package com.ecommerce.config;
 
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +23,9 @@ import vn.com.unit.springframework.data.mirage.repository.config.EnableMirageRep
         basePackages = "com.ecommerce.repository",
         sqlManagerRef = "sqlManagerPr"
 )
+/**
+ * author: LeTuBac
+ */
 public class MirageConfig {
 
     @Autowired

@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Bot, Send, Loader2, MessageSquare, Sparkles,

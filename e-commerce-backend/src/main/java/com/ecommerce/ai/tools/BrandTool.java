@@ -1,4 +1,4 @@
-package com.ecommerce.ai.tools;
+﻿package com.ecommerce.ai.tools;
 
 import com.ecommerce.dto.BrandDTO;
 import com.ecommerce.dto.ProductDTO;
@@ -17,6 +17,9 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class BrandTool {
 
     private final BrandService brandService;

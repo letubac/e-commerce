@@ -1,4 +1,4 @@
-package com.ecommerce.service.impl;
+﻿package com.ecommerce.service.impl;
 
 import com.ecommerce.dto.FlashSaleDTO;
 import com.ecommerce.dto.FlashSaleProductDTO;
@@ -29,6 +29,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+/**
+ * author: LeTuBac
+ */
 public class FlashSaleServiceImpl implements FlashSaleService {
 
 	private final FlashSaleRepository flashSaleRepository;

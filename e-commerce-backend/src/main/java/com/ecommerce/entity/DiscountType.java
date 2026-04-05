@@ -1,5 +1,8 @@
-package com.ecommerce.entity;
+﻿package com.ecommerce.entity;
 
+/**
+ * author: LeTuBac
+ */
 public enum DiscountType {
     PERCENTAGE("Phần trăm"),
     FIXED_AMOUNT("Số tiền cố định");

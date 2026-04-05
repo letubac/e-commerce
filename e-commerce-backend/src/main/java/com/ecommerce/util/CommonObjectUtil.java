@@ -1,4 +1,4 @@
-package com.ecommerce.util;
+﻿package com.ecommerce.util;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -16,6 +16,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.Column;
 
+/**
+ * author: LeTuBac
+ */
 public class CommonObjectUtil {
     
     /** The column default. */

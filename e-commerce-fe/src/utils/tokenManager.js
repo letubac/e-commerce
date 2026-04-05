@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 // Token expiration manager
 class TokenManager {
   constructor() {

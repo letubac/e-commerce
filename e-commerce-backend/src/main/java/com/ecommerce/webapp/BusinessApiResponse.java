@@ -1,4 +1,4 @@
-package com.ecommerce.webapp;
+﻿package com.ecommerce.webapp;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -10,6 +10,9 @@ import lombok.Data;
 
 
 @Data
+/**
+ * author: LeTuBac
+ */
 public class BusinessApiResponse extends MovieBaseResponse implements Serializable{
 
     private static final long serialVersionUID = -2080447665304438927L;

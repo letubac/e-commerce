@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 // WebSocket Notification Service
 // Uses SockJS + STOMP for real-time notifications
 

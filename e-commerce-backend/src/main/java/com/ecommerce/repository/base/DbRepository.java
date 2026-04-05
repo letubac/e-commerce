@@ -1,4 +1,4 @@
-package com.ecommerce.repository.base;
+﻿package com.ecommerce.repository.base;
 
 import java.io.Serializable;
 
@@ -21,6 +21,9 @@ import vn.com.unit.sparwings.spring.data.repository.WritableRepository;
  * maps to: userRepository_findByUsername.sql
  */
 @NoRepositoryBean
+/**
+ * author: LeTuBac
+ */
 public interface DbRepository<E, ID extends Serializable>
         extends ScannableRepository<E, ID>, UpsertableRepository<E, ID>,
         WritableRepository<E, ID>, ChunkableRepository<E, ID>, PageableRepository<E, ID> {

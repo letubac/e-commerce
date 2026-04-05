@@ -1,10 +1,13 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import com.ecommerce.dto.TrendingSearchDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
 
+/**
+ * author: LeTuBac
+ */
 public interface TrendingSearchService {
 
     // Search tracking

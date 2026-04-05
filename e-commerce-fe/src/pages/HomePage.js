@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Smartphone, Laptop, Monitor, Headphones, Watch, Camera, Gamepad2, Tv, Home, Zap, Package, ChevronLeft, ChevronRight, Star, Shield, RefreshCw, CreditCard, Truck } from 'lucide-react';

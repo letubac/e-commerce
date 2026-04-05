@@ -1,4 +1,4 @@
-package com.ecommerce.security;
+﻿package com.ecommerce.security;
 
 import java.io.IOException;
 import java.util.Set;
@@ -17,6 +17,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Component
+/**
+ * author: LeTuBac
+ */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	@Autowired

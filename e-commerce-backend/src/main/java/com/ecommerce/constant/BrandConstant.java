@@ -1,9 +1,12 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * Constants for Brand module error and success codes.
  * Error codes: 200-249
  * Success codes: S200-S219
+ */
+/**
+ * author: LeTuBac
  */
 public final class BrandConstant {
 

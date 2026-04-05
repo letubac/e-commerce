@@ -1,4 +1,4 @@
-package com.ecommerce.util;
+﻿package com.ecommerce.util;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -8,6 +8,9 @@ import java.util.Date;
 
 
 
+/**
+ * author: LeTuBac
+ */
 public class CommonDateUtil extends MovieDateUtil {
     
     /** The Constant DATE_TIME_HYPHEN. */

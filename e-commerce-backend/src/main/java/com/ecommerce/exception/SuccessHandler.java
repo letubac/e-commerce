@@ -1,7 +1,10 @@
-package com.ecommerce.exception;
+﻿package com.ecommerce.exception;
 
 import com.ecommerce.webapp.BusinessApiResponse;
 
+/**
+ * author: LeTuBac
+ */
 public interface SuccessHandler {
 
 	public BusinessApiResponse handlerSuccess(Object data, long start);

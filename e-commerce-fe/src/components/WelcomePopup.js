@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Sparkles, Star, Heart, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

@@ -1,4 +1,4 @@
-package com.ecommerce.controller;
+﻿package com.ecommerce.controller;
 
 import java.util.List;
 import java.util.Locale;
@@ -37,6 +37,9 @@ import jakarta.validation.Valid;
  */
 @RestController
 @RequestMapping("/api/v1")
+/**
+ * author: LeTuBac
+ */
 public class BrandController {
 
     private static final Logger log = LoggerFactory.getLogger(BrandController.class);

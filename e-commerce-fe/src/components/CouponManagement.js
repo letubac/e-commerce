@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, TicketPercent, Search, X } from 'lucide-react';
 import adminApi from '../api/adminApi';

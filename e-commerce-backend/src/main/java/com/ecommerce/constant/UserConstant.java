@@ -1,9 +1,12 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * Constants for User module error and success codes.
  * Error codes: E950-E994
  * Success codes: S950-S994
+ */
+/**
+ * author: LeTuBac
  */
 public class UserConstant {
 

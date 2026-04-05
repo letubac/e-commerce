@@ -1,5 +1,8 @@
-package com.ecommerce.entity;
+﻿package com.ecommerce.entity;
 
+/**
+ * author: LeTuBac
+ */
 public enum MessageType {
     TEXT("Tin nhắn"),
     IMAGE("Hình ảnh"),

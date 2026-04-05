@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 // Toast notification utility
 let toastContainer = null;
 

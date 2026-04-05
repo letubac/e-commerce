@@ -1,4 +1,4 @@
-package com.ecommerce.controller;
+﻿package com.ecommerce.controller;
 
 import com.ecommerce.dto.*;
 import com.ecommerce.security.AuthService;
@@ -19,6 +19,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 @RestController
 @RequestMapping("/api/v1/auth")
 
+/**
+ * author: LeTuBac
+ */
 public class AuthController {
 
     @Autowired

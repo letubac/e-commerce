@@ -1,4 +1,4 @@
-package com.ecommerce;
+﻿package com.ecommerce;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -22,6 +22,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @ComponentScan(basePackages = "com.ecommerce")
 @ConfigurationPropertiesScan("com.ecommerce")
 // @EnableKafka // Disabled Kafka temporarily
+/**
+ * author: LeTuBac
+ */
 public class ECommerceApplication extends SpringBootServletInitializer {
 
     @Override

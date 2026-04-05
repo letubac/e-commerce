@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import com.ecommerce.exception.DetailException;
 
@@ -6,6 +6,9 @@ import java.util.Map;
 
 /**
  * Service interface for payment operations
+ */
+/**
+ * author: LeTuBac
  */
 public interface PaymentService {
 

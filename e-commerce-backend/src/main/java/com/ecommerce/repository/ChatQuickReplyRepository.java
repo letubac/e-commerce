@@ -1,4 +1,4 @@
-package com.ecommerce.repository;
+﻿package com.ecommerce.repository;
 
 import com.ecommerce.entity.ChatQuickReply;
 import com.ecommerce.repository.base.DbRepository;
@@ -8,6 +8,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
+/**
+ * author: LeTuBac
+ */
 public interface ChatQuickReplyRepository extends DbRepository<ChatQuickReply, Long> {
 
     // Maps to: chatQuickReplyRepository_findActive.sql

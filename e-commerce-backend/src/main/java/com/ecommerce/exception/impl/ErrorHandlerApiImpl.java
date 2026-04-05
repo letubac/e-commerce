@@ -1,4 +1,4 @@
-package com.ecommerce.exception.impl;
+﻿package com.ecommerce.exception.impl;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -31,6 +31,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Component
 @Slf4j
+/**
+ * author: LeTuBac
+ */
 public class ErrorHandlerApiImpl implements ErrorHandler {
 
     @Autowired

@@ -1,4 +1,4 @@
-package com.ecommerce.config;
+﻿package com.ecommerce.config;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
@@ -10,6 +10,9 @@ import com.ecommerce.service.CommonService;
 import com.ecommerce.service.impl.CommonServiceImpl;
 
 @Configuration
+/**
+ * author: LeTuBac
+ */
 public class BeanCoreConfiguration {
 	
 	@Bean

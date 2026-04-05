@@ -1,4 +1,4 @@
-package com.ecommerce.repository;
+﻿package com.ecommerce.repository;
 
 import com.ecommerce.entity.NewArrival;
 import com.ecommerce.repository.base.DbRepository;
@@ -11,6 +11,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
+/**
+ * author: LeTuBac
+ */
 public interface NewArrivalRepository extends DbRepository<NewArrival, Long> {
 
     // Maps to: newArrivalRepository_findActive.sql

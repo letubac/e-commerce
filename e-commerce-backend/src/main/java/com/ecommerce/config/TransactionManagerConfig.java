@@ -1,4 +1,4 @@
-package com.ecommerce.config;
+﻿package com.ecommerce.config;
 
 import javax.sql.DataSource;
 
@@ -12,6 +12,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
 @EnableTransactionManagement
+/**
+ * author: LeTuBac
+ */
 public class TransactionManagerConfig {
 
     @Autowired

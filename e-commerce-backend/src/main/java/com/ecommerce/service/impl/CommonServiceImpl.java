@@ -1,4 +1,4 @@
-package com.ecommerce.service.impl;
+﻿package com.ecommerce.service.impl;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -19,6 +19,9 @@ import com.ecommerce.util.CommonObjectUtil;
 import com.ecommerce.util.CommonStringUtil;
 
 @Service
+/**
+ * author: LeTuBac
+ */
 public class CommonServiceImpl implements CommonService {
 
 	// @Autowired

@@ -1,4 +1,4 @@
-package com.ecommerce.repository;
+﻿package com.ecommerce.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +12,9 @@ import com.ecommerce.entity.Category;
 import com.ecommerce.repository.base.DbRepository;
 
 @Repository
+/**
+ * author: LeTuBac
+ */
 public interface CategoryRepository extends DbRepository<Category, Long> {
 
     List<Category> findAllData();

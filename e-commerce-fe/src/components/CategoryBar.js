@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React, { useState, useEffect } from 'react';
 import { Smartphone, Laptop, Monitor, Headphones, Watch, Camera, Gamepad2, Tv, Shirt, ShoppingBag, Zap, Sparkles, Package, ChevronRight, ChevronLeft } from 'lucide-react';
 import api from '../api/api';

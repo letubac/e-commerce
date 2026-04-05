@@ -1,4 +1,4 @@
-package com.ecommerce.util;
+﻿package com.ecommerce.util;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -9,6 +9,9 @@ import java.util.List;
 
 import org.apache.commons.lang3.time.DateUtils;
 
+/**
+ * author: LeTuBac
+ */
 public class MovieDateUtil extends DateUtils{
 
     public static final String YYYYMMDD = "yyyyMMdd";

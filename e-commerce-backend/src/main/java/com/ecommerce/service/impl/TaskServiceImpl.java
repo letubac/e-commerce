@@ -1,4 +1,4 @@
-package com.ecommerce.service.impl;
+﻿package com.ecommerce.service.impl;
 
 import com.ecommerce.dto.TaskDTO;
 import com.ecommerce.entity.Task;
@@ -20,6 +20,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 @Slf4j
+/**
+ * author: LeTuBac
+ */
 public class TaskServiceImpl implements TaskService {
 
     private static final String TASK_NOT_FOUND = "Task not found with id: ";

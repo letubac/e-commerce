@@ -1,5 +1,8 @@
-package com.ecommerce.entity;
+﻿package com.ecommerce.entity;
 
+/**
+ * author: LeTuBac
+ */
 public enum ShippingMethod {
     STANDARD("Giao hàng tiêu chuẩn", 0.0),
     EXPRESS("Giao hàng nhanh", 50000.0),

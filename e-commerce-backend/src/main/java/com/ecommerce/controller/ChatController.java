@@ -1,4 +1,4 @@
-package com.ecommerce.controller;
+﻿package com.ecommerce.controller;
 
 import java.util.Map;
 
@@ -42,6 +42,9 @@ import jakarta.validation.Valid;
  */
 @RestController
 @RequestMapping("/api/v1/chat")
+/**
+ * author: LeTuBac
+ */
 public class ChatController {
 
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);

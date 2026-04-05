@@ -1,4 +1,4 @@
-package com.ecommerce.util;
+﻿package com.ecommerce.util;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
@@ -10,6 +10,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
+/**
+ * author: LeTuBac
+ */
 public class SqlLoader {
     
     private final Map<String, String> queryCache = new HashMap<>();

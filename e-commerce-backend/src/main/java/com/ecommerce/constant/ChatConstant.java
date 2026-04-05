@@ -1,9 +1,12 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * Chat Module Constants
  * Error codes: E500-E549
  * Success codes: S500-S529
+ */
+/**
+ * author: LeTuBac
  */
 public class ChatConstant {
 

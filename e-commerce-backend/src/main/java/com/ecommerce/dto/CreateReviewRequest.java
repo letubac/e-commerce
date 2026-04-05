@@ -1,7 +1,10 @@
-package com.ecommerce.dto;
+﻿package com.ecommerce.dto;
 
 import jakarta.validation.constraints.*;
 
+/**
+ * author: LeTuBac
+ */
 public class CreateReviewRequest {
     @NotNull(message = "Rating is required")
     @Min(value = 1, message = "Rating must be at least 1")

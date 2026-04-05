@@ -1,4 +1,4 @@
-package com.ecommerce.webapp;
+﻿package com.ecommerce.webapp;
 
 import java.util.Date;
 import java.util.ArrayList;
@@ -24,6 +24,9 @@ import lombok.EqualsAndHashCode;
 @Data
 @JsonTypeInfo(include = JsonTypeInfo.As.WRAPPER_OBJECT, use = JsonTypeInfo.Id.CUSTOM, property = AppCoreConstant.ERROR, visible = true)
 @JsonTypeIdResolver(LowerCaseClassNameResolver.class)
+/**
+ * author: LeTuBac
+ */
 public class BusinessApiError {
 
     private HttpStatus status;

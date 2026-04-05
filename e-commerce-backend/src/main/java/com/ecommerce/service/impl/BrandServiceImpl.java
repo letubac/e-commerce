@@ -1,4 +1,4 @@
-package com.ecommerce.service.impl;
+﻿package com.ecommerce.service.impl;
 
 import java.util.Date;
 import java.util.Calendar;
@@ -27,6 +27,9 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+/**
+ * author: LeTuBac
+ */
 public class BrandServiceImpl implements BrandService {
 
 	private static final Logger log = LoggerFactory.getLogger(BrandServiceImpl.class);

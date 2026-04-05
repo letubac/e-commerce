@@ -1,8 +1,11 @@
-package com.ecommerce.dto;
+﻿package com.ecommerce.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
+/**
+ * author: LeTuBac
+ */
 public class AddToCartRequest {
     @NotNull(message = "Product ID is required")
     private Long productId;

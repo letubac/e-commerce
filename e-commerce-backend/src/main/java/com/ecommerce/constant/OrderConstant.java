@@ -1,8 +1,11 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * Order Module Constants
  * Code Range: E750-E799 (Errors), S750-S779 (Success)
+ */
+/**
+ * author: LeTuBac
  */
 public class OrderConstant {
 

@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Minus, Plus, Trash2, ArrowLeft, AlertCircle, Tag, Ticket } from 'lucide-react';

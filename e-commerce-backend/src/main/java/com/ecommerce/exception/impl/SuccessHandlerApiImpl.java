@@ -1,4 +1,4 @@
-package com.ecommerce.exception.impl;
+﻿package com.ecommerce.exception.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -15,6 +15,9 @@ import com.ecommerce.webapp.BusinessApiResponse;
  * @author BacLV
  */
 @Component
+/**
+ * author: LeTuBac
+ */
 public class SuccessHandlerApiImpl implements SuccessHandler  {
 
     public BusinessApiResponse handlerSuccess(Object data, long start) {

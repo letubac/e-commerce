@@ -1,4 +1,4 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * 
@@ -7,6 +7,9 @@ package com.ecommerce.constant;
  * @version 01-00
  * @since 01-00
  * @author BacLV
+ */
+/**
+ * author: LeTuBac
  */
 public class AppApiExceptionCodeConstant {
 	// API ACCOUNT REST (01-99)

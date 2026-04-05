@@ -1,4 +1,4 @@
-package com.ecommerce.config;
+﻿package com.ecommerce.config;
 
 import com.ecommerce.security.CustomUserDetailsService;
 import com.ecommerce.security.JwtAuthenticationEntryPoint;
@@ -22,6 +22,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
+/**
+ * author: LeTuBac
+ */
 public class SecurityConfig {
 
     @Autowired

@@ -1,4 +1,4 @@
-package com.ecommerce.repository;
+﻿package com.ecommerce.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +15,9 @@ import com.ecommerce.entity.ConversationStatus;
 import com.ecommerce.repository.base.DbRepository;
 
 @Repository
+/**
+ * author: LeTuBac
+ */
 public interface ConversationRepository extends DbRepository<Conversation, Long> {
 
     // Maps to: conversationRepository_findById.sql

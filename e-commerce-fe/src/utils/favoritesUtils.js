@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 /**
  * localStorage-based favorites/wishlist utility.
  * Stores product summaries for display in the Profile favorites tab.

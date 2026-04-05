@@ -1,3 +1,6 @@
+﻿/**
+ * author: LeTuBac
+ */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Settings, LogOut, User, Menu, X, Search } from 'lucide-react';

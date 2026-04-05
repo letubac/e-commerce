@@ -1,5 +1,8 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
+/**
+ * author: LeTuBac
+ */
 public class ReviewConstant {
 
     // Error codes (E900-E949)

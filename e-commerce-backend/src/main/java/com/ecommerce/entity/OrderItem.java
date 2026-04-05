@@ -1,4 +1,4 @@
-package com.ecommerce.entity;
+﻿package com.ecommerce.entity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -18,6 +18,9 @@ import com.ecommerce.constant.TableConstant;
 @AllArgsConstructor
 @Entity
 @Table(name = TableConstant.ORDER_ITEMS)
+/**
+ * author: LeTuBac
+ */
 public class OrderItem {
     @Id
     @PrimaryKey(generationType = PrimaryKey.GenerationType.SEQUENCE, generator = TableConstant.SEQ

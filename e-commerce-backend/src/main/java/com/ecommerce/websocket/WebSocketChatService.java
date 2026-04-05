@@ -1,4 +1,4 @@
-package com.ecommerce.websocket;
+﻿package com.ecommerce.websocket;
 
 import com.ecommerce.dto.ChatMessageDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,6 +17,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+/**
+ * author: LeTuBac
+ */
 public class WebSocketChatService {
 
     private final ObjectMapper objectMapper;

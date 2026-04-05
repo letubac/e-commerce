@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import java.util.List;
 
@@ -9,6 +9,9 @@ import com.ecommerce.dto.ChatMessageDTO;
 import com.ecommerce.dto.request.SendMessageRequest;
 import com.ecommerce.exception.DetailException;
 
+/**
+ * author: LeTuBac
+ */
 public interface ChatMessageService {
     ChatMessageDTO sendMessage(Long senderId, SendMessageRequest request) throws DetailException;
 

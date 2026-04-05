@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import com.ecommerce.dto.NotificationDTO;
 import com.ecommerce.exception.DetailException;
@@ -10,6 +10,9 @@ import java.util.List;
 /**
  * Notification Service Interface
  * Manages real-time notifications for users and admins
+ */
+/**
+ * author: LeTuBac
  */
 public interface NotificationService {
 

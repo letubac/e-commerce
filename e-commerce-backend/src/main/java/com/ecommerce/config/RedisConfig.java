@@ -1,4 +1,4 @@
-package com.ecommerce.config;
+﻿package com.ecommerce.config;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +22,9 @@ import java.time.Duration;
 @Configuration
 @EnableCaching
 @EnableRedisHttpSession(maxInactiveIntervalInSeconds = 1800) // 30 minutes
+/**
+ * author: LeTuBac
+ */
 public class RedisConfig {
 
     @Bean

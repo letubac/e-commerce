@@ -1,9 +1,12 @@
-package com.ecommerce.constant;
+﻿package com.ecommerce.constant;
 
 /**
  * Constants for Product module error and success codes
  * Error codes: E850-E899
  * Success codes: S850-S899
+ */
+/**
+ * author: LeTuBac
  */
 public class ProductConstant {
 

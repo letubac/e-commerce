@@ -1,4 +1,4 @@
-package com.ecommerce.service;
+﻿package com.ecommerce.service;
 
 import com.ecommerce.dto.CreateReviewRequest;
 import com.ecommerce.dto.ReviewDTO;
@@ -8,6 +8,9 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * author: LeTuBac
+ */
 public interface ReviewService {
     ReviewDTO createReview(Long productId, Long userId, CreateReviewRequest request) throws DetailException;
 

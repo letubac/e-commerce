@@ -1,4 +1,4 @@
-package com.ecommerce.mapper;
+﻿package com.ecommerce.mapper;
 
 import org.springframework.stereotype.Component;
 
@@ -8,6 +8,9 @@ import com.ecommerce.entity.Product;
 import com.ecommerce.entity.ProductImage;
 
 @Component
+/**
+ * author: LeTuBac
+ */
 public class ProductMapper {
 
     public ProductDTO toDTO(Product product) {
