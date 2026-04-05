@@ -1,4 +1,4 @@
-﻿package com.ecommerce.config;
+package com.ecommerce.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;

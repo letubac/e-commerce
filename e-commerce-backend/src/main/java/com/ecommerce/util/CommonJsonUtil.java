@@ -1,4 +1,4 @@
-﻿package com.ecommerce.util;
+package com.ecommerce.util;
 
 import java.io.IOException;
 import java.util.Map;

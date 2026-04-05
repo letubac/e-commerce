@@ -1,4 +1,4 @@
-﻿package com.ecommerce.ai;
+package com.ecommerce.ai;
 
 import com.ecommerce.ai.tools.BrandTool;
 import com.ecommerce.ai.tools.CartTool;

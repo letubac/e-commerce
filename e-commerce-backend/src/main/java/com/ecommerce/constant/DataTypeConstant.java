@@ -1,4 +1,4 @@
-﻿package com.ecommerce.constant;
+package com.ecommerce.constant;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

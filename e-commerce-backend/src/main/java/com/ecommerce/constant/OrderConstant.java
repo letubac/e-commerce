@@ -1,4 +1,4 @@
-﻿package com.ecommerce.constant;
+package com.ecommerce.constant;
 
 /**
  * Order Module Constants

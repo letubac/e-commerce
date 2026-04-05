@@ -1,4 +1,4 @@
-﻿package com.ecommerce.controller;
+package com.ecommerce.controller;
 
 import com.ecommerce.constant.FlashSaleConstant;
 import com.ecommerce.dto.FlashSaleDTO;

@@ -1,4 +1,4 @@
-﻿package com.ecommerce.exception;
+package com.ecommerce.exception;
 
 import org.apache.commons.lang3.StringUtils;
 

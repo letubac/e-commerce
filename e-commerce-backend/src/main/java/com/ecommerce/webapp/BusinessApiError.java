@@ -1,4 +1,4 @@
-﻿package com.ecommerce.webapp;
+package com.ecommerce.webapp;
 
 import java.util.Date;
 import java.util.ArrayList;

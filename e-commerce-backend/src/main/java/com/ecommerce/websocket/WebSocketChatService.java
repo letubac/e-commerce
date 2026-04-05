@@ -1,4 +1,4 @@
-﻿package com.ecommerce.websocket;
+package com.ecommerce.websocket;
 
 import com.ecommerce.dto.ChatMessageDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;

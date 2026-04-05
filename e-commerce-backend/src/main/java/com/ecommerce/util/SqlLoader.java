@@ -1,4 +1,4 @@
-﻿package com.ecommerce.util;
+package com.ecommerce.util;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;

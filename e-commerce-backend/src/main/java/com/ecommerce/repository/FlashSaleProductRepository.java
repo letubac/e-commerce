@@ -1,4 +1,4 @@
-﻿package com.ecommerce.repository;
+package com.ecommerce.repository;
 
 import com.ecommerce.entity.FlashSaleProduct;
 import com.ecommerce.repository.base.DbRepository;

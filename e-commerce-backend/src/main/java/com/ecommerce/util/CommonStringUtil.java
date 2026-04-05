@@ -1,4 +1,4 @@
-﻿package com.ecommerce.util;
+package com.ecommerce.util;
 
 import java.text.Normalizer;
 import java.util.regex.Pattern;

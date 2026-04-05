@@ -1,4 +1,4 @@
-﻿package com.ecommerce.service;
+package com.ecommerce.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

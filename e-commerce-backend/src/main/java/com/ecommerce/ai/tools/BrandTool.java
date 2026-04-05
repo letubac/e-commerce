@@ -1,4 +1,4 @@
-﻿package com.ecommerce.ai.tools;
+package com.ecommerce.ai.tools;
 
 import com.ecommerce.dto.BrandDTO;
 import com.ecommerce.dto.ProductDTO;

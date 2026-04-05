@@ -1,4 +1,4 @@
-﻿package com.ecommerce.repository.base;
+package com.ecommerce.repository.base;
 
 import java.io.Serializable;
 

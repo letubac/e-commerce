@@ -1,4 +1,4 @@
-﻿package com.ecommerce.entity;
+package com.ecommerce.entity;
 
 import jakarta.persistence.*;
 import vn.com.unit.miragesql.miragesql.annotation.PrimaryKey;

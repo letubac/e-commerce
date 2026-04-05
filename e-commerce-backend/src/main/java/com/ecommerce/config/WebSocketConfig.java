@@ -1,4 +1,4 @@
-﻿package com.ecommerce.config;
+package com.ecommerce.config;
 
 import com.ecommerce.websocket.ChatWebSocketHandler;
 import com.ecommerce.websocket.WebSocketAuthInterceptor;

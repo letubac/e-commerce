@@ -1,4 +1,4 @@
-﻿package com.ecommerce.config;
+package com.ecommerce.config;
 
 import java.util.Locale;
 

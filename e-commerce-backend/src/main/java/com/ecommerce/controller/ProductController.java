@@ -1,4 +1,4 @@
-﻿package com.ecommerce.controller;
+package com.ecommerce.controller;
 
 import com.ecommerce.dto.ProductDTO;
 import com.ecommerce.exception.ErrorHandler;

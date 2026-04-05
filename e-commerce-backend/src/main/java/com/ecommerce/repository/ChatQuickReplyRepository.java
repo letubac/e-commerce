@@ -1,4 +1,4 @@
-﻿package com.ecommerce.repository;
+package com.ecommerce.repository;
 
 import com.ecommerce.entity.ChatQuickReply;
 import com.ecommerce.repository.base.DbRepository;

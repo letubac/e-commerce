@@ -1,4 +1,4 @@
-﻿package com.ecommerce.config;
+package com.ecommerce.config;
 
 import vn.com.unit.miragesql.miragesql.annotation.PrimaryKey;
 import vn.com.unit.miragesql.miragesql.dialect.Dialect;

@@ -1,4 +1,4 @@
-﻿package com.ecommerce.constant;
+package com.ecommerce.constant;
 
 /**
  * Constants for User module error and success codes.

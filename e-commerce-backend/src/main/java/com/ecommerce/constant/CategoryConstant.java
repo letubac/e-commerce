@@ -1,4 +1,4 @@
-﻿package com.ecommerce.constant;
+package com.ecommerce.constant;
 
 /**
  * Constants for Category module error and success codes

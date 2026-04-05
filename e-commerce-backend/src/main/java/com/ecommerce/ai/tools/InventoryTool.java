@@ -1,4 +1,4 @@
-﻿package com.ecommerce.ai.tools;
+package com.ecommerce.ai.tools;
 
 import com.ecommerce.service.DashboardService;
 import com.ecommerce.service.ProductService;

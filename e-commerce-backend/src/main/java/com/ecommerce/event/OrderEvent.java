@@ -1,4 +1,4 @@
-﻿package com.ecommerce.event;
+package com.ecommerce.event;
 
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;

@@ -1,4 +1,4 @@
-﻿package com.ecommerce.util;
+package com.ecommerce.util;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;

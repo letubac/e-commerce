@@ -1,4 +1,4 @@
-﻿package com.ecommerce.ai;
+package com.ecommerce.ai;
 
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;

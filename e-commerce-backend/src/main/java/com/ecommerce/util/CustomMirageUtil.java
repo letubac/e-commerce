@@ -1,4 +1,4 @@
-﻿package com.ecommerce.util;
+package com.ecommerce.util;
 
 import vn.com.unit.miragesql.miragesql.naming.NameConverter;
 

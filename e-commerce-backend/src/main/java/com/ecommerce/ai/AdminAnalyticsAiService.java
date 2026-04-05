@@ -1,4 +1,4 @@
-﻿package com.ecommerce.ai;
+package com.ecommerce.ai;
 
 import com.ecommerce.ai.tools.DashboardAnalyticsTool;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;

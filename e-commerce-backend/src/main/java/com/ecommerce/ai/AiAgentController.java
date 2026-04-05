@@ -1,4 +1,4 @@
-﻿package com.ecommerce.ai;
+package com.ecommerce.ai;
 
 import com.ecommerce.exception.ErrorHandler;
 import com.ecommerce.exception.SuccessHandler;

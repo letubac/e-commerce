@@ -1,4 +1,4 @@
-﻿package com.ecommerce.config;
+package com.ecommerce.config;
 
 import com.ecommerce.security.CustomUserDetailsService;
 import com.ecommerce.security.JwtAuthenticationEntryPoint;

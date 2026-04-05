@@ -1,4 +1,4 @@
-﻿package com.ecommerce.constant;
+package com.ecommerce.constant;
 
 /**
  * Constants for Flash Sale module error and success codes

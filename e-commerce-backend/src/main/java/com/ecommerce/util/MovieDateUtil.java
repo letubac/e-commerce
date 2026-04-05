@@ -1,4 +1,4 @@
-﻿package com.ecommerce.util;
+package com.ecommerce.util;
 
 import java.text.DateFormat;
 import java.text.ParseException;

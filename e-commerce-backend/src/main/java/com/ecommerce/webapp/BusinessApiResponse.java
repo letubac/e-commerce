@@ -1,4 +1,4 @@
-﻿package com.ecommerce.webapp;
+package com.ecommerce.webapp;
 
 import java.io.Serializable;
 import java.util.Date;

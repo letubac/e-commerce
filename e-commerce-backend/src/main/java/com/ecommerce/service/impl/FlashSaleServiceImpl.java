@@ -1,4 +1,4 @@
-﻿package com.ecommerce.service.impl;
+package com.ecommerce.service.impl;
 
 import com.ecommerce.dto.FlashSaleDTO;
 import com.ecommerce.dto.FlashSaleProductDTO;

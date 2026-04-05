@@ -1,4 +1,4 @@
-﻿package com.ecommerce.webapp;
+package com.ecommerce.webapp;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
