@@ -2,10 +2,14 @@
  * author: LeTuBac
  */
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Power, PowerOff, Package, Calendar, TrendingUp, Clock, AlertCircle, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Power, PowerOff, Package, Calendar, TrendingUp, Clock, AlertCircle, Search, Zap, BarChart2, Copy } from 'lucide-react';
 import adminApi from '../api/adminApi';
 import toast from '../utils/toast';
 import FlashSaleProductModal from './FlashSaleProductModal';
+import FlashSaleScheduleView from './FlashSaleScheduleView';
+import FlashSaleWizardModal from './FlashSaleWizardModal';
+import { useConfirm } from './ConfirmModal';
+import FlashSaleAnalyticsDashboard from './FlashSaleAnalyticsDashboard';
 
 function FlashSaleManagement() {
   const [flashSales, setFlashSales] = useState([]);
@@ -14,6 +18,10 @@ function FlashSaleManagement() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingFlashSale, setEditingFlashSale] = useState(null);
   const [selectedFlashSale, setSelectedFlashSale] = useState(null);
+
+  const [activeTab, setActiveTab] = useState('list'); // 'list' | 'schedule'
+  const [showWizard, setShowWizard] = useState(false);
+  const { showConfirm, confirmModal } = useConfirm();
 
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -95,11 +103,21 @@ function FlashSaleManagement() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa Flash Sale này?')) return;
+  const handleDelete = async (flashSale) => {
+    if (flashSale.hasProducts || flashSale.totalProducts > 0) {
+      toast.error('Không thể xóa Flash Sale đang có sản phẩm. Hãy xóa hết sản phẩm trước.');
+      return;
+    }
+    const ok = await showConfirm({
+      title: 'Xóa Flash Sale',
+      message: `Bạn có chắc chắn muốn xóa Flash Sale "${flashSale.name}"?\nHành động này không thể hoàn tác.`,
+      confirmText: 'Xóa',
+      variant: 'danger',
+    });
+    if (!ok) return;
 
     try {
-      await adminApi.deleteFlashSale(id);
+      await adminApi.deleteFlashSale(flashSale.id);
       toast.success('Xóa Flash Sale thành công');
       fetchFlashSales();
     } catch (error) {
@@ -108,7 +126,35 @@ function FlashSaleManagement() {
     }
   };
 
+  const handleClone = async (flashSale) => {
+    const ok = await showConfirm({
+      title: 'Clone Flash Sale',
+      message: `Tạo bản sao của "${flashSale.name}"?\n\nBản sao sẽ có trạng thái inactive, giữ nguyên sản phẩm và thời gian. Bạn có thể chỉnh sửa sau.`,
+      confirmText: 'Clone',
+      variant: 'info',
+    });
+    if (!ok) return;
+    try {
+      await adminApi.cloneFlashSale(flashSale.id, {});
+      toast.success('Đã tạo bản sao Flash Sale');
+      fetchFlashSales();
+    } catch (error) {
+      toast.error(error.message || 'Lỗi khi clone Flash Sale');
+    }
+  };
+
   const handleToggleStatus = async (flashSale) => {
+    const action = flashSale.isActive ? 'tắt' : 'kích hoạt';
+    const warn = flashSale.isActive && (flashSale.hasProducts || flashSale.totalProducts > 0)
+      ? 'Flash Sale đang có sản phẩm — khách hàng sẽ không thể mua trong khi đang tắt.'
+      : '';
+    const ok = await showConfirm({
+      title: `${flashSale.isActive ? 'Tắt' : 'Kích hoạt'} Flash Sale`,
+      message: `Bạn có chắc muốn ${action} Flash Sale "${flashSale.name}"?${warn ? '\n\n⚠️ ' + warn : ''}`,
+      confirmText: flashSale.isActive ? 'Tắt' : 'Kích hoạt',
+      variant: flashSale.isActive ? 'deactivate' : 'info',
+    });
+    if (!ok) return;
     try {
       if (flashSale.isActive) {
         await adminApi.deactivateFlashSale(flashSale.id);
@@ -124,7 +170,18 @@ function FlashSaleManagement() {
     }
   };
 
-  const handleEdit = (flashSale) => {
+  const handleEdit = async (flashSale) => {
+    if (flashSale.hasProducts || flashSale.totalProducts > 0) {
+      toast.error('Không thể chỉnh sửa Flash Sale đang có sản phẩm. Hãy xóa hết sản phẩm trước.');
+      return;
+    }
+    const ok = await showConfirm({
+      title: 'Chỉnh sửa Flash Sale',
+      message: `Bạn có chắc muốn chỉnh sửa Flash Sale "${flashSale.name}"?`,
+      confirmText: 'Sửa',
+      variant: 'warning',
+    });
+    if (!ok) return;
     setEditingFlashSale(flashSale);
     setFormData({
       name: flashSale.name,
@@ -195,18 +252,60 @@ function FlashSaleManagement() {
           </h1>
           <p className="text-gray-600 mt-1">Thiết lập và quản lý các chương trình Flash Sale</p>
         </div>
-        <button
-          onClick={() => {
-            resetForm();
-            setShowModal(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-        >
-          <Plus size={20} />
-          Tạo Flash Sale mới
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Tab switcher */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setActiveTab('list')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${activeTab === 'list' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <span className="flex items-center gap-1.5"><TrendingUp size={15} />Danh sách</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('schedule')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${activeTab === 'schedule' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <span className="flex items-center gap-1.5"><Calendar size={15} />Lịch</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${activeTab === 'analytics' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <span className="flex items-center gap-1.5"><BarChart2 size={15} />Analytics</span>
+            </button>
+          </div>
+          {/* Action button — context-depends on tab */}
+          {activeTab === 'list' ? (
+            <button
+              onClick={() => { resetForm(); setShowModal(true); }}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              <Plus size={20} />
+              Tạo Flash Sale mới
+            </button>
+          ) : activeTab === 'schedule' ? (
+            <button
+              onClick={() => setShowWizard(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-orange-500 text-white rounded-lg hover:from-red-700 hover:to-orange-600 transition"
+            >
+              <Zap size={20} />
+              Lên lịch mới
+            </button>
+          ) : null}
+        </div>
       </div>
 
+      {/* Tab content */}
+      {activeTab === 'analytics' ? (
+        <FlashSaleAnalyticsDashboard />
+      ) : activeTab === 'schedule' ? (
+        <FlashSaleScheduleView
+          onCreateNew={() => setShowWizard(true)}
+          onManageProducts={handleManageProducts}
+          onRefresh={fetchFlashSales}
+        />
+      ) : (
+        <>
       {/* Search */}
       <div className="mb-6">
         <div className="relative">
@@ -309,21 +408,38 @@ function FlashSaleManagement() {
                             ? 'bg-green-100 text-green-600 hover:bg-green-200'
                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
-                        title={flashSale.isActive ? 'Tắt' : 'Bật'}
+                        title={flashSale.isActive ? 'Tắt Flash Sale' : 'Kích hoạt Flash Sale'}
                       >
                         {flashSale.isActive ? <Power size={18} /> : <PowerOff size={18} />}
                       </button>
                       <button
+                        onClick={() => handleClone(flashSale)}
+                        className="p-2 rounded-lg transition bg-indigo-100 text-indigo-600 hover:bg-indigo-200"
+                        title="Clone Flash Sale"
+                      >
+                        <Copy size={18} />
+                      </button>
+                      <button
                         onClick={() => handleEdit(flashSale)}
-                        className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
-                        title="Sửa"
+                        disabled={flashSale.hasProducts || flashSale.totalProducts > 0}
+                        className={`p-2 rounded-lg transition ${
+                          flashSale.hasProducts || flashSale.totalProducts > 0
+                            ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                            : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                        }`}
+                        title={flashSale.hasProducts || flashSale.totalProducts > 0 ? 'Không thể sửa khi có sản phẩm' : 'Sửa'}
                       >
                         <Edit size={18} />
                       </button>
                       <button
-                        onClick={() => handleDelete(flashSale.id)}
-                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
-                        title="Xóa"
+                        onClick={() => handleDelete(flashSale)}
+                        disabled={flashSale.hasProducts || flashSale.totalProducts > 0}
+                        className={`p-2 rounded-lg transition ${
+                          flashSale.hasProducts || flashSale.totalProducts > 0
+                            ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                            : 'bg-red-100 text-red-600 hover:bg-red-200'
+                        }`}
+                        title={flashSale.hasProducts || flashSale.totalProducts > 0 ? 'Không thể xóa khi có sản phẩm' : 'Xóa'}
                       >
                         <Trash2 size={18} />
                       </button>
@@ -358,6 +474,8 @@ function FlashSaleManagement() {
           )}
         </div>
       )}
+        </>
+      )} {/* end activeTab === 'list' */}
 
       {/* Create/Edit Modal - Will be implemented in next part */}
       {showModal && (
@@ -496,6 +614,22 @@ function FlashSaleManagement() {
             setSelectedFlashSale(null);
           }}
           onUpdate={fetchFlashSales}
+        />
+      )}
+
+      {/* Confirm Modal */}
+      {confirmModal}
+
+      {/* Wizard Modal */}
+      {showWizard && (
+        <FlashSaleWizardModal
+          isOpen={showWizard}
+          onClose={() => setShowWizard(false)}
+          onDone={() => {
+            setShowWizard(false);
+            fetchFlashSales();
+            setActiveTab('schedule');
+          }}
         />
       )}
     </div>

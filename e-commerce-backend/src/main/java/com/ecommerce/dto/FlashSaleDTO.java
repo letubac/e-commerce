@@ -37,6 +37,8 @@ public class FlashSaleDTO {
     private boolean expired;
     private long remainingTimeInMinutes;
     private int totalProducts;
+    @JsonProperty("hasProducts")
+    private boolean hasProducts;
     private Long totalSales;
     private java.math.BigDecimal totalRevenue;
 }

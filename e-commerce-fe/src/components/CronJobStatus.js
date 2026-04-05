@@ -1,4 +1,4 @@
-/**
+﻿/**
  * author: LeTuBac
  */
 import React, { useState, useEffect, useCallback } from 'react';
@@ -10,34 +10,39 @@ import adminApi from '../api/adminApi';
 import toast from '../utils/toast';
 import ConfirmDialog, { ACTION_TYPES } from './ConfirmDialog';
 
-// Maps BE job keys ? human-readable metadata
+// Maps BE job keys → human-readable metadata
 const JOB_META = {
+  syncFlashSaleStatus: {
+    label: 'Flash Sale Sync',
+    description: 'Tự động bật/tắt flash sale theo lịch & đánh dấu sản phẩm hết hàng',
+    schedule: 'Mỗi 10 giây',
+  },
   checkFlashSaleExpiry: {
-    label: 'Flash Sale Expiry Check',
-    description: 'Ki?m tra v� t?t c�c flash sale d� h?t h?n',
-    schedule: 'M?i ph�t',
+    label: 'Coupon Expiry Check',
+    description: 'Tắt coupon hết hạn hoặc đã dùng hết',
+    schedule: 'Mỗi phút',
   },
   checkOrderStatuses: {
     label: 'Order Status Check',
-    description: 'C?p nh?t tr?ng th�i don h�ng t? d?ng',
-    schedule: 'M?i 5 ph�t',
+    description: 'Cảnh báo & tự hủy đơn hàng PENDING quá hạn',
+    schedule: 'Mỗi 5 phút',
   },
   cleanExpiredSessions: {
     label: 'Expired Session Cleanup',
-    description: 'D?n d?p c�c phi�n dang nh?p d� h?t h?n',
-    schedule: 'M?i gi?',
+    description: 'Xóa thông báo đã hết hạn (expires_at < now)',
+    schedule: 'Mỗi giờ',
   },
   nightlyCleanup: {
     label: 'Nightly Cleanup',
-    description: 'D?n d?p d? li?u t?m th?i h�ng d�m',
-    schedule: 'H�ng ng�y l�c 2:00 AM',
+    description: 'Xóa thông báo cũ > 90 ngày & deactivate coupon hết hạn',
+    schedule: 'Hàng ngày lúc 2:00 AM',
   },
 };
 
 const STATUS_CONFIG = {
-  SUCCESS: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50', label: 'Th�nh c�ng' },
-  ERROR: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-50', label: 'L?i' },
-  RUNNING: { icon: Loader2, color: 'text-blue-500', bg: 'bg-blue-50', label: '�ang ch?y', spin: true },
+  SUCCESS: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50', label: 'Thành công' },
+  ERROR: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-50', label: 'Lỗi' },
+  RUNNING: { icon: Loader2, color: 'text-blue-500', bg: 'bg-blue-50', label: 'Đang chạy', spin: true },
 };
 
 function SkeletonCard() {
@@ -68,9 +73,9 @@ function JobCard({ jobKey, jobData, onToggle, onPause, onResume, actionLoading }
   else if (isPaused) runState = 'paused';
 
   const runStateConfig = {
-    active: { dot: 'bg-green-400', text: '�ang ch?y' },
-    disabled: { dot: 'bg-gray-400', text: '�� t?t' },
-    paused: { dot: 'bg-yellow-400', text: 'T?m ngung' },
+    active: { dot: 'bg-green-400', text: 'Đang chạy' },
+    disabled: { dot: 'bg-gray-400', text: 'Đã tắt' },
+    paused: { dot: 'bg-yellow-400', text: 'Tạm ngừng' },
   };
 
   const loading = actionLoading === jobKey;
@@ -98,13 +103,13 @@ function JobCard({ jobKey, jobData, onToggle, onPause, onResume, actionLoading }
       <div className="space-y-1 text-xs text-gray-500 mb-4">
         <div className="flex items-center gap-2">
           <Clock size={11} className="shrink-0" />
-          <span className="font-medium text-gray-600">L?ch ch?y:</span>
+          <span className="font-medium text-gray-600">Lịch chạy:</span>
           <span>{meta.schedule}</span>
         </div>
         {jobData?.lastRun && (
           <div className="flex items-center gap-2">
             <CheckCircle size={11} className="shrink-0" />
-            <span className="font-medium text-gray-600">L?n cu?i:</span>
+            <span className="font-medium text-gray-600">Lần cuối:</span>
             <span>{new Date(jobData.lastRun).toLocaleString('vi-VN')}</span>
           </div>
         )}
@@ -115,7 +120,7 @@ function JobCard({ jobKey, jobData, onToggle, onPause, onResume, actionLoading }
         )}
         {isPaused && (
           <p className="text-yellow-600 mt-1">
-            T?m ngung d?n: {new Date(jobData.pausedUntil).toLocaleString('vi-VN')}
+            Tạm ngừng đến: {new Date(jobData.pausedUntil).toLocaleString('vi-VN')}
           </p>
         )}
       </div>
@@ -133,7 +138,7 @@ function JobCard({ jobKey, jobData, onToggle, onPause, onResume, actionLoading }
         <button
           onClick={() => onToggle(jobKey, isEnabled)}
           disabled={loading}
-          title={isEnabled ? 'T?t job n�y' : 'B?t job n�y'}
+          title={isEnabled ? 'Tắt job này' : 'Bật job này'}
           className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded border transition-colors ${
             isEnabled
               ? 'border-red-200 text-red-600 hover:bg-red-50'
@@ -141,18 +146,18 @@ function JobCard({ jobKey, jobData, onToggle, onPause, onResume, actionLoading }
           } disabled:opacity-50`}
         >
           {isEnabled ? <PowerOff size={12} /> : <Power size={12} />}
-          {isEnabled ? 'T?t' : 'B?t'}
+          {isEnabled ? 'Tắt' : 'Bật'}
         </button>
 
         {isEnabled && !isPaused && (
           <button
             onClick={() => onPause(jobKey)}
             disabled={loading}
-            title="T?m ngung 60 ph�t"
+            title="Tạm ngừng 60 phút"
             className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded border border-yellow-200 text-yellow-600 hover:bg-yellow-50 disabled:opacity-50 transition-colors"
           >
             <PauseCircle size={12} />
-            D?ng
+            Dừng
           </button>
         )}
 
@@ -160,11 +165,11 @@ function JobCard({ jobKey, jobData, onToggle, onPause, onResume, actionLoading }
           <button
             onClick={() => onResume(jobKey)}
             disabled={loading}
-            title="Ti?p t?c ngay"
+            title="Tiếp tục ngay"
             className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded border border-blue-200 text-blue-600 hover:bg-blue-50 disabled:opacity-50 transition-colors"
           >
             <PlayCircle size={12} />
-            Ti?p t?c
+            Tiếp tục
           </button>
         )}
 
@@ -211,16 +216,26 @@ function CronJobStatus() {
       jobKey,
       actionType: currentlyEnabled ? ACTION_TYPES.DEACTIVATE : ACTION_TYPES.ACTIVATE,
       detail: currentlyEnabled
-        ? `Job "${JOB_META[jobKey]?.label || jobKey}" s? b? t?t v� kh�ng ch?y n?a.`
-        : `Job "${JOB_META[jobKey]?.label || jobKey}" s? du?c b?t l?i.`,
+        ? `Job "${JOB_META[jobKey]?.label || jobKey}" sẽ bị tắt và không chạy nữa.`
+        : `Job "${JOB_META[jobKey]?.label || jobKey}" sẽ được bật lại.`,
       confirmFn: async () => {
         setActionLoading(jobKey);
         try {
           await adminApi.toggleCronJob(jobKey);
-          toast.success(currentlyEnabled ? '�� t?t job' : '�� b?t job');
-          fetchJobs();
+          // Optimistic update — card reflects new state immediately with the toast
+          setJobsMap(prev => ({
+            ...prev,
+            [jobKey]: { ...(prev[jobKey] || {}), enabled: !currentlyEnabled }
+          }));
+          toast.success(currentlyEnabled ? 'Đã tắt job' : 'Đã bật job');
+          await fetchJobs();
         } catch (error) {
-          toast.error(error.message || 'Kh�ng th? thay d?i tr?ng th�i job');
+          // Revert optimistic update on failure
+          setJobsMap(prev => ({
+            ...prev,
+            [jobKey]: { ...(prev[jobKey] || {}), enabled: currentlyEnabled }
+          }));
+          toast.error(error.message || 'Không thể thay đổi trạng thái job');
         } finally {
           setActionLoading(null);
         }
@@ -233,15 +248,21 @@ function CronJobStatus() {
       isOpen: true,
       jobKey,
       actionType: ACTION_TYPES.PAUSE,
-      detail: `Job "${JOB_META[jobKey]?.label || jobKey}" s? b? t?m ngung trong 60 ph�t.`,
+      detail: `Job "${JOB_META[jobKey]?.label || jobKey}" sẽ bị tạm ngừng trong 60 phút.`,
       confirmFn: async () => {
         setActionLoading(jobKey);
         try {
           await adminApi.pauseCronJob(jobKey, 60);
-          toast.success('�� t?m ngung job trong 60 ph�t');
-          fetchJobs();
+          // Optimistic update — show paused state immediately
+          const pausedUntil = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+          setJobsMap(prev => ({
+            ...prev,
+            [jobKey]: { ...(prev[jobKey] || {}), pausedUntil }
+          }));
+          toast.success('Đã tạm ngừng job trong 60 phút');
+          await fetchJobs();
         } catch (error) {
-          toast.error(error.message || 'Kh�ng th? t?m ngung job');
+          toast.error(error.message || 'Không thể tạm ngừng job');
         } finally {
           setActionLoading(null);
         }
@@ -253,10 +274,16 @@ function CronJobStatus() {
     setActionLoading(jobKey);
     try {
       await adminApi.resumeCronJob(jobKey);
-      toast.success('�� ti?p t?c job');
-      fetchJobs();
+      // Optimistic update — remove paused state immediately
+      setJobsMap(prev => {
+        const updated = { ...(prev[jobKey] || {}) };
+        delete updated.pausedUntil;
+        return { ...prev, [jobKey]: updated };
+      });
+      toast.success('Đã tiếp tục job');
+      await fetchJobs();
     } catch (error) {
-      toast.error(error.message || 'Kh�ng th? ti?p t?c job');
+      toast.error(error.message || 'Không thể tiếp tục job');
     } finally {
       setActionLoading(null);
     }
@@ -285,8 +312,8 @@ function CronJobStatus() {
                 <h2 className="text-xl font-bold text-gray-900">Cron Jobs</h2>
                 <p className="text-sm text-gray-500">
                   {lastRefreshed
-                    ? `C?p nh?t l�c ${lastRefreshed.toLocaleTimeString('vi-VN')} � T? d?ng l�m m?i m?i 30s`
-                    : 'Theo d�i v� ki?m so�t c�c t�c v? d?nh k?'}
+                    ? `Cập nhật lúc ${lastRefreshed.toLocaleTimeString('vi-VN')} · Tự động làm mới mỗi 30s`
+                    : 'Theo dõi và kiểm soát các tác vụ định kỳ'}
                 </p>
               </div>
             </div>
@@ -296,7 +323,7 @@ function CronJobStatus() {
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
             >
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-              L�m m?i
+              Làm mới
             </button>
           </div>
         </div>

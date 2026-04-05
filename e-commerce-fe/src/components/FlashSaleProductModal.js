@@ -296,7 +296,7 @@ function FlashSaleProductModal({ flashSale, isOpen, onClose, onUpdate }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {flashSaleProducts.map((item) => {
                 const productName = item.productName || products.find(p => p.id === item.productId)?.name || 'Sản phẩm';
-                const productImageUrl = item.productImageUrl || products.find(p => p.id === item.productId)?.imageUrl || '/images/placeholder.png';
+                const productImageUrl = item.productImageUrl || products.find(p => p.id === item.productId)?.productImages?.[0]?.imageUrl || '/images/placeholder.png';
                 return (
                   <div key={item.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
                     <div className="flex gap-4">
@@ -398,7 +398,7 @@ function FlashSaleProductModal({ flashSale, isOpen, onClose, onUpdate }) {
                             }`}
                           >
                             <img
-                              src={product.imageUrl || '/images/placeholder.png'}
+                              src={product.productImages?.[0]?.imageUrl || '/images/placeholder.png'}
                               alt={product.name}
                               className="w-12 h-12 object-cover rounded"
                             />
@@ -422,7 +422,7 @@ function FlashSaleProductModal({ flashSale, isOpen, onClose, onUpdate }) {
                     <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <img
-                          src={selectedProduct.imageUrl || '/images/placeholder.png'}
+                          src={selectedProduct.productImages?.[0]?.imageUrl || '/images/placeholder.png'}
                           alt={selectedProduct.name}
                           className="w-16 h-16 object-cover rounded"
                         />

@@ -59,6 +59,12 @@ public interface FlashSaleService {
 
     FlashSaleDTO deactivateFlashSale(Long flashSaleId) throws DetailException;
 
+    // Scheduler operations
+    void syncFlashSaleStatus();
+
+    // Clone
+    FlashSaleDTO cloneFlashSale(Long flashSaleId, FlashSaleDTO overrides) throws DetailException;
+
     // Statistics
     Long getTotalSalesForFlashSale(Long flashSaleId) throws DetailException;
 

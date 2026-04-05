@@ -55,4 +55,11 @@ public interface FlashSaleProductRepository extends DbRepository<FlashSaleProduc
             @Param("maxPerCustomer") Integer maxPerCustomer,
             @Param("displayOrder") Integer displayOrder,
             @Param("isActive") boolean isActive);
+
+    // Maps to: FlashSaleProductRepository_updateActiveStatus.sql
+    @Modifying
+    void updateActiveStatus(@Param("id") Long id, @Param("isActive") boolean isActive);
+
+    // Maps to: FlashSaleProductRepository_findSoldOutByFlashSaleId.sql
+    List<FlashSaleProduct> findSoldOutByFlashSaleId(@Param("flashSaleId") Long flashSaleId);
 }

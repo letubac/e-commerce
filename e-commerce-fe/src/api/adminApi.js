@@ -201,6 +201,9 @@ const adminApi = {
   removeFlashSaleProduct: (flashSaleId, productId) =>
     adminApi.request(`/admin/flash-sales/${flashSaleId}/products/${productId}`, { method: 'DELETE' }),
   getFlashSaleStatistics: (id) => adminApi.request(`/admin/flash-sales/${id}/statistics`),
+  getFlashSaleDashboardAnalytics: () => adminApi.request('/admin/flash-sales/analytics/dashboard'),
+  cloneFlashSale: (id, payload) =>
+    adminApi.request(`/admin/flash-sales/${id}/clone`, { method: 'POST', body: JSON.stringify(payload) }),
 
   // Task Management APIs
   getTasks: (params = {}) => {

@@ -5,13 +5,13 @@
  */
 public class TableConstant {
 
-	public static final String SEQ = "seq_";
-	public static final String CARTS = "carts";
-	public static final String CART_ITEMS = "cart_items";
-	public static final String ADDRESS = "addresses";
-	public static final String BANNERS = "banners";
-	public static final String BRANCHS = "brands";
-	public static final String CATEGORIES = "categories";
+    public static final String SEQ = "seq_";
+    public static final String CARTS = "carts";
+    public static final String CART_ITEMS = "cart_items";
+    public static final String ADDRESS = "addresses";
+    public static final String BANNERS = "banners";
+    public static final String BRANCHS = "brands";
+    public static final String CATEGORIES = "categories";
     public static final String CHAT_MESSAGES = "chat_messages";
     public static final String CHAT_PARTICIPANTS = "chat_participants";
     public static final String CHAT_QUICK_REPLIES = "chat_quick_replies";
@@ -45,5 +45,6 @@ public class TableConstant {
     public static final String WISHLISTS = "wishlists";
     public static final String NEW_ARRIVALS = "new_arrivals";
     public static final String TASKS = "tasks";
+    public static final String CRON_JOB_CONFIGS = "cron_job_configs";
 
 }

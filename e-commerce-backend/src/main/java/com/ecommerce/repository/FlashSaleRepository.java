@@ -56,4 +56,16 @@ public interface FlashSaleRepository extends DbRepository<FlashSale, Long> {
             @Param("bannerImageUrl") String bannerImageUrl,
             @Param("backgroundColor") String backgroundColor,
             @Param("updatedAt") Date updatedAt);
+
+    // Maps to: FlashSaleRepository_findOverlapping.sql
+    List<FlashSale> findOverlapping(
+            @Param("startTime") Date startTime,
+            @Param("endTime") Date endTime,
+            @Param("excludeId") Long excludeId);
+
+    // Maps to: FlashSaleRepository_findExpiredActive.sql
+    List<FlashSale> findExpiredActive();
+
+    // Maps to: FlashSaleRepository_findToActivate.sql
+    List<FlashSale> findToActivate();
 }

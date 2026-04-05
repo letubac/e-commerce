@@ -2,15 +2,18 @@
 
 import com.ecommerce.dto.FlashSaleDTO;
 import com.ecommerce.dto.FlashSaleProductDTO;
+import com.ecommerce.dto.NotificationDTO;
 import com.ecommerce.entity.FlashSale;
 import com.ecommerce.entity.FlashSaleProduct;
 import com.ecommerce.entity.Product;
+import com.ecommerce.entity.ProductImage;
 import com.ecommerce.exception.ResourceNotFoundException;
 import com.ecommerce.exception.BadRequestException;
 import com.ecommerce.repository.FlashSaleRepository;
 import com.ecommerce.repository.FlashSaleProductRepository;
 import com.ecommerce.repository.ProductRepository;
 import com.ecommerce.service.FlashSaleService;
+import com.ecommerce.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,10 +40,20 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 	private final FlashSaleRepository flashSaleRepository;
 	private final FlashSaleProductRepository flashSaleProductRepository;
 	private final ProductRepository productRepository;
+	private final NotificationService notificationService;
 
 	@Override
 	public FlashSaleDTO createFlashSale(FlashSaleDTO flashSaleDTO) {
 		log.debug("Creating flash sale: {}", flashSaleDTO.getName());
+
+		// Validate: no overlapping flash sales
+		List<FlashSale> overlapping = flashSaleRepository.findOverlapping(
+				flashSaleDTO.getStartTime(), flashSaleDTO.getEndTime(), null);
+		if (!overlapping.isEmpty()) {
+			FlashSale conflict = overlapping.get(0);
+			throw new BadRequestException("Thời gian chồng chéo với Flash Sale \"" + conflict.getName()
+					+ "\" (" + conflict.getStartTime() + " – " + conflict.getEndTime() + ")");
+		}
 
 		FlashSale flashSale = new FlashSale();
 		flashSale.setName(flashSaleDTO.getName());
@@ -73,6 +86,21 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 				.orElseThrow(
 						() -> new ResourceNotFoundException("Flash sale not found with id: " + flashSaleDTO.getId()));
 
+		// Lock check: cannot edit if flash sale has products
+		List<FlashSaleProduct> existingProds = flashSaleProductRepository.findByFlashSaleId(flashSaleDTO.getId());
+		if (!existingProds.isEmpty()) {
+			throw new BadRequestException(
+					"Không thể chỉnh sửa Flash Sale đang có sản phẩm. Vui lòng xóa tất cả sản phẩm trước.");
+		}
+
+		// Overlap check (exclude self)
+		List<FlashSale> overlapping = flashSaleRepository.findOverlapping(
+				flashSaleDTO.getStartTime(), flashSaleDTO.getEndTime(), flashSaleDTO.getId());
+		if (!overlapping.isEmpty()) {
+			FlashSale conflict = overlapping.get(0);
+			throw new BadRequestException("Thời gian chồng chéo với Flash Sale \"" + conflict.getName() + "\"");
+		}
+
 		flashSale.setName(flashSaleDTO.getName());
 		flashSale.setDescription(flashSaleDTO.getDescription());
 		flashSale.setStartTime(flashSaleDTO.getStartTime());
@@ -100,11 +128,13 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 		FlashSale flashSale = flashSales.stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
 				.orElseThrow(() -> new ResourceNotFoundException("Flash sale not found with id: " + flashSaleId));
 
-		// Delete associated products first
+		// Lock check: cannot delete if has products
 		List<FlashSaleProduct> products = flashSaleProductRepository.findByFlashSaleId(flashSaleId);
-		products.forEach(flashSaleProductRepository::delete);
+		if (!products.isEmpty()) {
+			throw new BadRequestException(
+					"Không thể xóa Flash Sale đang có sản phẩm. Vui lòng xóa tất cả sản phẩm trước.");
+		}
 
-		// Then delete the flash sale
 		flashSaleRepository.delete(flashSale);
 		log.info("Flash sale deleted with id: {}", flashSaleId);
 	}
@@ -173,9 +203,16 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 			throw new BadRequestException("Không thể thêm sản phẩm vào Flash Sale đã hết hạn");
 		}
 
-		// Validate product exists
-		productRepository.findById(productDTO.getProductId()).orElseThrow(
+		// Validate product exists and is not out-of-stock
+		Product product = productRepository.findById(productDTO.getProductId()).orElseThrow(
 				() -> new ResourceNotFoundException("Product not found with id: " + productDTO.getProductId()));
+		if (!product.isActive()) {
+			throw new BadRequestException("Sản phẩm đang bị tắt, không thể thêm vào Flash Sale");
+		}
+		if (product.getStockQuantity() != null && product.getStockQuantity() <= 0) {
+			throw new BadRequestException(
+					"Sản phẩm \"" + product.getName() + "\" đã hết hàng, không thể thêm vào Flash Sale");
+		}
 
 		// Check if product is already in this flash sale
 		List<FlashSaleProduct> existingProducts = flashSaleProductRepository.findByFlashSaleId(flashSaleId);
@@ -371,8 +408,20 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 	public FlashSaleDTO activateFlashSale(Long flashSaleId) {
 		log.debug("Activating flash sale: {}", flashSaleId);
 
-		flashSaleRepository.findAllFlashSales().stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
+		FlashSale flashSale = flashSaleRepository.findAllFlashSales().stream()
+				.filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
 				.orElseThrow(() -> new ResourceNotFoundException("Flash sale not found with id: " + flashSaleId));
+
+		// Validate: flash sale must not be expired
+		if (flashSale.isExpired()) {
+			throw new BadRequestException("Không thể kích hoạt Flash Sale đã hết hạn (endTime đã qua).");
+		}
+		// Validate: must have at least one active product
+		List<FlashSaleProduct> activeProds = flashSaleProductRepository.findActiveByFlashSaleId(flashSaleId);
+		if (activeProds.isEmpty()) {
+			throw new BadRequestException(
+					"Không thể kích hoạt Flash Sale khi chưa có sản phẩm nào. Hãy thêm sản phẩm trước.");
+		}
 
 		flashSaleRepository.updateStatus(flashSaleId, true);
 		log.info("Flash sale activated: {}", flashSaleId);
@@ -384,13 +433,69 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 	public FlashSaleDTO deactivateFlashSale(Long flashSaleId) {
 		log.debug("Deactivating flash sale: {}", flashSaleId);
 
-		flashSaleRepository.findAllFlashSales().stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
+		FlashSale flashSale = flashSaleRepository.findAllFlashSales().stream()
+				.filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
 				.orElseThrow(() -> new ResourceNotFoundException("Flash sale not found with id: " + flashSaleId));
+
+		if (!flashSale.isActive()) {
+			throw new BadRequestException("Flash Sale này đang ở trạng thái tắt rồi.");
+		}
 
 		flashSaleRepository.updateStatus(flashSaleId, false);
 		log.info("Flash sale deactivated: {}", flashSaleId);
 
 		return getFlashSaleById(flashSaleId);
+	}
+
+	@Override
+	public FlashSaleDTO cloneFlashSale(Long flashSaleId, FlashSaleDTO overrides) {
+		log.debug("Cloning flash sale: {}", flashSaleId);
+
+		List<FlashSale> allFlashSales = flashSaleRepository.findAllFlashSales();
+		FlashSale source = allFlashSales.stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
+				.orElseThrow(() -> new ResourceNotFoundException("Flash sale not found with id: " + flashSaleId));
+
+		// Apply overrides for time, name. Others fall back to source values.
+		Date newStart = overrides != null && overrides.getStartTime() != null ? overrides.getStartTime()
+				: source.getStartTime();
+		Date newEnd = overrides != null && overrides.getEndTime() != null ? overrides.getEndTime()
+				: source.getEndTime();
+		String newName = overrides != null && overrides.getName() != null && !overrides.getName().isBlank()
+				? overrides.getName()
+				: "Copy of " + source.getName();
+
+		// Validate no time overlap
+		List<FlashSale> overlapping = flashSaleRepository.findOverlapping(newStart, newEnd, null);
+		if (!overlapping.isEmpty()) {
+			FlashSale conflict = overlapping.get(0);
+			throw new BadRequestException("Thời gian chồng chéo với Flash Sale \"" + conflict.getName()
+					+ "\" (" + conflict.getStartTime() + " – " + conflict.getEndTime() + ")");
+		}
+
+		// Create the cloned flash sale (always inactive)
+		Date now = new Date();
+		Long newId = flashSaleRepository.insertFlashSale(
+				newName,
+				source.getDescription(),
+				newStart, newEnd,
+				false,
+				source.getBannerImageUrl(),
+				source.getBackgroundColor(),
+				now, now);
+
+		// Copy all products with stockSold reset to 0
+		List<FlashSaleProduct> sourceProducts = flashSaleProductRepository.findByFlashSaleId(flashSaleId);
+		for (FlashSaleProduct sp : sourceProducts) {
+			flashSaleProductRepository.insertFlashSaleProduct(
+					newId, sp.getProductId(),
+					sp.getOriginalPrice(), sp.getFlashPrice(),
+					sp.getStockLimit(), 0,
+					sp.getMaxPerCustomer(), sp.getDisplayOrder(),
+					false, now);
+		}
+
+		log.info("Cloned flash sale {} → new id={}", flashSaleId, newId);
+		return getFlashSaleById(newId);
 	}
 
 	@Override
@@ -415,6 +520,68 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 		}).reduce(BigDecimal.ZERO, BigDecimal::add);
 	}
 
+	@Override
+	public void syncFlashSaleStatus() {
+		// 1. Auto-activate flash sales that should now be running
+		List<FlashSale> toActivate = flashSaleRepository.findToActivate();
+		for (FlashSale fs : toActivate) {
+			// Only activate if it has at least one active product
+			List<FlashSaleProduct> activeProds = flashSaleProductRepository.findActiveByFlashSaleId(fs.getId());
+			if (!activeProds.isEmpty()) {
+				flashSaleRepository.updateStatus(fs.getId(), true);
+				log.info("[Scheduler] Auto-activated flash sale id={} name={}", fs.getId(), fs.getName());
+				// Notify all users
+				try {
+					NotificationDTO notif = new NotificationDTO();
+					notif.setTitle("🔥 Flash Sale bắt đầu!");
+					notif.setMessage(fs.getName() + " đã bắt đầu! Đừng bỏ lỡ cơ hội mà.");
+					notif.setType("FLASH_SALE");
+					notif.setEntityType("FLASH_SALE");
+					notif.setEntityId(fs.getId());
+					notif.setPriority("HIGH");
+					notif.setLink("/flash-sale");
+					notificationService.broadcastToAll(notif);
+				} catch (Exception e) {
+					log.warn("[Scheduler] Failed to send activate notification for flash sale id={}: {}", fs.getId(),
+							e.getMessage());
+				}
+			}
+		}
+
+		// 2. Auto-expire flash sales that have passed their end time
+		List<FlashSale> expired = flashSaleRepository.findExpiredActive();
+		for (FlashSale fs : expired) {
+			flashSaleRepository.updateStatus(fs.getId(), false);
+			log.info("[Scheduler] Auto-expired flash sale id={} name={}", fs.getId(), fs.getName());
+			// Notify admins that flash sale has ended
+			try {
+				NotificationDTO notif = new NotificationDTO();
+				notif.setTitle("⏱️ Flash Sale kết thúc");
+				notif.setMessage(fs.getName() + " đã kết thúc.");
+				notif.setType("FLASH_SALE");
+				notif.setEntityType("FLASH_SALE");
+				notif.setEntityId(fs.getId());
+				notif.setPriority("NORMAL");
+				notif.setTargetRole("ADMIN");
+				notificationService.broadcastToRole("ADMIN", notif);
+			} catch (Exception e) {
+				log.warn("[Scheduler] Failed to send expire notification for flash sale id={}: {}", fs.getId(),
+						e.getMessage());
+			}
+		}
+
+		// 3. Mark sold-out products as inactive for all currently active flash sales
+		List<FlashSale> activeFlashSales = flashSaleRepository.findActive();
+		for (FlashSale fs : activeFlashSales) {
+			List<FlashSaleProduct> soldOut = flashSaleProductRepository.findSoldOutByFlashSaleId(fs.getId());
+			for (FlashSaleProduct fsp : soldOut) {
+				flashSaleProductRepository.updateActiveStatus(fsp.getId(), false);
+				log.info("[Scheduler] Marked sold-out product id={} in flash sale id={}", fsp.getProductId(),
+						fs.getId());
+			}
+		}
+	}
+
 	private FlashSaleDTO convertToDTO(FlashSale flashSale) {
 		FlashSaleDTO dto = new FlashSaleDTO();
 		dto.setId(flashSale.getId());
@@ -437,6 +604,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 		// Set statistics
 		List<FlashSaleProduct> products = flashSaleProductRepository.findByFlashSaleId(flashSale.getId());
 		dto.setTotalProducts(products.size());
+		dto.setHasProducts(!products.isEmpty());
 		dto.setTotalSales(getTotalSalesForFlashSale(flashSale.getId()));
 		dto.setTotalRevenue(getTotalRevenueForFlashSale(flashSale.getId()));
 
@@ -467,7 +635,13 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 		Product product = productRepository.findById(flashSaleProduct.getProductId()).orElse(null);
 		if (product != null) {
 			dto.setProductName(product.getName());
-			dto.setProductImageUrl(product.getImageUrl());
+			List<ProductImage> productImages = productRepository.findImagesByProductId(product.getId());
+			String imgUrl = productImages.stream()
+					.filter(ProductImage::isPrimary)
+					.map(ProductImage::getImageUrl)
+					.findFirst()
+					.orElse(productImages.isEmpty() ? null : productImages.get(0).getImageUrl());
+			dto.setProductImageUrl(imgUrl);
 			dto.setProductSku(product.getSku());
 			dto.setProductDescription(product.getDescription());
 			dto.setBrandName(product.getBrandName());

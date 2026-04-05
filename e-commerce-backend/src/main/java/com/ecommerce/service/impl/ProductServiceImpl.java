@@ -716,6 +716,12 @@ public class ProductServiceImpl implements ProductService {
 					return true;
 				}).collect(Collectors.toList());
 
+		// Load images from product_images table for each product
+		products.forEach(product -> {
+			product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+					.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+		});
+
 		int start = Math.min((int) pageable.getOffset(), products.size());
 		int end = Math.min((start + pageable.getPageSize()), products.size());
 		List<ProductDTO> subList = products.subList(start, end);
@@ -739,6 +745,12 @@ public class ProductServiceImpl implements ProductService {
 						return false;
 					return true;
 				}).collect(Collectors.toList());
+
+		// Load images from product_images table for each product
+		products.forEach(product -> {
+			product.setProductImages(productRepository.findImagesByProductId(product.getId()).stream()
+					.map(image -> productMapper.toDtoProductImage(image)).collect(Collectors.toList()));
+		});
 
 		int start = Math.min((int) pageable.getOffset(), products.size());
 		int end = Math.min((start + pageable.getPageSize()), products.size());

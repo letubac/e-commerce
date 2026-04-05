@@ -85,7 +85,8 @@ public class FlashSaleController {
     }
 
     /**
-     * Get all Flash Sale sessions (current + upcoming) for schedule display (Public)
+     * Get all Flash Sale sessions (current + upcoming) for schedule display
+     * (Public)
      */
     @GetMapping("/flash-sale/schedule")
     public ResponseEntity<BusinessApiResponse> getFlashSaleSchedule() {
@@ -342,6 +343,79 @@ public class FlashSaleController {
             statistics.put("totalRevenue", totalRevenue);
 
             return ResponseEntity.ok(successHandler.handlerSuccess(statistics, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
+    }
+
+    /**
+     * Get aggregate dashboard analytics across all flash sales (Admin)
+     * Returns: totalFlashSales, totalRevenue, totalSold, avgSoldOutRate, top seller
+     */
+    @GetMapping("/admin/flash-sales/analytics/dashboard")
+    public ResponseEntity<BusinessApiResponse> getDashboardAnalytics() {
+        long start = System.currentTimeMillis();
+        try {
+            java.util.List<com.ecommerce.dto.FlashSaleDTO> allDTOs = new java.util.ArrayList<>();
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 1000);
+            allDTOs.addAll(flashSaleService.getAllFlashSales(pageable).getContent());
+
+            long totalFlashSales = allDTOs.size();
+            java.math.BigDecimal totalRevenue = allDTOs.stream()
+                    .map(dto -> dto.getTotalRevenue() != null ? dto.getTotalRevenue() : java.math.BigDecimal.ZERO)
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+            long totalSold = allDTOs.stream()
+                    .mapToLong(dto -> dto.getTotalSales() != null ? dto.getTotalSales() : 0L)
+                    .sum();
+
+            // Sold-out rate: products that hit stock limit / total products across all
+            // flash sales
+            long totalProducts = allDTOs.stream()
+                    .mapToLong(dto -> dto.getTotalProducts() != 0 ? dto.getTotalProducts() : 0L).sum();
+
+            // Top revenue flash sale
+            com.ecommerce.dto.FlashSaleDTO topSale = allDTOs.stream()
+                    .filter(dto -> dto.getTotalRevenue() != null)
+                    .max(java.util.Comparator.comparing(com.ecommerce.dto.FlashSaleDTO::getTotalRevenue))
+                    .orElse(null);
+
+            java.util.Map<String, Object> result = new java.util.HashMap<>();
+            result.put("totalFlashSales", totalFlashSales);
+            result.put("totalRevenue", totalRevenue);
+            result.put("totalSold", totalSold);
+            result.put("totalProducts", totalProducts);
+            result.put("topSaleName", topSale != null ? topSale.getName() : null);
+            result.put("topSaleRevenue", topSale != null ? topSale.getTotalRevenue() : null);
+            result.put("perFlashSale", allDTOs.stream().map(dto -> {
+                java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
+                row.put("id", dto.getId());
+                row.put("name", dto.getName());
+                row.put("totalSales", dto.getTotalSales());
+                row.put("totalRevenue", dto.getTotalRevenue());
+                row.put("totalProducts", dto.getTotalProducts());
+                row.put("startTime", dto.getStartTime());
+                row.put("endTime", dto.getEndTime());
+                row.put("isActive", dto.isActive());
+                return row;
+            }).collect(java.util.stream.Collectors.toList()));
+
+            return ResponseEntity.ok(successHandler.handlerSuccess(result, start));
+        } catch (Exception e) {
+            return ResponseEntity.ok(errorHandler.handlerException(e, start));
+        }
+    }
+
+    /**
+     * Clone a flash sale (Admin)
+     */
+    @PostMapping("/admin/flash-sales/{flashSaleId}/clone")
+    public ResponseEntity<BusinessApiResponse> cloneFlashSale(
+            @PathVariable Long flashSaleId,
+            @RequestBody(required = false) com.ecommerce.dto.FlashSaleDTO overrides) {
+        long start = System.currentTimeMillis();
+        try {
+            com.ecommerce.dto.FlashSaleDTO cloned = flashSaleService.cloneFlashSale(flashSaleId, overrides);
+            return ResponseEntity.ok(successHandler.handlerSuccess(cloned, start));
         } catch (Exception e) {
             return ResponseEntity.ok(errorHandler.handlerException(e, start));
         }
