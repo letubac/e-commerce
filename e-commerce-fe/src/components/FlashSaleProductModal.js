@@ -226,6 +226,9 @@ function FlashSaleProductModal({ flashSale, isOpen, onClose, onUpdate }) {
 
   if (!isOpen) return null;
 
+  const isExpired = flashSale?.endTime && new Date() > new Date(flashSale.endTime);
+  const isAddable = flashSale?.isActive && !isExpired;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
@@ -236,12 +239,22 @@ function FlashSaleProductModal({ flashSale, isOpen, onClose, onUpdate }) {
             <p className="text-gray-600 mt-1">{flashSale.name}</p>
           </div>
           <div className="flex items-center gap-3">
+            {!isAddable && (
+              <span className="px-3 py-1 text-sm rounded-full bg-red-100 text-red-700 font-medium">
+                {isExpired ? 'Đã hết hạn — không thể thêm sản phẩm' : 'Đang tắt — không thể thêm sản phẩm'}
+              </span>
+            )}
             <button
               onClick={() => {
                 resetForm();
                 setShowAddModal(true);
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              disabled={!isAddable}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                isAddable
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
             >
               <Plus size={20} />
               Thêm sản phẩm
@@ -269,7 +282,12 @@ function FlashSaleProductModal({ flashSale, isOpen, onClose, onUpdate }) {
               <p className="text-gray-500 mb-4">Thêm sản phẩm vào Flash Sale để bắt đầu</p>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                disabled={!isAddable}
+                className={`px-6 py-2 rounded-lg transition ${
+                  isAddable
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
               >
                 Thêm sản phẩm đầu tiên
               </button>
@@ -277,18 +295,19 @@ function FlashSaleProductModal({ flashSale, isOpen, onClose, onUpdate }) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {flashSaleProducts.map((item) => {
-                const product = products.find(p => p.id === item.productId);
+                const productName = item.productName || products.find(p => p.id === item.productId)?.name || 'Sản phẩm';
+                const productImageUrl = item.productImageUrl || products.find(p => p.id === item.productId)?.imageUrl || '/images/placeholder.png';
                 return (
                   <div key={item.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
                     <div className="flex gap-4">
                       <img
-                        src={product?.imageUrl || '/images/placeholder.png'}
-                        alt={product?.name}
+                        src={productImageUrl}
+                        alt={productName}
                         className="w-24 h-24 object-cover rounded-lg"
                       />
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
-                          {product?.name || 'Sản phẩm'}
+                          {productName}
                         </h3>
                         <div className="space-y-1 text-sm">
                           <div className="flex items-center gap-2">

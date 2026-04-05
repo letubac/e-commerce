@@ -8,6 +8,8 @@ import vn.com.unit.springframework.data.mirage.repository.query.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 
 @Repository
@@ -28,4 +30,29 @@ public interface FlashSaleProductRepository extends DbRepository<FlashSaleProduc
     // Maps to: flashSaleProductRepository_updateSoldQuantity.sql
     @Modifying
     int updateSoldQuantity(@Param("id") Long id, @Param("quantity") Integer quantity);
+
+    // Maps to: FlashSaleProductRepository_insertFlashSaleProduct.sql
+    @Modifying
+    Long insertFlashSaleProduct(
+            @Param("flashSaleId") Long flashSaleId,
+            @Param("productId") Long productId,
+            @Param("originalPrice") BigDecimal originalPrice,
+            @Param("flashPrice") BigDecimal flashPrice,
+            @Param("stockLimit") Integer stockLimit,
+            @Param("stockSold") Integer stockSold,
+            @Param("maxPerCustomer") Integer maxPerCustomer,
+            @Param("displayOrder") Integer displayOrder,
+            @Param("isActive") boolean isActive,
+            @Param("createdAt") Date createdAt);
+
+    // Maps to: FlashSaleProductRepository_updateFlashSaleProduct.sql
+    @Modifying
+    void updateFlashSaleProduct(
+            @Param("id") Long id,
+            @Param("originalPrice") BigDecimal originalPrice,
+            @Param("flashPrice") BigDecimal flashPrice,
+            @Param("stockLimit") Integer stockLimit,
+            @Param("maxPerCustomer") Integer maxPerCustomer,
+            @Param("displayOrder") Integer displayOrder,
+            @Param("isActive") boolean isActive);
 }

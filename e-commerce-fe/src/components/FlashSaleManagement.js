@@ -297,7 +297,7 @@ function FlashSaleManagement() {
                       className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
                     >
                       <Package size={16} />
-                      Quản lý
+                      {flashSale.totalProducts || 0} sản phẩm
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Date;
 import java.util.List;
 
@@ -21,6 +23,7 @@ public class FlashSaleDTO {
     private String description;
     private Date startTime;
     private Date endTime;
+    @JsonProperty("isActive")
     private boolean isActive;
     private String bannerImageUrl;
     private String backgroundColor;

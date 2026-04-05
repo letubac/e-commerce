@@ -53,10 +53,15 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 		flashSale.setCreatedAt(new Date());
 		flashSale.setUpdatedAt(new Date());
 
-		FlashSale savedFlashSale = flashSaleRepository.save(flashSale);
-		log.info("Flash sale created with id: {}", savedFlashSale.getId());
+		Long generatedId = flashSaleRepository.insertFlashSale(
+				flashSale.getName(), flashSale.getDescription(),
+				flashSale.getStartTime(), flashSale.getEndTime(),
+				flashSale.isActive(), flashSale.getBannerImageUrl(),
+				flashSale.getBackgroundColor(), flashSale.getCreatedAt(), flashSale.getUpdatedAt());
+		flashSale.setId(generatedId);
+		log.info("Flash sale created with id: {}", generatedId);
 
-		return convertToDTO(savedFlashSale);
+		return convertToDTO(flashSale);
 	}
 
 	@Override
@@ -77,10 +82,14 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 		flashSale.setBackgroundColor(flashSaleDTO.getBackgroundColor());
 		flashSale.setUpdatedAt(new Date());
 
-		FlashSale updatedFlashSale = flashSaleRepository.save(flashSale);
-		log.info("Flash sale updated with id: {}", updatedFlashSale.getId());
+		flashSaleRepository.updateFlashSale(
+				flashSale.getId(), flashSale.getName(), flashSale.getDescription(),
+				flashSale.getStartTime(), flashSale.getEndTime(),
+				flashSale.isActive(), flashSale.getBannerImageUrl(),
+				flashSale.getBackgroundColor(), flashSale.getUpdatedAt());
+		log.info("Flash sale updated with id: {}", flashSale.getId());
 
-		return convertToDTO(updatedFlashSale);
+		return convertToDTO(flashSale);
 	}
 
 	@Override
@@ -152,10 +161,17 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 	public FlashSaleProductDTO addProductToFlashSale(Long flashSaleId, FlashSaleProductDTO productDTO) {
 		log.debug("Adding product {} to flash sale {}", productDTO.getProductId(), flashSaleId);
 
-		// Validate flash sale exists
+		// Validate flash sale exists and can accept new products
 		List<FlashSale> allFlashSales = flashSaleRepository.findAllFlashSales();
-		allFlashSales.stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
+		FlashSale targetFlashSale = allFlashSales.stream().filter(fs -> fs.getId().equals(flashSaleId)).findFirst()
 				.orElseThrow(() -> new ResourceNotFoundException("Flash sale not found with id: " + flashSaleId));
+
+		if (!targetFlashSale.isActive()) {
+			throw new BadRequestException("Không thể thêm sản phẩm vào Flash Sale đang tắt (inactive)");
+		}
+		if (targetFlashSale.isExpired()) {
+			throw new BadRequestException("Không thể thêm sản phẩm vào Flash Sale đã hết hạn");
+		}
 
 		// Validate product exists
 		productRepository.findById(productDTO.getProductId()).orElseThrow(
@@ -182,20 +198,27 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 		flashSaleProduct.setActive(true);
 		flashSaleProduct.setCreatedAt(new Date());
 
-		FlashSaleProduct savedProduct = flashSaleProductRepository.save(flashSaleProduct);
+		Long generatedProductId = flashSaleProductRepository.insertFlashSaleProduct(
+				flashSaleProduct.getFlashSaleId(), flashSaleProduct.getProductId(),
+				flashSaleProduct.getOriginalPrice(), flashSaleProduct.getFlashPrice(),
+				flashSaleProduct.getStockLimit(), flashSaleProduct.getStockSold(),
+				flashSaleProduct.getMaxPerCustomer(), flashSaleProduct.getDisplayOrder(),
+				flashSaleProduct.isActive(), flashSaleProduct.getCreatedAt());
+		flashSaleProduct.setId(generatedProductId);
 		log.info("Product {} added to flash sale {}", productDTO.getProductId(), flashSaleId);
 
-		return convertToDTO(savedProduct);
+		return convertToDTO(flashSaleProduct);
 	}
 
 	@Override
 	public FlashSaleProductDTO updateFlashSaleProduct(FlashSaleProductDTO productDTO) {
 		log.debug("Updating flash sale product with id: {}", productDTO.getId());
 
-		List<FlashSaleProduct> allProducts = (List<FlashSaleProduct>) flashSaleProductRepository.findAll();
-		FlashSaleProduct flashSaleProduct = allProducts.stream().filter(fsp -> fsp.getId().equals(productDTO.getId()))
+		List<FlashSaleProduct> allProducts = flashSaleProductRepository.findByFlashSaleId(productDTO.getFlashSaleId());
+		FlashSaleProduct flashSaleProduct = allProducts.stream()
+				.filter(fsp -> fsp.getProductId().equals(productDTO.getProductId()))
 				.findFirst().orElseThrow(() -> new ResourceNotFoundException(
-						"Flash sale product not found with id: " + productDTO.getId()));
+						"Flash sale product not found for productId: " + productDTO.getProductId()));
 
 		flashSaleProduct.setOriginalPrice(productDTO.getOriginalPrice());
 		flashSaleProduct.setFlashPrice(productDTO.getFlashPrice());
@@ -204,10 +227,14 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 		flashSaleProduct.setDisplayOrder(productDTO.getDisplayOrder());
 		flashSaleProduct.setActive(productDTO.isActive());
 
-		FlashSaleProduct updatedProduct = flashSaleProductRepository.save(flashSaleProduct);
-		log.info("Flash sale product updated with id: {}", updatedProduct.getId());
+		flashSaleProductRepository.updateFlashSaleProduct(
+				flashSaleProduct.getId(), flashSaleProduct.getOriginalPrice(),
+				flashSaleProduct.getFlashPrice(), flashSaleProduct.getStockLimit(),
+				flashSaleProduct.getMaxPerCustomer(), flashSaleProduct.getDisplayOrder(),
+				flashSaleProduct.isActive());
+		log.info("Flash sale product updated with id: {}", flashSaleProduct.getId());
 
-		return convertToDTO(updatedProduct);
+		return convertToDTO(flashSaleProduct);
 	}
 
 	@Override
@@ -254,6 +281,13 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 				.filter(fs -> fs.getStartTime().before(now) && fs.getEndTime().after(now)).findFirst().orElse(null);
 
 		if (currentFlashSale == null) {
+			return null;
+		}
+
+		// Only return if there are active products
+		List<FlashSaleProduct> activeProducts = flashSaleProductRepository
+				.findActiveByFlashSaleId(currentFlashSale.getId());
+		if (activeProducts.isEmpty()) {
 			return null;
 		}
 
@@ -329,7 +363,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 		int currentSold = flashSaleProduct.getStockSold() != null ? flashSaleProduct.getStockSold() : 0;
 		flashSaleProduct.setStockSold(currentSold + quantity);
 
-		flashSaleProductRepository.save(flashSaleProduct);
+		flashSaleProductRepository.updateSoldQuantity(flashSaleProduct.getId(), flashSaleProduct.getStockSold());
 		log.info("Flash sale purchase processed: {} units of product {} for user {}", quantity, productId, userId);
 	}
 

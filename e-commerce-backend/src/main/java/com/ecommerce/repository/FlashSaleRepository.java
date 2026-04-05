@@ -6,6 +6,7 @@ import vn.com.unit.springframework.data.mirage.repository.query.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 
 @Repository
@@ -29,4 +30,30 @@ public interface FlashSaleRepository extends DbRepository<FlashSale, Long> {
     // Maps to: flashSaleRepository_updateStatus.sql
     @Modifying
     void updateStatus(@Param("id") Long id, @Param("isActive") boolean isActive);
+
+    // Maps to: FlashSaleRepository_insertFlashSale.sql
+    @Modifying
+    Long insertFlashSale(
+            @Param("name") String name,
+            @Param("description") String description,
+            @Param("startTime") Date startTime,
+            @Param("endTime") Date endTime,
+            @Param("isActive") boolean isActive,
+            @Param("bannerImageUrl") String bannerImageUrl,
+            @Param("backgroundColor") String backgroundColor,
+            @Param("createdAt") Date createdAt,
+            @Param("updatedAt") Date updatedAt);
+
+    // Maps to: FlashSaleRepository_updateFlashSale.sql
+    @Modifying
+    void updateFlashSale(
+            @Param("id") Long id,
+            @Param("name") String name,
+            @Param("description") String description,
+            @Param("startTime") Date startTime,
+            @Param("endTime") Date endTime,
+            @Param("isActive") boolean isActive,
+            @Param("bannerImageUrl") String bannerImageUrl,
+            @Param("backgroundColor") String backgroundColor,
+            @Param("updatedAt") Date updatedAt);
 }

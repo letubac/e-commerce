@@ -224,8 +224,8 @@ export default function FlashSale() {
               const discount = product.discountPercentage
                 ? Math.round(product.discountPercentage)
                 : calcDiscount(product.originalPrice, product.flashPrice);
-              const soldPct = calcSoldPercent(product.stockSold, product.stockQuantity);
-              const isSoldOut = (product.stockQuantity || 0) - (product.stockSold || 0) <= 0;
+              const soldPct = calcSoldPercent(product.stockSold, product.stockLimit);
+              const isSoldOut = (product.stockLimit || 0) - (product.stockSold || 0) <= 0;
               const imgUrl = getProductImageUrl(product.productImageUrl);
 
               return (

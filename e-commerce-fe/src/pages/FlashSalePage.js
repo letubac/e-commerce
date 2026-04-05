@@ -280,9 +280,9 @@ function FlashSalePage() {
               const discount = product.discountPercentage
                 ? Math.round(product.discountPercentage)
                 : calcDiscount(product.originalPrice, product.flashPrice);
-              const stockLeft = (product.stockQuantity || 0) - (product.stockSold || 0);
-              const soldPct = product.stockQuantity
-                ? Math.min(100, Math.round(((product.stockSold || 0) / product.stockQuantity) * 100))
+              const stockLeft = (product.stockLimit || 0) - (product.stockSold || 0);
+              const soldPct = product.stockLimit
+                ? Math.min(100, Math.round(((product.stockSold || 0) / product.stockLimit) * 100))
                 : 0;
               const isSoldOut = stockLeft <= 0;
               const saved = product.originalPrice && product.flashPrice
