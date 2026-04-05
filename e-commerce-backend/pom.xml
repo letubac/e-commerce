@@ -290,6 +290,7 @@
 					<include>**/*.sql</include>
 					<include>**/*.yml</include>
 					<include>**/*.xml</include>
+					<include>**/*.properties</include>
 					<include>static/**</include>
 					<include>templates/**</include>
 				</includes>
