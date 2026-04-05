@@ -1,37 +1,43 @@
-﻿/**
+/**
  * author: LeTuBac
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Clock, RefreshCw, CheckCircle, XCircle, Loader2, Calendar } from 'lucide-react';
+import {
+  Clock, RefreshCw, CheckCircle, XCircle, Loader2, Calendar,
+  Power, PowerOff, PauseCircle, PlayCircle
+} from 'lucide-react';
 import adminApi from '../api/adminApi';
+import toast from '../utils/toast';
+import ConfirmDialog, { ACTION_TYPES } from './ConfirmDialog';
 
-const KNOWN_JOBS = [
-  {
-    name: 'Flash Sale Expiry Check',
-    description: 'Kiểm tra và tắt các flash sale đã hết hạn',
-    schedule: 'Mỗi phút',
+// Maps BE job keys ? human-readable metadata
+const JOB_META = {
+  checkFlashSaleExpiry: {
+    label: 'Flash Sale Expiry Check',
+    description: 'Ki?m tra v� t?t c�c flash sale d� h?t h?n',
+    schedule: 'M?i ph�t',
   },
-  {
-    name: 'Order Status Check',
-    description: 'Cập nhật trạng thái đơn hàng tự động',
-    schedule: 'Mỗi 5 phút',
+  checkOrderStatuses: {
+    label: 'Order Status Check',
+    description: 'C?p nh?t tr?ng th�i don h�ng t? d?ng',
+    schedule: 'M?i 5 ph�t',
   },
-  {
-    name: 'Expired Session Cleanup',
-    description: 'Dọn dẹp các phiên đăng nhập đã hết hạn',
-    schedule: 'Mỗi giờ',
+  cleanExpiredSessions: {
+    label: 'Expired Session Cleanup',
+    description: 'D?n d?p c�c phi�n dang nh?p d� h?t h?n',
+    schedule: 'M?i gi?',
   },
-  {
-    name: 'Nightly Cleanup',
-    description: 'Dọn dẹp dữ liệu tạm thời hàng đêm',
-    schedule: 'Hàng ngày lúc 2:00 AM',
+  nightlyCleanup: {
+    label: 'Nightly Cleanup',
+    description: 'D?n d?p d? li?u t?m th?i h�ng d�m',
+    schedule: 'H�ng ng�y l�c 2:00 AM',
   },
-];
+};
 
 const STATUS_CONFIG = {
-  SUCCESS: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50', label: 'Thành công' },
-  ERROR: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-50', label: 'Lỗi' },
-  RUNNING: { icon: Loader2, color: 'text-blue-500', bg: 'bg-blue-50', label: 'Đang chạy', spin: true },
+  SUCCESS: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50', label: 'Th�nh c�ng' },
+  ERROR: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-50', label: 'L?i' },
+  RUNNING: { icon: Loader2, color: 'text-blue-500', bg: 'bg-blue-50', label: '�ang ch?y', spin: true },
 };
 
 function SkeletonCard() {
@@ -48,48 +54,124 @@ function SkeletonCard() {
   );
 }
 
-function JobCard({ job }) {
-  const statusKey = job.status?.toUpperCase() || 'SUCCESS';
+function JobCard({ jobKey, jobData, onToggle, onPause, onResume, actionLoading }) {
+  const meta = JOB_META[jobKey] || { label: jobKey, description: '', schedule: 'N/A' };
+  const statusKey = jobData?.status?.toUpperCase() || 'SUCCESS';
   const config = STATUS_CONFIG[statusKey] || STATUS_CONFIG.SUCCESS;
   const StatusIcon = config.icon;
 
+  const isEnabled = jobData?.enabled !== false;
+  const isPaused = jobData?.pausedUntil != null;
+
+  let runState = 'active';
+  if (!isEnabled) runState = 'disabled';
+  else if (isPaused) runState = 'paused';
+
+  const runStateConfig = {
+    active: { dot: 'bg-green-400', text: '�ang ch?y' },
+    disabled: { dot: 'bg-gray-400', text: '�� t?t' },
+    paused: { dot: 'bg-yellow-400', text: 'T?m ngung' },
+  };
+
+  const loading = actionLoading === jobKey;
+
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Calendar size={16} className="text-gray-400 shrink-0 mt-0.5" />
-          <h3 className="font-semibold text-gray-900 text-sm">{job.name}</h3>
+    <div className={`bg-white rounded-lg border-2 p-5 transition-all ${
+      runState === 'disabled' ? 'border-gray-200 opacity-70' :
+      runState === 'paused' ? 'border-yellow-200' : 'border-gray-200 hover:shadow-md'
+    }`}>
+      {/* Title row */}
+      <div className="flex items-start justify-between mb-2 gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Calendar size={15} className="text-gray-400 shrink-0 mt-0.5" />
+          <h3 className="font-semibold text-gray-900 text-sm truncate">{meta.label}</h3>
         </div>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className={`inline-block w-2 h-2 rounded-full ${runStateConfig[runState].dot}`} />
+          <span className="text-xs text-gray-500">{runStateConfig[runState].text}</span>
+        </div>
+      </div>
+
+      <p className="text-xs text-gray-500 mb-3">{meta.description}</p>
+
+      {/* Schedule / last run info */}
+      <div className="space-y-1 text-xs text-gray-500 mb-4">
+        <div className="flex items-center gap-2">
+          <Clock size={11} className="shrink-0" />
+          <span className="font-medium text-gray-600">L?ch ch?y:</span>
+          <span>{meta.schedule}</span>
+        </div>
+        {jobData?.lastRun && (
+          <div className="flex items-center gap-2">
+            <CheckCircle size={11} className="shrink-0" />
+            <span className="font-medium text-gray-600">L?n cu?i:</span>
+            <span>{new Date(jobData.lastRun).toLocaleString('vi-VN')}</span>
+          </div>
+        )}
+        {jobData?.message && (
+          <p className={`mt-1 break-words ${statusKey === 'ERROR' ? 'text-red-500' : 'text-gray-400'}`}>
+            {jobData.message}
+          </p>
+        )}
+        {isPaused && (
+          <p className="text-yellow-600 mt-1">
+            T?m ngung d?n: {new Date(jobData.pausedUntil).toLocaleString('vi-VN')}
+          </p>
+        )}
+      </div>
+
+      {/* Status badge */}
+      <div className="flex items-center justify-between mb-3">
         <span className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${config.bg} ${config.color}`}>
           <StatusIcon size={12} className={config.spin ? 'animate-spin' : ''} />
           {config.label}
         </span>
       </div>
 
-      <p className="text-xs text-gray-500 mb-3">{job.description}</p>
+      {/* Action buttons */}
+      <div className="flex gap-1.5">
+        <button
+          onClick={() => onToggle(jobKey, isEnabled)}
+          disabled={loading}
+          title={isEnabled ? 'T?t job n�y' : 'B?t job n�y'}
+          className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded border transition-colors ${
+            isEnabled
+              ? 'border-red-200 text-red-600 hover:bg-red-50'
+              : 'border-green-200 text-green-600 hover:bg-green-50'
+          } disabled:opacity-50`}
+        >
+          {isEnabled ? <PowerOff size={12} /> : <Power size={12} />}
+          {isEnabled ? 'T?t' : 'B?t'}
+        </button>
 
-      <div className="space-y-1.5 text-xs text-gray-500">
-        <div className="flex items-center gap-2">
-          <Clock size={11} className="shrink-0" />
-          <span className="font-medium text-gray-600">Lịch chạy:</span>
-          <span>{job.schedule}</span>
-        </div>
-        {job.lastRunAt && (
-          <div className="flex items-center gap-2">
-            <CheckCircle size={11} className="shrink-0" />
-            <span className="font-medium text-gray-600">Lần cuối:</span>
-            <span>{new Date(job.lastRunAt).toLocaleString('vi-VN')}</span>
-          </div>
+        {isEnabled && !isPaused && (
+          <button
+            onClick={() => onPause(jobKey)}
+            disabled={loading}
+            title="T?m ngung 60 ph�t"
+            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded border border-yellow-200 text-yellow-600 hover:bg-yellow-50 disabled:opacity-50 transition-colors"
+          >
+            <PauseCircle size={12} />
+            D?ng
+          </button>
         )}
-        {job.nextRunAt && (
-          <div className="flex items-center gap-2">
-            <Clock size={11} className="shrink-0" />
-            <span className="font-medium text-gray-600">Lần tiếp:</span>
-            <span>{new Date(job.nextRunAt).toLocaleString('vi-VN')}</span>
-          </div>
+
+        {isPaused && (
+          <button
+            onClick={() => onResume(jobKey)}
+            disabled={loading}
+            title="Ti?p t?c ngay"
+            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded border border-blue-200 text-blue-600 hover:bg-blue-50 disabled:opacity-50 transition-colors"
+          >
+            <PlayCircle size={12} />
+            Ti?p t?c
+          </button>
         )}
-        {job.errorMessage && (
-          <p className="text-red-500 mt-1 break-words">{job.errorMessage}</p>
+
+        {loading && (
+          <div className="flex items-center justify-center px-2">
+            <Loader2 size={14} className="animate-spin text-gray-400" />
+          </div>
         )}
       </div>
     </div>
@@ -97,25 +179,20 @@ function JobCard({ job }) {
 }
 
 function CronJobStatus() {
-  const [jobs, setJobs] = useState([]);
+  const [jobsMap, setJobsMap] = useState({});
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(null);
   const [lastRefreshed, setLastRefreshed] = useState(null);
+  // confirmDialog state: { isOpen, jobKey, actionType, confirmFn }
+  const [confirm, setConfirm] = useState({ isOpen: false });
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     try {
       const data = await adminApi.getCronJobs();
-      // Merge API data with known jobs list for display
-      const apiJobs = Array.isArray(data) ? data : [];
-      const merged = KNOWN_JOBS.map(known => {
-        const found = apiJobs.find(j => j.name === known.name);
-        return found ? { ...known, ...found } : { ...known, status: 'SUCCESS' };
-      });
-      setJobs(merged);
+      setJobsMap(data && typeof data === 'object' ? data : {});
       setLastRefreshed(new Date());
     } catch {
-      // Fallback to showing known jobs with default status
-      setJobs(KNOWN_JOBS.map(j => ({ ...j, status: 'SUCCESS' })));
       setLastRefreshed(new Date());
     } finally {
       setLoading(false);
@@ -128,43 +205,131 @@ function CronJobStatus() {
     return () => clearInterval(interval);
   }, [fetchJobs]);
 
+  const handleToggle = (jobKey, currentlyEnabled) => {
+    setConfirm({
+      isOpen: true,
+      jobKey,
+      actionType: currentlyEnabled ? ACTION_TYPES.DEACTIVATE : ACTION_TYPES.ACTIVATE,
+      detail: currentlyEnabled
+        ? `Job "${JOB_META[jobKey]?.label || jobKey}" s? b? t?t v� kh�ng ch?y n?a.`
+        : `Job "${JOB_META[jobKey]?.label || jobKey}" s? du?c b?t l?i.`,
+      confirmFn: async () => {
+        setActionLoading(jobKey);
+        try {
+          await adminApi.toggleCronJob(jobKey);
+          toast.success(currentlyEnabled ? '�� t?t job' : '�� b?t job');
+          fetchJobs();
+        } catch (error) {
+          toast.error(error.message || 'Kh�ng th? thay d?i tr?ng th�i job');
+        } finally {
+          setActionLoading(null);
+        }
+      }
+    });
+  };
+
+  const handlePause = (jobKey) => {
+    setConfirm({
+      isOpen: true,
+      jobKey,
+      actionType: ACTION_TYPES.PAUSE,
+      detail: `Job "${JOB_META[jobKey]?.label || jobKey}" s? b? t?m ngung trong 60 ph�t.`,
+      confirmFn: async () => {
+        setActionLoading(jobKey);
+        try {
+          await adminApi.pauseCronJob(jobKey, 60);
+          toast.success('�� t?m ngung job trong 60 ph�t');
+          fetchJobs();
+        } catch (error) {
+          toast.error(error.message || 'Kh�ng th? t?m ngung job');
+        } finally {
+          setActionLoading(null);
+        }
+      }
+    });
+  };
+
+  const handleResume = async (jobKey) => {
+    setActionLoading(jobKey);
+    try {
+      await adminApi.resumeCronJob(jobKey);
+      toast.success('�� ti?p t?c job');
+      fetchJobs();
+    } catch (error) {
+      toast.error(error.message || 'Kh�ng th? ti?p t?c job');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (confirm.confirmFn) {
+      await confirm.confirmFn();
+    }
+    setConfirm({ isOpen: false });
+  };
+
+  const jobKeys = Object.keys(JOB_META);
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
-              <Clock className="text-orange-500" size={22} />
+    <>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+                <Clock className="text-orange-500" size={22} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Cron Jobs</h2>
+                <p className="text-sm text-gray-500">
+                  {lastRefreshed
+                    ? `C?p nh?t l�c ${lastRefreshed.toLocaleTimeString('vi-VN')} � T? d?ng l�m m?i m?i 30s`
+                    : 'Theo d�i v� ki?m so�t c�c t�c v? d?nh k?'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Cron Jobs</h2>
-              <p className="text-sm text-gray-500">
-                {lastRefreshed
-                  ? `Cập nhật lúc ${lastRefreshed.toLocaleTimeString('vi-VN')} • Tự động làm mới mỗi 30s`
-                  : 'Theo dõi các tác vụ định kỳ'}
-              </p>
-            </div>
+            <button
+              onClick={fetchJobs}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            >
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              L�m m?i
+            </button>
           </div>
-          <button
-            onClick={fetchJobs}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-          >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            Làm mới
-          </button>
+        </div>
+
+        {/* Job cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+          {loading && Object.keys(jobsMap).length === 0
+            ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+            : jobKeys.map(jobKey => (
+                <JobCard
+                  key={jobKey}
+                  jobKey={jobKey}
+                  jobData={jobsMap[jobKey]}
+                  onToggle={handleToggle}
+                  onPause={handlePause}
+                  onResume={handleResume}
+                  actionLoading={actionLoading}
+                />
+              ))
+          }
         </div>
       </div>
 
-      {/* Job cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {loading && jobs.length === 0
-          ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-          : jobs.map(job => <JobCard key={job.name} job={job} />)
-        }
-      </div>
-    </div>
+      <ConfirmDialog
+        isOpen={confirm.isOpen}
+        action={confirm.actionType || ACTION_TYPES.STATUS_CHANGE}
+        target={JOB_META[confirm.jobKey]?.label || confirm.jobKey || 'job'}
+        detail={confirm.detail}
+        onConfirm={handleConfirm}
+        onCancel={() => setConfirm({ isOpen: false })}
+        loading={!!actionLoading}
+      />
+    </>
   );
 }
 

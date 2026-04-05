@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Upload, Plus, Minus, AlertCircle } from 'lucide-react';
 import api, { getImageUrl } from '../api/api';
+import toast from '../utils/toast';
 
 function AddProductModal({ isOpen, onClose, onSuccess, editProduct = null }) {
   const [formData, setFormData] = useState({
@@ -199,7 +200,7 @@ function AddProductModal({ isOpen, onClose, onSuccess, editProduct = null }) {
       handleClose();
     } catch (error) {
       console.error('Error saving product:', error);
-      alert('Có lỗi xảy ra khi lưu sản phẩm. Vui lòng thử lại!');
+      toast.error(error.message || 'Có lỗi xảy ra khi lưu sản phẩm. Vui lòng thử lại!');
     } finally {
       setLoading(false);
     }

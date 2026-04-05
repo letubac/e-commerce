@@ -126,7 +126,7 @@ function CouponManagement() {
       fetchCoupons();
     } catch (error) {
       console.error('Error saving coupon:', error);
-      toast.error(editingCoupon ? 'Không thể cập nhật mã giảm giá' : 'Không thể tạo mã giảm giá');
+      toast.error(error.message || (editingCoupon ? 'Không thể cập nhật mã giảm giá' : 'Không thể tạo mã giảm giá'));
     }
   };
 
@@ -139,7 +139,7 @@ function CouponManagement() {
       fetchCoupons();
     } catch (error) {
       console.error('Error deleting coupon:', error);
-      toast.error('Không thể xóa mã giảm giá');
+      toast.error(error.message || 'Không thể xóa mã giảm giá');
     }
   };
 

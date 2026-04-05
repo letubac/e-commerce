@@ -19,18 +19,22 @@ const adminApi = {
     });
 
     // Parse JSON response
-    const responseData = await response.json();
+    const responseData = await response.json().catch(() => ({}));
 
     if (!response.ok) {
       if (response.status === 401) {
-        // Token expired or invalid - clear auth and redirect to login
+        // Token expired/invalid — clear storage and fire event so AuthContext + toast handles it
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        // Dispatch custom event; AdminDashboard listens and navigates to /login
+        window.dispatchEvent(new CustomEvent('admin:session-expired'));
         throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
       }
+      if (response.status === 403) {
+        throw new Error('Bạn không có quyền thực hiện thao tác này.');
+      }
       // Extract error message from BusinessApiResponse structure
-      const errorMessage = responseData.description || responseData.message || 'Request failed';
+      const errorMessage = responseData.description || responseData.messageStatus || responseData.message || `Lỗi ${response.status}`;
       throw new Error(errorMessage);
     }
 
@@ -213,6 +217,12 @@ const adminApi = {
 
   // Cron Job APIs
   getCronJobs: () => adminApi.request('/admin/cron-jobs'),
+  toggleCronJob: (jobName) =>
+    adminApi.request(`/admin/cron-jobs/${jobName}/toggle`, { method: 'PUT' }),
+  pauseCronJob: (jobName, minutes = 60) =>
+    adminApi.request(`/admin/cron-jobs/${jobName}/pause?minutes=${minutes}`, { method: 'PUT' }),
+  resumeCronJob: (jobName) =>
+    adminApi.request(`/admin/cron-jobs/${jobName}/resume`, { method: 'PUT' }),
 
   // Analytics AI APIs
   chatAnalytics: (question, sessionId) => adminApi.request('/ai/analytics', { method: 'POST', body: JSON.stringify({ question, sessionId }) }),

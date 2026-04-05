@@ -2,6 +2,7 @@
  * author: LeTuBac
  */
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
   Package, 
@@ -33,10 +34,24 @@ import FlashSaleManagement from '../../components/FlashSaleManagement';
 import TaskManagement from '../../components/TaskManagement';
 import AiAgentsDashboard from '../../components/AiAgentsDashboard';
 import CronJobStatus from '../../components/CronJobStatus';
+import BrandManagement from '../../components/BrandManagement';
+import LogManagement from '../../components/LogManagement';
 import adminApi from '../../api/adminApi';
+import toast from '../../utils/toast';
 
 function AdminDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Session-expired event listener (fired by adminApi when 401 received)
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      navigate('/login');
+    };
+    window.addEventListener('admin:session-expired', handleSessionExpired);
+    return () => window.removeEventListener('admin:session-expired', handleSessionExpired);
+  }, [navigate]);
   
   // Category Management State
   const [categories, setCategories] = useState([]);
@@ -63,7 +78,7 @@ function AdminDashboard() {
       setCategories(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      alert(error.message || 'Không thể tải danh sách danh mục');
+      toast.error(error.message || 'Không thể tải danh sách danh mục');
     } finally {
       setCategoriesLoading(false);
     }
@@ -90,16 +105,16 @@ function AdminDashboard() {
     try {
       if (editingCategory) {
         await adminApi.updateCategory(editingCategory.id, categoryForm);
-        alert('Cập nhật danh mục thành công!');
+        toast.success('Cập nhật danh mục thành công');
       } else {
         await adminApi.createCategory(categoryForm);
-        alert('Tạo danh mục mới thành công!');
+        toast.success('Tạo danh mục mới thành công');
       }
       setShowCategoryModal(false);
       fetchCategories();
     } catch (error) {
       console.error('Error saving category:', error);
-      alert(error.message || 'Có lỗi xảy ra khi lưu danh mục');
+      toast.error(error.message || 'Có lỗi xảy ra khi lưu danh mục');
     }
   };
 
@@ -108,11 +123,11 @@ function AdminDashboard() {
     
     try {
       await adminApi.deleteCategory(categoryId);
-      alert('Xóa danh mục thành công!');
+      toast.success('Xóa danh mục thành công');
       fetchCategories();
     } catch (error) {
       console.error('Error deleting category:', error);
-      alert(error.message || 'Không thể xóa danh mục. Vui lòng kiểm tra xem danh mục có chứa sản phẩm không.');
+      toast.error(error.message || 'Không thể xóa danh mục. Vui lòng kiểm tra xem danh mục có chứa sản phẩm không.');
     }
   };
 
@@ -122,7 +137,7 @@ function AdminDashboard() {
       fetchCategories();
     } catch (error) {
       console.error('Error toggling category status:', error);
-      alert(error.message || 'Không thể thay đổi trạng thái danh mục');
+      toast.error(error.message || 'Không thể thay đổi trạng thái danh mục');
     }
   };
 
@@ -287,41 +302,7 @@ function AdminDashboard() {
         )}
 
         {/* Brands Tab */}
-        {activeTab === 'brands' && (
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Quản lý thương hiệu</h3>
-              <button className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                <Plus size={20} />
-                Thêm thương hiệu
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {['Apple', 'Samsung', 'Xiaomi', 'Dell', 'HP', 'Asus', 'Logitech', 'Razer'].map((brand) => (
-                <div key={brand} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <Tags size={24} className="text-gray-400" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{brand}</h4>
-                      <p className="text-sm text-gray-500">45 sản phẩm</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="flex-1 px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">
-                      Xem
-                    </button>
-                    <button className="flex-1 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
-                      Sửa
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {activeTab === 'brands' && <BrandManagement />}
 
         {/* Categories Tab */}
         {activeTab === 'categories' && (
@@ -509,143 +490,7 @@ function AdminDashboard() {
         )}
 
         {/* Logs Tab */}
-        {activeTab === 'logs' && (
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Log hệ thống</h3>
-              <div className="flex gap-2">
-                <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                  <option value="">Tất cả loại log</option>
-                  <option value="user">Hoạt động người dùng</option>
-                  <option value="admin">Hoạt động admin</option>
-                  <option value="system">Hệ thống</option>
-                  <option value="error">Lỗi</option>
-                </select>
-                <input
-                  type="date"
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                />
-              </div>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Thời gian
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Người dùng
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Hành động
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Mô tả
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      IP Address
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trạng thái
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date().toLocaleString('vi-VN')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      admin@eshop.com
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      LOGIN
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Đăng nhập vào admin dashboard
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      192.168.1.100
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                        Thành công
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(Date.now() - 300000).toLocaleString('vi-VN')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      user1@gmail.com
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ORDER_CREATE
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Tạo đơn hàng #ORD-2024-000006
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      192.168.1.105
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                        Thành công
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(Date.now() - 600000).toLocaleString('vi-VN')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      system
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      BACKUP
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Tự động backup database
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      127.0.0.1
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                        Thành công
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(Date.now() - 900000).toLocaleString('vi-VN')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      user2@gmail.com
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      LOGIN_FAILED
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Đăng nhập thất bại - sai mật khẩu
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      192.168.1.110
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
-                        Thất bại
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        {activeTab === 'logs' && <LogManagement />}
 
         {/* Tasks Tab */}
         {activeTab === 'tasks' && <TaskManagement />}

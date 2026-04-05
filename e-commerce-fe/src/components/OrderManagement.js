@@ -2,16 +2,19 @@
  * author: LeTuBac
  */
 import React, { useState, useEffect } from 'react';
-import { Eye, Package, Truck, Check, X, Search } from 'lucide-react';
+import { Eye, Package, Truck, Check, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import adminApi from '../api/adminApi';
 import { getImageUrl } from '../api/api';
 import toast from '../utils/toast';
+import ConfirmDialog, { ACTION_TYPES } from './ConfirmDialog';
 
 function OrderManagement() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [confirmState, setConfirmState] = useState({ isOpen: false, orderId: null, newStatus: null });
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
     search: '',
@@ -77,7 +80,29 @@ function OrderManagement() {
       }
     } catch (error) {
       console.error('Error updating order status:', error);
-      toast.error('Không thể cập nhật trạng thái đơn hàng');
+      toast.error(error.message || 'Không thể cập nhật trạng thái đơn hàng');
+    }
+  };
+
+  const openStatusConfirm = (orderId, newStatus) => {
+    setConfirmState({ isOpen: true, orderId, newStatus });
+  };
+
+  const handleConfirmStatus = async () => {
+    setConfirmLoading(true);
+    try {
+      await adminApi.updateOrderStatus(confirmState.orderId, confirmState.newStatus);
+      toast.success('Cập nhật trạng thái đơn hàng thành công');
+      setConfirmState({ isOpen: false, orderId: null, newStatus: null });
+      fetchOrders();
+      if (selectedOrder && selectedOrder.id === confirmState.orderId) {
+        setShowModal(false);
+        setSelectedOrder(null);
+      }
+    } catch (error) {
+      toast.error(error.message || 'Không thể cập nhật trạng thái');
+    } finally {
+      setConfirmLoading(false);
     }
   };
 
@@ -128,6 +153,7 @@ function OrderManagement() {
   }
 
   return (
+    <>
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
@@ -246,28 +272,52 @@ function OrderManagement() {
       </div>
 
       {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-          <div className="text-sm text-gray-500">
-            Hiển thị {orders.length} / {pagination.totalElements} đơn hàng
+      {pagination.totalElements > 0 && (
+        <div className="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-3 text-sm text-gray-500">
+            <span>Hiển thị {orders.length} / {pagination.totalElements} đơn hàng</span>
+            <select
+              value={filters.size}
+              onChange={(e) => setFilters({ ...filters, size: Number(e.target.value), page: 0 })}
+              className="border border-gray-300 rounded px-2 py-1"
+            >
+              <option value={5}>5/trang</option>
+              <option value={10}>10/trang</option>
+              <option value={20}>20/trang</option>
+              <option value={50}>50/trang</option>
+            </select>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setFilters({ ...filters, page: 0 })}
+              disabled={filters.page === 0}
+              className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+            >
+              «
+            </button>
             <button
               onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
               disabled={filters.page === 0}
-              className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Trước
+              <ChevronLeft size={16} />
             </button>
-            <span className="px-3 py-1">
-              Trang {filters.page + 1} / {pagination.totalPages}
+            <span className="px-4 py-1 text-sm">
+              Trang {filters.page + 1} / {pagination.totalPages || 1}
             </span>
             <button
               onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
-              disabled={filters.page >= pagination.totalPages - 1}
-              className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={filters.page >= (pagination.totalPages || 1) - 1}
+              className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Sau
+              <ChevronRight size={16} />
+            </button>
+            <button
+              onClick={() => setFilters({ ...filters, page: (pagination.totalPages || 1) - 1 })}
+              disabled={filters.page >= (pagination.totalPages || 1) - 1}
+              className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+            >
+              »
             </button>
           </div>
         </div>
@@ -312,7 +362,7 @@ function OrderManagement() {
                   <div className="flex gap-2">
                     {selectedOrder.status === 'PENDING' && (
                       <button
-                        onClick={() => handleUpdateStatus(selectedOrder.id, 'CONFIRMED')}
+                        onClick={() => openStatusConfirm(selectedOrder.id, 'CONFIRMED')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
                       >
                         <Check size={16} />
@@ -321,7 +371,7 @@ function OrderManagement() {
                     )}
                     {selectedOrder.status === 'CONFIRMED' && (
                       <button
-                        onClick={() => handleUpdateStatus(selectedOrder.id, 'PROCESSING')}
+                        onClick={() => openStatusConfirm(selectedOrder.id, 'PROCESSING')}
                         className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
                       >
                         <Package size={16} />
@@ -330,7 +380,7 @@ function OrderManagement() {
                     )}
                     {selectedOrder.status === 'PROCESSING' && (
                       <button
-                        onClick={() => handleUpdateStatus(selectedOrder.id, 'SHIPPING')}
+                        onClick={() => openStatusConfirm(selectedOrder.id, 'SHIPPING')}
                         className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
                       >
                         <Truck size={16} />
@@ -339,7 +389,7 @@ function OrderManagement() {
                     )}
                     {selectedOrder.status === 'SHIPPING' && (
                       <button
-                        onClick={() => handleUpdateStatus(selectedOrder.id, 'DELIVERED')}
+                        onClick={() => openStatusConfirm(selectedOrder.id, 'DELIVERED')}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
                       >
                         <Check size={16} />
@@ -347,7 +397,7 @@ function OrderManagement() {
                       </button>
                     )}
                     <button
-                      onClick={() => handleUpdateStatus(selectedOrder.id, 'CANCELLED')}
+                      onClick={() => openStatusConfirm(selectedOrder.id, 'CANCELLED')}
                       className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
                     >
                       <X size={16} />
@@ -476,6 +526,21 @@ function OrderManagement() {
         </div>
       )}
     </div>
+
+      {/* Status Change ConfirmDialog */}
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        action={confirmState.newStatus === 'CANCELLED' ? ACTION_TYPES.CANCEL : ACTION_TYPES.STATUS_CHANGE}
+        target={`đơn hàng #${confirmState.orderId}`}
+        detail={confirmState.newStatus === 'CANCELLED'
+          ? 'Đơn hàng sẽ bị hủy và không thể hoàn tác.'
+          : `Chuyển trạng thái sang "${confirmState.newStatus === 'CONFIRMED' ? 'Đã xác nhận' : confirmState.newStatus === 'PROCESSING' ? 'Đang xử lý' : confirmState.newStatus === 'SHIPPING' ? 'Đang giao' : 'Đã giao'}"`
+        }
+        onConfirm={handleConfirmStatus}
+        onCancel={() => setConfirmState({ isOpen: false, orderId: null, newStatus: null })}
+        loading={confirmLoading}
+      />
+    </>
   );
 }
 
