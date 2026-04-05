@@ -43,7 +43,7 @@ public class CronJobController {
 
     /** Toggle a job enabled/disabled. Returns new enabled state. */
     @PutMapping("/{jobName}/toggle")
-    public ResponseEntity<BusinessApiResponse> toggleCronJob(@PathVariable String jobName) {
+    public ResponseEntity<BusinessApiResponse> toggleCronJob(@PathVariable("jobName") String jobName) {
         long start = System.currentTimeMillis();
         try {
             boolean enabled = scheduledTasksService.toggleJob(jobName);
@@ -59,7 +59,7 @@ public class CronJobController {
     /** Pause a job for the given number of minutes (default 60). */
     @PutMapping("/{jobName}/pause")
     public ResponseEntity<BusinessApiResponse> pauseCronJob(
-            @PathVariable String jobName,
+            @PathVariable("jobName") String jobName,
             @RequestParam(defaultValue = "60") int minutes) {
         long start = System.currentTimeMillis();
         try {
@@ -78,7 +78,7 @@ public class CronJobController {
 
     /** Resume a paused job immediately. */
     @PutMapping("/{jobName}/resume")
-    public ResponseEntity<BusinessApiResponse> resumeCronJob(@PathVariable String jobName) {
+    public ResponseEntity<BusinessApiResponse> resumeCronJob(@PathVariable("jobName") String jobName) {
         long start = System.currentTimeMillis();
         try {
             scheduledTasksService.resumeJob(jobName);
