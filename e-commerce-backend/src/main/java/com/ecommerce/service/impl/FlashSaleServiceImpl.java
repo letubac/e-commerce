@@ -48,7 +48,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 
 		// Validate: no overlapping flash sales
 		List<FlashSale> overlapping = flashSaleRepository.findOverlapping(
-				flashSaleDTO.getStartTime(), flashSaleDTO.getEndTime(), null);
+				flashSaleDTO.getStartTime(), flashSaleDTO.getEndTime(), -1L);
 		if (!overlapping.isEmpty()) {
 			FlashSale conflict = overlapping.get(0);
 			throw new BadRequestException("Thời gian chồng chéo với Flash Sale \"" + conflict.getName()
@@ -465,7 +465,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 				: "Copy of " + source.getName();
 
 		// Validate no time overlap
-		List<FlashSale> overlapping = flashSaleRepository.findOverlapping(newStart, newEnd, null);
+		List<FlashSale> overlapping = flashSaleRepository.findOverlapping(newStart, newEnd, flashSaleId);
 		if (!overlapping.isEmpty()) {
 			FlashSale conflict = overlapping.get(0);
 			throw new BadRequestException("Thời gian chồng chéo với Flash Sale \"" + conflict.getName()
@@ -543,7 +543,8 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 						notif.setLink("/flash-sale");
 						notificationService.broadcastToAll(notif);
 					} catch (Exception e) {
-						log.warn("[Scheduler] Failed to send activate notification for flash sale id={}: {}", fs.getId(),
+						log.warn("[Scheduler] Failed to send activate notification for flash sale id={}: {}",
+								fs.getId(),
 								e.getMessage());
 					}
 				}

@@ -20,10 +20,10 @@ function CouponManagement() {
     minOrderAmount: 0,
     maxDiscountAmount: null,
     usageLimit: null,
-    usagePerUser: 1,
+    usageLimitPerUser: 1,
     startDate: '',
     endDate: '',
-    active: true
+    isActive: true
   });
   const [filters, setFilters] = useState({
     search: '',
@@ -79,10 +79,10 @@ function CouponManagement() {
         minOrderAmount: coupon.minOrderAmount || 0,
         maxDiscountAmount: coupon.maxDiscountAmount || null,
         usageLimit: coupon.usageLimit || null,
-        usagePerUser: coupon.usagePerUser || 1,
+        usageLimitPerUser: coupon.usageLimitPerUser || 1,
         startDate: coupon.startDate ? new Date(coupon.startDate).toISOString().slice(0, 16) : '',
         endDate: coupon.endDate ? new Date(coupon.endDate).toISOString().slice(0, 16) : '',
-        active: coupon.active !== false
+        isActive: coupon.isActive !== false
       });
     } else {
       setEditingCoupon(null);
@@ -95,10 +95,10 @@ function CouponManagement() {
         minOrderAmount: 0,
         maxDiscountAmount: null,
         usageLimit: null,
-        usagePerUser: 1,
+        usageLimitPerUser: 1,
         startDate: '',
         endDate: '',
-        active: true
+        isActive: true
       });
     }
     setShowModal(true);
@@ -267,7 +267,7 @@ function CouponManagement() {
                   {coupon.usageCount || 0} / {coupon.usageLimit || '∞'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(coupon.active, coupon.startDate, coupon.endDate)}
+                  {getStatusBadge(coupon.isActive, coupon.startDate, coupon.endDate)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex gap-2">
@@ -474,8 +474,8 @@ function CouponManagement() {
                     <input
                       type="number"
                       min="1"
-                      value={formData.usagePerUser}
-                      onChange={(e) => setFormData({ ...formData, usagePerUser: parseInt(e.target.value) })}
+                      value={formData.usageLimitPerUser}
+                      onChange={(e) => setFormData({ ...formData, usageLimitPerUser: parseInt(e.target.value) })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
@@ -510,12 +510,12 @@ function CouponManagement() {
                 <div className="flex items-center">
                   <input
                     type="checkbox"
-                    id="active"
-                    checked={formData.active}
-                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                    id="isActive"
+                    checked={formData.isActive}
+                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                     className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                   />
-                  <label htmlFor="active" className="ml-2 text-sm text-gray-700">
+                  <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
                     Kích hoạt mã giảm giá
                   </label>
                 </div>
