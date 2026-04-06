@@ -164,13 +164,9 @@ public class BrandServiceImpl implements BrandService {
 					: (brandDTO.getImageUrl() != null ? brandDTO.getImageUrl() : existingBrand.getLogoUrl());
 			Date now = new Date();
 
-			Integer result = brandRepository.updateBrand(
+			brandRepository.updateBrand(
 					brandDTO.getId(), brandDTO.getName(), slug, brandDTO.getDescription(),
 					logoUrl, brandDTO.getWebsiteUrl(), existingBrand.isActive(), now);
-
-			if (result == null || result <= 0) {
-				throw new DetailException(BrandConstant.E202_BRAND_UPDATE_ERROR);
-			}
 
 			Brand updatedBrand = brandRepository.findById(brandDTO.getId());
 			log.info("Updated brand with ID: {}", brandDTO.getId());
@@ -222,11 +218,7 @@ public class BrandServiceImpl implements BrandService {
 			boolean newStatus = !brand.isActive();
 			Date now = new Date();
 
-			Integer result = brandRepository.toggleActiveStatus(id, newStatus, now);
-
-			if (result == null || result <= 0) {
-				throw new DetailException(BrandConstant.E210_BRAND_TOGGLE_STATUS_ERROR);
-			}
+			brandRepository.toggleActiveStatus(id, newStatus, now);
 
 			Brand updatedBrand = brandRepository.findById(id);
 			log.info("Toggled active status for brand ID: {} to {}", id, newStatus);

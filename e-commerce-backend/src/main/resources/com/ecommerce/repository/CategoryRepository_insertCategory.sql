@@ -9,13 +9,13 @@ INSERT INTO categories (
     created_at,
     updated_at
 ) VALUES (
-    /* name */,
-    /* slug */,
-    /* description */,
-    /* parentId */,
-    /* imageUrl */,
-    /* sortOrder */,
-    /* isActive */,
-    /* createdAt */,
-    /* updatedAt */
+    /*name*/'',
+    /*slug*/'',
+    /*description*/'',
+    /*parentId*/0,
+    /*imageUrl*/'',
+    /*sortOrder*/0,
+    /*isActive*/true,
+    /*createdAt*/CURRENT_TIMESTAMP,
+    /*updatedAt*/CURRENT_TIMESTAMP
 )

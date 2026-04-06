@@ -18,4 +18,4 @@ INSERT INTO flash_sales (
     /*backgroundColor*/'',
     /*createdAt*/'',
     /*updatedAt*/''
-)
+) RETURNING id

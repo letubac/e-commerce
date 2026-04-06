@@ -164,17 +164,13 @@ public class CategoryServiceImpl implements CategoryService {
 							: generateSlug(categoryDTO.getName());
 			Date now = new Date();
 
-			Integer result = categoryRepository.updateCategory(
+			categoryRepository.updateCategory(
 					categoryDTO.getId(), categoryDTO.getName(), slug,
 					categoryDTO.getDescription(), categoryDTO.getParentId(),
 					categoryDTO.getImageUrl(),
 					categoryDTO.getSortOrder() != null ? categoryDTO.getSortOrder()
 							: (existingCategory.getSortOrder() != null ? existingCategory.getSortOrder() : 0),
 					existingCategory.isActive(), now);
-
-			if (result == null || result <= 0) {
-				throw new DetailException(CategoryConstant.E407_CATEGORY_UPDATE_ERROR);
-			}
 
 			Category updatedCategory = categoryRepository.findById(categoryDTO.getId())
 					.orElse(existingCategory);
@@ -224,11 +220,7 @@ public class CategoryServiceImpl implements CategoryService {
 			boolean newStatus = !category.isActive();
 			Date now = new Date();
 
-			Integer result = categoryRepository.toggleActiveStatus(id, newStatus, now);
-
-			if (result == null || result <= 0) {
-				throw new DetailException(CategoryConstant.E409_CATEGORY_TOGGLE_ERROR);
-			}
+			categoryRepository.toggleActiveStatus(id, newStatus, now);
 
 			Category updatedCategory = categoryRepository.findById(id).orElse(category);
 			log.info("Toggled active status for category ID: {} to {}", id, newStatus);

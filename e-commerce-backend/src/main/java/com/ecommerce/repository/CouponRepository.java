@@ -35,7 +35,6 @@ public interface CouponRepository extends DbRepository<Coupon, Long> {
         void deleteById(@Param("id") Long id);
 
         // Maps to: couponRepository_save.sql
-        @Modifying
         Long save(
                         @Param("code") String code,
                         @Param("name") String name,
@@ -45,7 +44,7 @@ public interface CouponRepository extends DbRepository<Coupon, Long> {
                         @Param("minOrderAmount") Double minOrderAmount,
                         @Param("maxDiscountAmount") Double maxDiscountAmount,
                         @Param("usageLimit") Integer usageLimit,
-                        @Param("usagePerUser") Integer usagePerUser,
+                        @Param("usageLimitPerUser") Integer usageLimitPerUser,
                         @Param("usedCount") Integer usedCount,
                         @Param("isActive") Boolean isActive,
                         @Param("startDate") Date startDate,

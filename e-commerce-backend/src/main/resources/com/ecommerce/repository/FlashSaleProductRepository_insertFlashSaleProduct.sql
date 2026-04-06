@@ -20,4 +20,4 @@ INSERT INTO flash_sale_products (
     /*displayOrder*/0,
     /*isActive*/true,
     /*createdAt*/''
-)
+) RETURNING id

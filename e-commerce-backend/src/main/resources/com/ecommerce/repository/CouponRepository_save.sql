@@ -7,7 +7,7 @@ INSERT INTO coupons (
     min_order_amount, 
     max_discount_amount, 
     usage_limit, 
-    usage_per_user, 
+    usage_limit_per_user, 
     used_count, 
     is_active, 
     start_date, 
@@ -23,7 +23,7 @@ INSERT INTO coupons (
     /*minOrderAmount*/0,
     /*maxDiscountAmount*/0,
     /*usageLimit*/0,
-    /*usagePerUser*/0,
+    /*usageLimitPerUser*/0,
     /*usedCount*/0,
     /*isActive*/true,
     /*startDate*/'',
@@ -31,3 +31,4 @@ INSERT INTO coupons (
     /*createdAt*/'',
     /*updatedAt*/''
 )
+RETURNING id

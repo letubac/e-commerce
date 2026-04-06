@@ -19,42 +19,42 @@ import vn.com.unit.springframework.data.mirage.repository.query.Modifying;
  */
 public interface CategoryRepository extends DbRepository<Category, Long> {
 
-    List<Category> findAllData();
+        List<Category> findAllData();
 
-    Optional<Category> findById(@Param("id") Long id);
+        Optional<Category> findById(@Param("id") Long id);
 
-    boolean existsById(@Param("id") Long id);
+        boolean existsById(@Param("id") Long id);
 
-    List<Category> findByActiveTrue();
+        List<Category> findByActiveTrue();
 
-    boolean existsByNameIgnoreCase(@Param("name") String name);
+        boolean existsByNameIgnoreCase(@Param("name") String name);
 
-    // Maps to: CategoryRepository_findByExactName.sql
-    Optional<Category> findByExactName(@Param("name") String name);
+        // Maps to: CategoryRepository_findByExactName.sql
+        Optional<Category> findByExactName(@Param("name") String name);
 
-    Page<Category> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-            @Param("search") String search, Pageable pageable);
+        Page<Category> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+                        @Param("search") String search, Pageable pageable);
 
-    Long countAllByActiveTrue();
+        Long countAllByActiveTrue();
 
-    // Custom write methods — map to custom SQL files instead of MirageSQL built-ins
-    @Modifying
-    Integer insertCategory(@Param("name") String name, @Param("slug") String slug,
-            @Param("description") String description, @Param("parentId") Long parentId,
-            @Param("imageUrl") String imageUrl, @Param("sortOrder") Integer sortOrder,
-            @Param("isActive") boolean isActive,
-            @Param("createdAt") Date createdAt, @Param("updatedAt") Date updatedAt);
+        // Custom write methods — map to custom SQL files instead of MirageSQL built-ins
+        @Modifying
+        Integer insertCategory(@Param("name") String name, @Param("slug") String slug,
+                        @Param("description") String description, @Param("parentId") Long parentId,
+                        @Param("imageUrl") String imageUrl, @Param("sortOrder") Integer sortOrder,
+                        @Param("isActive") boolean isActive,
+                        @Param("createdAt") Date createdAt, @Param("updatedAt") Date updatedAt);
 
-    @Modifying
-    Integer updateCategory(@Param("id") Long id, @Param("name") String name, @Param("slug") String slug,
-            @Param("description") String description, @Param("parentId") Long parentId,
-            @Param("imageUrl") String imageUrl, @Param("sortOrder") Integer sortOrder,
-            @Param("isActive") boolean isActive, @Param("updatedAt") Date updatedAt);
+        @Modifying
+        void updateCategory(@Param("id") Long id, @Param("name") String name, @Param("slug") String slug,
+                        @Param("description") String description, @Param("parentId") Long parentId,
+                        @Param("imageUrl") String imageUrl, @Param("sortOrder") Integer sortOrder,
+                        @Param("isActive") boolean isActive, @Param("updatedAt") Date updatedAt);
 
-    @Modifying
-    Integer toggleActiveStatus(@Param("id") Long id, @Param("isActive") boolean isActive,
-            @Param("updatedAt") Date updatedAt);
+        @Modifying
+        void toggleActiveStatus(@Param("id") Long id, @Param("isActive") boolean isActive,
+                        @Param("updatedAt") Date updatedAt);
 
-    @Modifying
-    Integer deleteCategory(@Param("id") Long id);
+        @Modifying
+        void deleteCategory(@Param("id") Long id);
 }
