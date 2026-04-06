@@ -62,3 +62,17 @@ src/
 - **PostgreSQL 13+**
 - **Redis 6+**
 - **Apache Kafka 2.8+**
+
+## Admin
+<img width="1661" height="872" alt="image" src="https://github.com/user-attachments/assets/e6065205-2283-4e03-b93e-807d7ee1a41d" />
+<img width="1589" height="872" alt="image" src="https://github.com/user-attachments/assets/57a40632-30d7-4199-acce-1fa8d8a86817" />
+<img width="1632" height="877" alt="image" src="https://github.com/user-attachments/assets/ded0d2c4-2dac-45de-91fd-70fbcf5638ad" />
+<img width="1590" height="874" alt="image" src="https://github.com/user-attachments/assets/c6cbd94c-3ae1-46d2-b1c7-5231da0f0cd2" />
+<img width="1578" height="823" alt="image" src="https://github.com/user-attachments/assets/cccc4f13-1c44-48b6-9b94-a6b02ac0c2d8" />
+<img width="1643" height="643" alt="image" src="https://github.com/user-attachments/assets/74f0163c-c997-42e7-8a68-cc5f22593008" />
+
+## Home
+<img width="1666" height="868" alt="image" src="https://github.com/user-attachments/assets/7f004872-2ebb-4f27-b1fc-43cdf807c678" />
+<img width="1651" height="871" alt="image" src="https://github.com/user-attachments/assets/d887eb4c-aa98-4a26-91d6-7b6ba531039a" />
+<img width="1593" height="868" alt="image" src="https://github.com/user-attachments/assets/576379cf-8b7f-408d-a83c-79ed08eb1c75" />
+<img width="1602" height="870" alt="image" src="https://github.com/user-attachments/assets/1eb013a7-f39e-4b1d-9eef-7b56b7fce6ee" />
