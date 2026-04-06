@@ -243,20 +243,45 @@ public class ScheduledTasksService {
     /**
      * Returns true if the job should execute (not disabled and not currently
      * paused).
+     * <p>
+     * Always reads the enabled/disabled state from DB (source of truth) so that
+     * admin changes persist across restarts and in-memory resets cannot cause a
+     * disabled job to run. The pause check remains in-memory because it is
+     * intentionally transient.
      */
     public boolean isJobActive(String jobName) {
-        if (disabledJobs.contains(jobName)) {
-            log.debug("[Cron] {} is disabled, skipping", jobName);
-            return false;
-        }
+        // Timed-pause check — intentionally transient (in-memory only)
         Instant pausedUntil = pausedUntilMap.get(jobName);
         if (pausedUntil != null && Instant.now().isBefore(pausedUntil)) {
             log.debug("[Cron] {} is paused until {}, skipping", jobName, pausedUntil);
             return false;
         }
-        // Auto-remove expired pause entries
         if (pausedUntil != null) {
             pausedUntilMap.remove(jobName);
+        }
+
+        // Enabled/disabled state: always read from DB (authoritative)
+        try {
+            var configOpt = cronJobConfigRepository.findByJobName(jobName);
+            if (configOpt.isPresent()) {
+                boolean enabled = configOpt.get().isEnabled();
+                // Keep in-memory cache in sync
+                if (enabled) {
+                    disabledJobs.remove(jobName);
+                } else {
+                    disabledJobs.add(jobName);
+                    log.info("[Cron] Job '{}' is DISABLED (DB), skipping execution", jobName);
+                }
+                return enabled;
+            }
+        } catch (Exception e) {
+            log.warn("[Cron] Could not read DB state for '{}', falling back to in-memory: {}", jobName, e.getMessage());
+        }
+
+        // Fallback: in-memory state (used only when DB is unreachable)
+        if (disabledJobs.contains(jobName)) {
+            log.debug("[Cron] {} is disabled (in-memory fallback), skipping", jobName);
+            return false;
         }
         return true;
     }
