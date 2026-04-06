@@ -78,3 +78,7 @@ src/
 <img width="1602" height="870" alt="image" src="https://github.com/user-attachments/assets/1eb013a7-f39e-4b1d-9eef-7b56b7fce6ee" />
 <img width="1435" height="870" alt="image" src="https://github.com/user-attachments/assets/ecdc5887-e528-4d2f-a4a9-15645f4ba345" />
 <img width="1615" height="865" alt="image" src="https://github.com/user-attachments/assets/d214bcb2-134d-40b4-822c-98bb432e1164" />
+
+## License
+
+MIT License. See [LICENSE](./LICENSE) for details.
