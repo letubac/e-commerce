@@ -410,7 +410,7 @@ public class FlashSaleController {
      */
     @PostMapping("/admin/flash-sales/{flashSaleId}/clone")
     public ResponseEntity<BusinessApiResponse> cloneFlashSale(
-            @PathVariable Long flashSaleId,
+            @PathVariable(name = "flashSaleId") Long flashSaleId,
             @RequestBody(required = false) com.ecommerce.dto.FlashSaleDTO overrides) {
         long start = System.currentTimeMillis();
         try {

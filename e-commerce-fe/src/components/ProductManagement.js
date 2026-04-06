@@ -14,7 +14,6 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import api, { getImageUrl } from '../api/api';
-import adminApi from '../api/adminApi';
 import AddProductModal from '../components/AddProductModal';
 
 function ProductManagement() {
@@ -78,8 +77,8 @@ function ProductManagement() {
     try {
       // API đã parse BusinessApiResponse và trả về data trực tiếp
       const [categories, brands] = await Promise.all([
-        adminApi.getCategories(),
-        adminApi.getBrands()
+        api.getAllCategoriesAdmin(),
+        api.getAllBrandsAdmin()
       ]);
       console.log('📂 Categories data:', categories); // Debug
       console.log('🏷️ Brands data:', brands); // Debug

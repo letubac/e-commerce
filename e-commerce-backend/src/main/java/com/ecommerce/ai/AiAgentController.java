@@ -16,7 +16,8 @@ import java.util.Map;
 /**
  * REST Controller cho AI Agent Team (Phase 5).
  * <p>
- * Exposes endpoints for Support, Analytics, Inventory, Sales, Marketing, and Orchestrator agents.
+ * Exposes endpoints for Support, Analytics, Inventory, Sales, Marketing, and
+ * Orchestrator agents.
  * </p>
  */
 @Slf4j
@@ -105,7 +106,7 @@ public class AiAgentController {
     @DeleteMapping("/memory/{conversationId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BusinessApiResponse> clearMemory(
-            @PathVariable Long conversationId) {
+            @PathVariable(name = "conversationId") Long conversationId) {
         long start = System.currentTimeMillis();
         aiSupportService.clearMemory(conversationId);
         return ResponseEntity.ok(successHandler.handlerSuccess(
@@ -168,7 +169,8 @@ public class AiAgentController {
     // ─────────────────────────────────────────────────────────────
 
     /**
-     * 📦 Inventory Agent - stock monitoring, low-stock alerts, restock suggestions (Admin only).
+     * 📦 Inventory Agent - stock monitoring, low-stock alerts, restock suggestions
+     * (Admin only).
      */
     @PostMapping("/agents/inventory")
     @PreAuthorize("hasRole('ADMIN')")
@@ -207,7 +209,8 @@ public class AiAgentController {
     }
 
     /**
-     * 🧠 Orchestrator Agent - routes to the most appropriate specialized agent (Admin only).
+     * 🧠 Orchestrator Agent - routes to the most appropriate specialized agent
+     * (Admin only).
      */
     @PostMapping("/agents/orchestrator")
     @PreAuthorize("hasRole('ADMIN')")
@@ -244,7 +247,8 @@ public class AiAgentController {
                 "inventory", Map.of("enabled", inventoryAgentService.isEnabled(), "name", "📦 Inventory Agent"),
                 "sales", Map.of("enabled", salesAgentService.isEnabled(), "name", "🛒 Sales Agent"),
                 "marketing", Map.of("enabled", marketingAgentService.isEnabled(), "name", "🎯 Marketing Agent"),
-                "orchestrator", Map.of("enabled", orchestratorAgentService.isEnabled(), "name", "🧠 Orchestrator Agent"));
+                "orchestrator",
+                Map.of("enabled", orchestratorAgentService.isEnabled(), "name", "🧠 Orchestrator Agent"));
         return ResponseEntity.ok(successHandler.handlerSuccess(status, start));
     }
 
@@ -272,7 +276,10 @@ public class AiAgentController {
             }
             if (!enabled) {
                 return ResponseEntity.ok(successHandler.handlerSuccess(Map.of(
-                        "reply", String.format("%s AI Agent is not enabled. Configure OPENAI_API_KEY and set app.ai.enabled=true.", agentName),
+                        "reply",
+                        String.format(
+                                "%s AI Agent is not enabled. Configure OPENAI_API_KEY and set app.ai.enabled=true.",
+                                agentName),
                         "aiEnabled", false), start));
             }
             String reply = caller.call(adminId, question);

@@ -8,12 +8,12 @@ INSERT INTO brands (
     created_at,
     updated_at
 ) VALUES (
-    /*name*/'',
-    /*slug*/'',
-    /*description*/'',
-    /*logoUrl*/'',
-    /*websiteUrl*/'',
-    /*isActive*/true,
-    /*createdAt*/'',
-    /*updatedAt*/''
+    /* name */,
+    /* slug */,
+    /* description */,
+    /* logoUrl */,
+    /* websiteUrl */,
+    /* isActive */,
+    /* createdAt */,
+    /* updatedAt */
 )

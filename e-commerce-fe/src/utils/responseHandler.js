@@ -30,14 +30,25 @@ export const parseBusinessResponse = (response) => {
   // Kiểm tra nếu response có cấu trúc BusinessApiResponse
   if (response && typeof response === 'object') {
     const { codeStatus, messageStatus, description, data } = response;
+    const status = messageStatus?.toLowerCase();
 
-    // Kiểm tra nếu là success
-    if (messageStatus === 'SUCCESS' || (codeStatus >= 200 && codeStatus < 300)) {
+    // Kiểm tra nếu là success (case-insensitive, messageStatus takes priority)
+    if (status === 'success') {
       return data;
     }
 
-    // Nếu là error, throw error với message từ BE
-    if (messageStatus === 'ERROR' || codeStatus >= 400) {
+    // Nếu là error, throw error với message từ BE (case-insensitive, messageStatus takes priority)
+    if (status === 'error') {
+      const errorMessage = description || 'Có lỗi xảy ra';
+      throw new Error(errorMessage);
+    }
+
+    // Fallback to codeStatus (only when messageStatus is absent/unknown)
+    if (codeStatus >= 200 && codeStatus < 300) {
+      return data;
+    }
+
+    if (codeStatus >= 400) {
       const errorMessage = description || 'Có lỗi xảy ra';
       throw new Error(errorMessage);
     }

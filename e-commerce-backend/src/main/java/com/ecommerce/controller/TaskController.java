@@ -82,7 +82,7 @@ public class TaskController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BusinessApiResponse> getTaskById(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> getTaskById(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             TaskDTO task = taskService.getTaskById(id);
@@ -108,7 +108,7 @@ public class TaskController {
 
     @PutMapping("/{id}")
     public ResponseEntity<BusinessApiResponse> updateTask(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             @RequestBody TaskDTO dto) {
         long start = System.currentTimeMillis();
         try {
@@ -120,7 +120,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<BusinessApiResponse> deleteTask(@PathVariable Long id) {
+    public ResponseEntity<BusinessApiResponse> deleteTask(@PathVariable(name = "id") Long id) {
         long start = System.currentTimeMillis();
         try {
             taskService.deleteTask(id);
@@ -133,7 +133,7 @@ public class TaskController {
 
     @PutMapping("/{id}/status")
     public ResponseEntity<BusinessApiResponse> updateTaskStatus(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             @RequestBody Map<String, String> body) {
         long start = System.currentTimeMillis();
         try {
