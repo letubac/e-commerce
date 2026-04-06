@@ -22,11 +22,11 @@ spring:
     password: ${DB_PASSWORD:Abcdef150899!}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
+      maximum-pool-size: 5
+      minimum-idle: 1
       connection-timeout: 20000 # 20 seconds
-      idle-timeout: 300000 # 5 minutes
-      max-lifetime: 1200000 # 20 minutes
+      idle-timeout: 30000 # 30 seconds
+      max-lifetime: 600000 # 10 minutes
       validation-timeout: 5000 # 5 seconds
   
   # Redis Configuration
@@ -75,11 +75,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
+    show-sql: false # true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        format_sql: false # true
         jdbc:
           batch_size: 50
         order_inserts: true
@@ -99,14 +99,14 @@ spring:
 # Logging Configuration
 logging:
   level:
-    com.ecommerce: DEBUG
-    org.springframework.security: DEBUG
-    org.springframework.web: DEBUG
+    com.ecommerce: INFO # DEBUG
+    org.springframework.security: INFO # DEBUG
+    org.springframework.web: INFO # DEBUG
     org.springframework.kafka: INFO
     # SQL logging - trace all queries and parameters
-    org.springframework.jdbc.core: DEBUG
-    vn.com.unit.miragesql: DEBUG
-    vn.com.unit.sparwings: DEBUG
+    org.springframework.jdbc.core: INFO # DEBUG
+    vn.com.unit.miragesql: INFO # DEBUG
+    vn.com.unit.sparwings: INFO # DEBUG
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
